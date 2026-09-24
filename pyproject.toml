@@ -29,6 +29,10 @@ packages = ["src"]
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-q"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::Warning",
+]
 
 [tool.ruff]
 line-length = 100
