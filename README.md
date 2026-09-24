@@ -1,5 +1,8 @@
 # AI Conversation Platform — Slice 1
 
+[![CI Pipeline](https://github.com/angelpixel-core/ai-conversation-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/angelpixel-core/ai-conversation-platform/actions/workflows/ci.yml)
+[![Python Version](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
+
 A Python reference implementation of the first vertical slice of an AI conversation platform.
 
 ## Slice 1
@@ -53,10 +56,11 @@ List it:
 curl http://localhost:8000/conversations
 ```
 
-Run tests:
+Run tests & coverage:
 
 ```bash
-pytest
+make test         # Run unit & integration tests
+make coverage     # Run test coverage report
 ```
 
 ## Architecture
