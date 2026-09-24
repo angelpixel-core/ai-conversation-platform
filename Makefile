@@ -1,4 +1,4 @@
-.PHONY: install install-dev test test-file coverage
+.PHONY: install install-dev test test-file coverage docker-up docker-down
 
 # Instalar dependencias base del proyecto
 install:
@@ -25,3 +25,11 @@ test-file:
 		exit 1; \
 	fi
 	.venv/bin/python -m pytest $(FILE)
+
+# Levantar servicios con Docker Compose (API + SQL Server)
+docker-up:
+	docker compose up -d --build
+
+# Detener servicios de Docker Compose
+docker-down:
+	docker compose down
