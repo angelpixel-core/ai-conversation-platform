@@ -9,16 +9,16 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DB_SERVER=sqlserver
+      - DB_SERVER=db
       - DB_PORT=1433
       - DB_NAME=ChatbotDB
       - DB_USER=sa
       - DB_PASSWORD=YourStrong@Password123
     depends_on:
-      - sqlserver
+      - db
     restart: unless-stopped
 
-  sqlserver:
+  db:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: mssql_db
     ports:
