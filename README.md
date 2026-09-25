@@ -1,6 +1,9 @@
 # AI Conversation Platform — Slice 1
 
 [![CI Pipeline](https://github.com/angelpixel-core/ai-conversation-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/angelpixel-core/ai-conversation-platform/actions/workflows/ci.yml)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Type Checking: Pyright](https://img.shields.io/badge/type_checking-pyright-blue)](https://github.com/microsoft/pyright)
+[![Security: Bandit](https://img.shields.io/badge/security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
 [![Python Version](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
 
 A Python reference implementation of the first vertical slice of an AI conversation platform.
@@ -56,11 +59,15 @@ List it:
 curl http://localhost:8000/conversations
 ```
 
-Run tests & coverage:
+Run tests & quality checks:
 
 ```bash
 make test         # Run unit & integration tests
 make coverage     # Run test coverage report
+make lint         # Run Ruff linter
+make typecheck    # Run Pyright static type checking
+make security     # Run Bandit security SAST analysis
+make check-all    # Run all QA & security checks
 ```
 
 ## Architecture
