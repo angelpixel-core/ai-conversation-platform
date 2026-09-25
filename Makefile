@@ -46,13 +46,16 @@ test-file:
 	fi
 	.venv/bin/python -m pytest $(FILE)
 
-# Ejecutar todas las verificaciones de calidad y seguridad
-check-all: lint format-check typecheck security audit coverage
+.PHONY: install install-dev test test-file coverage lint format-check typecheck security check-all docker-up docker-down stack/up stack/down stack-up stack-down docs-build
+
+# Generar documentación estática de la API (OpenAPI JSON y ReDoc HTML)
+docs-build:
+	.venv/bin/python scripts/export_openapi.py
 
 # Levantar servicios con Docker Compose (API + SQL Server)
-docker-up:
-	docker compose up -d --build
+stack/up:
+	docker compose up
 
 # Detener servicios de Docker Compose
-docker-down:
+stack/down:
 	docker compose down

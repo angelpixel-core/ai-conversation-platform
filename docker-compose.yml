@@ -21,12 +21,12 @@ services:
   db:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: mssql_db
+    user: root
     ports:
       - "1433:1433"
     environment:
       - ACCEPT_EULA=Y
       - MSSQL_SA_PASSWORD=YourStrong@Password123
-      - MSSQL_PID=Developer
     volumes:
       - mssql_data:/var/opt/mssql/data
     restart: unless-stopped
