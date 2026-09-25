@@ -12,9 +12,23 @@ from src.interfaces.http.schemas import ConversationResponse, CreateConversation
 def build_api(handler: CreateConversationHandler) -> FastAPI:
     """Create the HTTP adapter around application use cases."""
 
-    app = FastAPI(title="AI Conversation Platform", version="0.1.0")
+    app = FastAPI(
+        title="AI Conversation Platform API",
+        description=(
+            "Core API service for managing AI-driven conversations, messages, and RAG contexts."
+        ),
+        version="0.1.0",
+        docs_url="/docs",
+        redoc_url="/redoc",
+        openapi_url="/openapi.json",
+    )
 
-    @app.get("/health")
+    @app.get(
+        "/health",
+        tags=["Health"],
+        summary="Health check endpoint",
+        description="Returns current service availability status.",
+    )
     def health() -> dict[str, str]:
         return {"status": "ok"}
 
@@ -22,6 +36,11 @@ def build_api(handler: CreateConversationHandler) -> FastAPI:
         "/conversations",
         response_model=ConversationResponse,
         status_code=201,
+        tags=["Conversations"],
+        summary="Create a new conversation",
+        description=(
+            "Creates a new conversation aggregate with the provided title and assigns a unique ID."
+        ),
     )
     def create_conversation(
         request: CreateConversationRequest,

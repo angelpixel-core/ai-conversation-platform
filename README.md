@@ -1,6 +1,8 @@
 # AI Conversation Platform — Slice 1
 
 [![CI Pipeline](https://github.com/angelpixel-core/ai-conversation-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/angelpixel-core/ai-conversation-platform/actions/workflows/ci.yml)
+[![OpenAPI / ReDoc Docs](https://img.shields.io/badge/OpenAPI-ReDoc%20Docs-85EA2D?logo=openapi-initiative&logoColor=black)](https://angelpixel-core.github.io/ai-conversation-platform/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?logo=fastapi)](https://fastapi.tiangolo.com)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Type Checking: Pyright](https://img.shields.io/badge/type_checking-pyright-blue)](https://github.com/microsoft/pyright)
 [![Security: Bandit](https://img.shields.io/badge/security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)

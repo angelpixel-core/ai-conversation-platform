@@ -36,3 +36,5 @@ coverage.xml
 
 # Local
 .local
+public/
+docs_site/
