@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from src.domain.shared.domain_error import DomainError
-from src.domain.shared.aggregate_root import AggregateRoot
 from src.domain.conversations.events.conversation_created import ConversationCreatedDomainEvent
+from src.domain.shared.aggregate_root import AggregateRoot
+from src.domain.shared.domain_error import DomainError
 
 
 @dataclass(eq=False)
@@ -33,9 +33,7 @@ class Conversation(AggregateRoot):
         instance = cls(
             id=uuid4(),
             title=normalized,
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )
-        instance.record_event(
-            ConversationCreatedDomainEvent(conversation_id=instance.id)
-        )
+        instance.record_event(ConversationCreatedDomainEvent(conversation_id=instance.id))
         return instance

@@ -6,7 +6,7 @@ from src.application.conversations.commands.create_conversation import (
     CreateConversationCommand,
     CreateConversationHandler,
 )
-from src.interfaces.http.schemas import CreateConversationRequest, ConversationResponse
+from src.interfaces.http.schemas import ConversationResponse, CreateConversationRequest
 
 
 def build_api(handler: CreateConversationHandler) -> FastAPI:
@@ -27,9 +27,7 @@ def build_api(handler: CreateConversationHandler) -> FastAPI:
         request: CreateConversationRequest,
     ) -> ConversationResponse:
         try:
-            result = handler.handle(
-                CreateConversationCommand(title=request.title)
-            )
+            result = handler.handle(CreateConversationCommand(title=request.title))
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
