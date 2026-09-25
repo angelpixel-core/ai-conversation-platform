@@ -1,7 +1,9 @@
 ---
-id: agent-workflows-and-git
+id: agent-rules-workflows-and-git
 aliases: []
 tags: []
+description: Workflows, pytest enforcement, conventional commits, and mandatory updates to Mermaid system map. Activate when finalizing tasks, writing tests, creating commits, or updating architecture diagrams.
+trigger: model_decision
 ---
 
 # 01 — Workflows, Verification & Git Directives
@@ -68,3 +70,4 @@ Un commit solo puede sugerirse o ejecutarse si:
 2. No existen imports circulares ni violaciones de capas de `00-core-philosophy.md`.
 3. El archivo `.agent/architecture/system-map.mermaid.md` refleja fielmente los artefactos del commit.
 4. No se dejan archivos temporales, logs ni credenciales en el staged area.
+

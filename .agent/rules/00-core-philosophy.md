@@ -1,6 +1,9 @@
 ---
-trigger: model_decision
+id: agent-rules-core-philosophy
+aliases: []
+tags: []
 description: Rules for Clean Architecture, DDD, CQRS, and Ports & Adapters. Activate when designing, creating, refactoring, or reviewing code, classes, or layer dependencies across domain, application, infrastructure, or interfaces.
+trigger: model_decision
 ---
 
 # 00 — Core Architecture & Engineering Philosophy
@@ -71,3 +74,4 @@ Este documento establece los invariantes arquitectónicos del proyecto `ai-conve
 ## 4. Regla de Oro para el Agente Autónomo
 
 Si para resolver un problema necesitas importar una librería externa dentro de `src/domain/` o `src/application/`, **tu diseño es erróneo**. Reubica la dependencia detrás de un puerto abstracto (`ABC`) e impleméntala en `src/infrastructure/`.
+

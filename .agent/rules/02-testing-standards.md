@@ -1,5 +1,5 @@
 ---
-id: 02-testing-standards
+id: agent-rules-testing-standards
 aliases: []
 tags: []
 ---
