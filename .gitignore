@@ -33,3 +33,6 @@ coverage.xml
 .DS_Store
 .vscode/
 .idea/
+
+# Local
+.local
