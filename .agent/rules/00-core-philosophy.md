@@ -1,7 +1,6 @@
 ---
-id: 00-core-philosophy
-aliases: []
-tags: []
+trigger: model_decision
+description: Rules for Clean Architecture, DDD, CQRS, and Ports & Adapters. Activate when designing, creating, refactoring, or reviewing code, classes, or layer dependencies across domain, application, infrastructure, or interfaces.
 ---
 
 # 00 — Core Architecture & Engineering Philosophy
@@ -39,12 +38,12 @@ Este documento establece los invariantes arquitectónicos del proyecto `ai-conve
            └──> [ Infrastructure (Adapters) ] ───┴──────────────────────────────┘
 ```
 
-|         Capa         |                                                       Responsabilidad                                                       |                         Dependencias Permitidas                          |                                        PROHIBICIONES ESTRICTAS                                        |
-| :------------------: | :-------------------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------: |
-|     **`domain`**     |                                 Entidades, invariantes, eventos puros, puertos abstractos.                                  | Solo Python Standard Library (`dataclasses`, `uuid`, `datetime`, `abc`). |         **PROHIBIDO** importar FastAPI, Pydantic, SQLAlchemy, HTTPX o cualquier SDK externo.          |
-|  **`application`**   | Orquestación de casos de uso (Handlers), DTOs de comandos/queries, puertos de I/O (`UnitOfWorkPort`, `EventPublisherPort`). |                   `domain` y Python Standard Library.                    |          **PROHIBIDO** invocar directamente drivers de red, bases de datos o frameworks web.          |
-| **`infrastructure`** |       Implementación física de puertos (Driven Adapters): Repositorios en memoria/Postgres, HTTPX, Outbox dispatcher.       |  `domain`, `application`, librerías externas (SQLAlchemy, httpx, etc.).  |         **PROHIBIDO** contener reglas de negocio o alterar entidades saltándose sus métodos.          |
-|   **`interfaces`**   |                 Puntos de entrada (Driver Adapters): Routers FastAPI, esquemas Pydantic de entrada/salida.                  |               `application`, `domain`, FastAPI, Pydantic.                | **PROHIBIDO** escribir lógica de negocio o queries directas a la base de datos dentro de los routers. |
+| Capa                 | Responsabilidad                                                                                                             | Dependencias Permitidas                                                  | PROHIBICIONES ESTRICTAS                                                                               |
+| :------------------- | :-------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------- |
+| **`domain`**         | Entidades, invariantes, eventos puros, puertos abstractos.                                                                  | Solo Python Standard Library (`dataclasses`, `uuid`, `datetime`, `abc`). | **PROHIBIDO** importar FastAPI, Pydantic, SQLAlchemy, HTTPX o cualquier SDK externo.                  |
+| **`application`**    | Orquestación de casos de uso (Handlers), DTOs de comandos/queries, puertos de I/O (`UnitOfWorkPort`, `EventPublisherPort`). | `domain` y Python Standard Library.                                      | **PROHIBIDO** invocar directamente drivers de red, bases de datos o frameworks web.                   |
+| **`infrastructure`** | Implementación física de puertos (Driven Adapters): Repositorios en memoria/Postgres, HTTPX, Outbox dispatcher.             | `domain`, `application`, librerías externas (SQLAlchemy, httpx, etc.).   | **PROHIBIDO** contener reglas de negocio o alterar entidades saltándose sus métodos.                  |
+| **`interfaces`**     | Puntos de entrada (Driver Adapters): Routers FastAPI, esquemas Pydantic de entrada/salida.                                  | `application`, `domain`, FastAPI, Pydantic.                              | **PROHIBIDO** escribir lógica de negocio o queries directas a la base de datos dentro de los routers. |
 
 ---
 
