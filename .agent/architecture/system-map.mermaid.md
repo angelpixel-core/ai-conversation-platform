@@ -47,8 +47,8 @@ graph TD
     %% Interfaces to Application
     CLIExport --> RouterFastAPI
     RouterFastAPI --> CreateConvHandler
-    RouterFastAPI -.-> SendMessageHandler
-    RouterFastAPI -.-> StreamConvHandler
+    RouterFastAPI --> SendMessageHandler
+    RouterFastAPI --> StreamConvHandler
 
     %% Application orchestration
     CreateConvHandler --> CreateConvCmd

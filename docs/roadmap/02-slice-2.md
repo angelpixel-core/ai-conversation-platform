@@ -98,24 +98,24 @@ Permitir que un cliente envíe un mensaje a una conversación existente, reciba 
 
 *Endpoints de ingesta y canal de salida en tiempo real.*
 
-- [ ] **Esquemas DTO HTTP (Pydantic v2)**
+- [x] **Esquemas DTO HTTP (Pydantic v2)**
   - Archivo: `src/interfaces/http/schemas.py` (adicionar `SendMessageRequest`, `MessageResponse`)
-- [ ] **Router de Mensajería y Streaming (FastAPI)**
+- [x] **Router de Mensajería y Streaming (FastAPI)**
   - Archivo: `src/interfaces/http/api.py` (o `messages_router.py`)
   - Endpoint `POST /conversations/{id}/messages` (`202 Accepted` / `200 OK`)
   - Endpoint `GET /conversations/{id}/stream` (FastAPI `StreamingResponse` con `text/event-stream`)
-- [ ] **Tests de Integración de API / Streaming**
+- [x] **Tests de Integración de API / Streaming**
   - Archivo: `tests/integration/test_http.py`
 
 ---
 
 ### Fase 5: Ensamble, Container y Actualización Documental
 
-- [ ] **Inyección de Dependencias**
+- [x] **Inyección de Dependencias**
   - Archivo: `src/main.py` (registrar `LlmClientPort`, `OutboxDispatcher` y nuevos handlers)
-- [ ] **Actualización del Diagrama Vivo**
+- [x] **Actualización del Diagrama Vivo**
   - Archivo: `.agent/architecture/system-map.mermaid.md`
-- [ ] **Verificación de Suite Completa**
+- [x] **Verificación de Suite Completa**
   - Ejecución de `pytest` (cobertura total de Slice 1 y Slice 2)
 
 ---
