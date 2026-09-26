@@ -32,6 +32,7 @@ graph TD
         ConvRepoPort["ConversationRepository (Port)"]
         ConvNotFoundErr["ConversationNotFoundError"]
         DomainError["DomainError"]
+        EventEnvelopeVO["EventEnvelope (ValueObject)"]
     end
 
     subgraph Infrastructure ["Infrastructure (Driven Adapters)"]

@@ -47,7 +47,7 @@ Desacoplar completamente el ciclo de vida del servidor HTTP del procesamiento de
 
 *Definición de metadatos de integración, envelopes agnósticos, puertos de mensajería y extracción a `.agent/templates/`.*
 
-- [ ] **Value Objects & Event Envelope**
+- [x] **Value Objects & Event Envelope**
   - Archivo: `src/domain/shared/events/event_envelope.py` (`id`, `event_type`, `payload`, `correlation_id`, `occurred_on`).
   - Template canónico: `.agent/templates/domain/events/event_envelope.tt.py`.
   - Test template: `.agent/templates/domain/events/test_event_envelope.tt.py`.

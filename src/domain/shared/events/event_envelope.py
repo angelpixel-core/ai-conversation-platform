@@ -1,14 +1,8 @@
-"""Template canónico para Event Envelope (Envoltorio de Eventos de Integración).
+"""EventEnvelope Value Object for decoupled messaging and integration."""
 
-Reglas:
-- Pertenece a src/domain/shared/events/.
-- Encapsula metadatos estándar de mensajería (id, event_type, correlation_id, causation_id, occurred_on, payload).
-- Inmutable o agnóstico a frameworks de transporte (RabbitMQ, Kafka, Redis).
-"""
-
+import re
 from dataclasses import asdict, dataclass, field, is_dataclass
 from datetime import UTC, datetime
-import re
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -17,6 +11,18 @@ def _to_snake_case(name: str) -> str:
     """Convert PascalCase name to snake_case."""
     s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+
+
+def _serialize_value(val: Any) -> Any:
+    if isinstance(val, UUID):
+        return str(val)
+    if isinstance(val, datetime):
+        return val.isoformat()
+    if isinstance(val, dict):
+        return {k: _serialize_value(v) for k, v in val.items()}
+    if isinstance(val, list):
+        return [_serialize_value(item) for item in val]
+    return val
 
 
 @dataclass(frozen=True)
@@ -74,12 +80,7 @@ class EventEnvelope:
             for k, v in event_dict.items():
                 if k in ("event_id", "occurred_at"):
                     continue
-                if isinstance(v, UUID):
-                    payload[k] = str(v)
-                elif isinstance(v, datetime):
-                    payload[k] = v.isoformat()
-                else:
-                    payload[k] = v
+                payload[k] = _serialize_value(v)
 
         event_id = getattr(event, "event_id", None)
         occurred_at = getattr(event, "occurred_at", None)
