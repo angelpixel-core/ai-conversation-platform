@@ -44,6 +44,10 @@ graph TD
         HttpxLlmClient["HttpxLlmClientAdapter"]
         MssqlModels["MSSQL Models (SQLModel)"]
         ConversationMapper["ConversationDataMapper"]
+        MssqlConnection["MSSQL Connection & SessionFactory"]
+        MssqlRepo["MssqlConversationRepository"]
+        MssqlOutbox["MssqlOutboxRepository"]
+        MssqlUOW["MssqlUnitOfWork"]
     end
 
     %% Interfaces to Application
@@ -87,6 +91,14 @@ graph TD
     InMemoryRepo -- Implementa --> ConvRepoPort
     InMemoryUOW --> InMemoryRepo
     InMemoryUOW --> InMemoryOutbox
+    MssqlUOW -- Implementa --> UOWPort
+    MssqlRepo -- Implementa --> ConvRepoPort
+    MssqlUOW --> MssqlRepo
+    MssqlUOW --> MssqlOutbox
+    MssqlUOW --> MssqlConnection
+    MssqlRepo --> ConversationMapper
+    MssqlRepo --> MssqlModels
+    MssqlOutbox --> MssqlModels
     OutboxDispatcher --> InMemoryOutbox
     OutboxDispatcher --> EventPubPort
     FakeLlmClient -- Implementa --> LLMClientPort

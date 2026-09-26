@@ -55,16 +55,16 @@ Reemplazar los adaptadores temporales en memoria por adaptadores de producción 
 
 *Implementación de los Driven Adapters de persistencia sobre SQL Server.*
 
-- [ ] **Fábrica de Conexión y Sesiones MSSQL**
+- [x] **Fábrica de Conexión y Sesiones MSSQL**
   - Archivo: `src/infrastructure/persistence/mssql/connection.py`
   - Funciones para inicializar el `Engine` y `session_factory` con pooling de conexiones y timeouts configurables.
-- [ ] **Adaptador de Repositorio de Conversaciones**
+- [x] **Adaptador de Repositorio de Conversaciones**
   - Archivo: `src/infrastructure/persistence/mssql/repository.py` (`MssqlConversationRepository`)
-  - Implementa `ConversationRepository` (`add`, `get`).
-- [ ] **Adaptador de Repositorio de Outbox Físico**
+  - Implementa `ConversationRepository` (`add`, `get`, `list`).
+- [x] **Adaptador de Repositorio de Outbox Físico**
   - Archivo: `src/infrastructure/persistence/mssql/outbox_repository.py` (`MssqlOutboxRepository`)
-  - Métodos: `save`, `get_pending`, `mark_as_dispatched`, `mark_as_failed`.
-- [ ] **Adaptador Unit of Work Transaccional**
+  - Métodos: `save`, `add`, `get_by_id`, `get_pending`, `mark_as_dispatched`, `mark_as_completed`, `mark_as_failed`.
+- [x] **Adaptador Unit of Work Transaccional**
   - Archivo: `src/infrastructure/persistence/mssql/unit_of_work.py` (`MssqlUnitOfWork`)
   - Implementa `UnitOfWork` gestionando transacciones ACID atómicas.
 
