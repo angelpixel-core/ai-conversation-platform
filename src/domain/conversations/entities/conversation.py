@@ -1,8 +1,10 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from src.domain.conversations.events.conversation_created import ConversationCreatedDomainEvent
+from src.domain.conversations.events.message_appended import MessageAppendedDomainEvent
+from src.domain.conversations.value_objects.message import Message, MessageRole
 from src.domain.shared.aggregate_root import AggregateRoot
 from src.domain.shared.domain_error import DomainError
 
@@ -18,9 +20,15 @@ class Conversation(AggregateRoot):
     id: UUID
     title: str
     created_at: datetime
+    _messages: list[Message] = field(default_factory=list, init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         super().__init__()
+
+    @property
+    def messages(self) -> tuple[Message, ...]:
+        """Read-only access to conversation messages."""
+        return tuple(self._messages)
 
     @classmethod
     def create(cls, title: str) -> "Conversation":
@@ -37,3 +45,31 @@ class Conversation(AggregateRoot):
         )
         instance.record_event(ConversationCreatedDomainEvent(conversation_id=instance.id))
         return instance
+
+    def append_user_message(self, content: str) -> Message:
+        """Append a user message to the conversation."""
+        if self._messages and self._messages[-1].role == MessageRole.USER:
+            raise DomainError("Cannot append user message before assistant responds.")
+
+        try:
+            msg = Message.create_user_message(content)
+        except ValueError as exc:
+            raise DomainError(str(exc)) from exc
+
+        self._messages.append(msg)
+        self.record_event(MessageAppendedDomainEvent(conversation_id=self.id, message=msg))
+        return msg
+
+    def append_assistant_message(self, content: str) -> Message:
+        """Append an assistant response message to the conversation."""
+        if not self._messages or self._messages[-1].role != MessageRole.USER:
+            raise DomainError("Cannot append assistant message without a preceding user message.")
+
+        try:
+            msg = Message.create_assistant_message(content)
+        except ValueError as exc:
+            raise DomainError(str(exc)) from exc
+
+        self._messages.append(msg)
+        self.record_event(MessageAppendedDomainEvent(conversation_id=self.id, message=msg))
+        return msg

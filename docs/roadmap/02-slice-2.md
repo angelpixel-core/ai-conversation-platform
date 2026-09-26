@@ -45,10 +45,10 @@ Permitir que un cliente envíe un mensaje a una conversación existente, reciba 
 - [x] **Value Object de Mensaje**
   - Archivo: `src/domain/conversations/value_objects/message.py`
   - Encapsula `role` (`user`, `assistant`, `system`), `content`, `created_at`.
-- [ ] **Extensión de la Entidad de Dominio**
+- [x] **Extensión de la Entidad de Dominio**
   - Archivo: `src/domain/conversations/entities/conversation.py`
   - Validaciones de longitud de mensaje, contenido no vacío y alternancia de turnos.
-- [ ] **Nuevos Eventos de Dominio**
+- [x] **Nuevos Eventos de Dominio**
   - Archivo: `src/domain/conversations/events/message_appended.py` (`MessageAppendedDomainEvent`)
   - Archivo: `src/domain/conversations/events/assistant_response_completed.py` (`AssistantResponseCompletedDomainEvent`)
 - [ ] **Puerto para Cliente LLM (Driven Port)**
