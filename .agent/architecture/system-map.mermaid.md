@@ -40,6 +40,8 @@ graph TD
         HttpxClient["HttpxClientAdapter"]
         InMemoryOutbox["InMemoryOutboxRepository"]
         OutboxDispatcher["OutboxDispatcher"]
+        FakeLlmClient["FakeLlmClientAdapter"]
+        HttpxLlmClient["HttpxLlmClientAdapter"]
     end
 
     %% Interfaces to Application
@@ -85,5 +87,7 @@ graph TD
     InMemoryUOW --> InMemoryOutbox
     OutboxDispatcher --> InMemoryOutbox
     OutboxDispatcher --> EventPubPort
+    FakeLlmClient -- Implementa --> LLMClientPort
+    HttpxLlmClient -- Implementa --> LLMClientPort
     HttpxClient -- Implementa --> HTTPClientPort
 ```

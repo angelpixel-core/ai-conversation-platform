@@ -85,12 +85,12 @@ Permitir que un cliente envíe un mensaje a una conversación existente, reciba 
 - [x] **Implementación del Patrón Outbox**
   - Modelo & Repositorio: `src/infrastructure/shared/persistence/outbox/in_memory.py`
   - Dispatcher Worker: `src/infrastructure/shared/persistence/outbox/dispatcher.py`
-- [ ] **Adaptador de LLM (Streaming Client)**
+- [x] **Adaptador de LLM (Streaming Client)**
   - Adaptador Fake para pruebas: `src/infrastructure/llm/fake_llm_client.py` (`FakeLlmClientAdapter`)
   - Adaptador HTTP/API real: `src/infrastructure/llm/httpx_llm_client.py` (`HttpxLlmClientAdapter`)
-- [ ] **Tests de Integración de Infraestructura**
+- [x] **Tests de Integración de Infraestructura**
   - [x] Archivo: `tests/integration/infrastructure/test_outbox_dispatcher.py`
-  - [ ] Archivo: `tests/integration/infrastructure/test_llm_client_adapter.py`
+  - [x] Archivo: `tests/integration/infrastructure/test_llm_client_adapter.py`
 
 ---
 
