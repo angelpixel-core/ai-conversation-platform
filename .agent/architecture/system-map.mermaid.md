@@ -13,6 +13,8 @@ graph TD
         CreateConvHandler["CreateConversationHandler"]
         SendMessageCmd["SendMessageCommand"]
         SendMessageHandler["SendMessageHandler"]
+        AppendAssistantCmd["AppendAssistantMessageCommand"]
+        AppendAssistantHandler["AppendAssistantMessageHandler"]
         UOWPort["UnitOfWork Port"]
         LLMClientPort["LlmClientPort"]
         EventPubPort["EventPublisherPort"]
@@ -51,6 +53,11 @@ graph TD
     SendMessageHandler --> ConvAggregate
     SendMessageHandler --> ConvNotFoundErr
     SendMessageHandler --> UOWPort
+
+    AppendAssistantHandler --> AppendAssistantCmd
+    AppendAssistantHandler --> ConvAggregate
+    AppendAssistantHandler --> ConvNotFoundErr
+    AppendAssistantHandler --> UOWPort
 
     %% Domain Relationships
     ConvAggregate --> MessageVO
