@@ -50,7 +50,7 @@ test-file:
 
 # Generar documentación estática de la API (OpenAPI JSON y ReDoc HTML)
 docs-build:
-	.venv/bin/python scripts/export_openapi.py
+	.venv/bin/python -m src.interfaces.cli.export_openapi
 
 # Levantar servicios con Docker Compose (API + SQL Server)
 stack/up:

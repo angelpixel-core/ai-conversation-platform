@@ -1,7 +1,8 @@
-"""Script to generate static OpenAPI JSON and standalone ReDoc HTML for documentation publishing."""
+"""CLI Primary Adapter for generating static OpenAPI schema and ReDoc HTML."""
 
 import json
 from pathlib import Path
+
 from src.main import create_app
 
 
@@ -25,7 +26,7 @@ def generate_static_docs(output_dir: Path | str = "public") -> None:
     <title>{title}</title>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,100i" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700" rel="stylesheet">
     <style>
       body {{
         margin: 0;
@@ -44,5 +45,10 @@ def generate_static_docs(output_dir: Path | str = "public") -> None:
     print(f"✅ Generated static OpenAPI docs in '{target_dir}' directory.")
 
 
-if __name__ == "__main__":
+def cli_main() -> None:
+    """CLI Entrypoint."""
     generate_static_docs()
+
+
+if __name__ == "__main__":
+    cli_main()
