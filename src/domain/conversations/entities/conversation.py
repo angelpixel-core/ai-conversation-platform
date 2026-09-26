@@ -2,6 +2,9 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
+from src.domain.conversations.events.assistant_response_completed import (
+    AssistantResponseCompletedDomainEvent,
+)
 from src.domain.conversations.events.conversation_created import ConversationCreatedDomainEvent
 from src.domain.conversations.events.message_appended import MessageAppendedDomainEvent
 from src.domain.conversations.value_objects.message import Message, MessageRole
@@ -72,4 +75,7 @@ class Conversation(AggregateRoot):
 
         self._messages.append(msg)
         self.record_event(MessageAppendedDomainEvent(conversation_id=self.id, message=msg))
+        self.record_event(
+            AssistantResponseCompletedDomainEvent(conversation_id=self.id, message=msg)
+        )
         return msg

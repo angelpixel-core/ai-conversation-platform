@@ -54,7 +54,7 @@ Permitir que un cliente envíe un mensaje a una conversación existente, reciba 
 - [x] **Puerto para Cliente LLM (Driven Port)**
   - Archivo: `src/application/shared/ports/llm_client.py`
   - Contrato abstracto: `LlmClientPort` con método `stream_chat(messages, ...)` retornando `AsyncIterator[str]`.
-- [ ] **Tests Unitarios de Dominio**
+- [x] **Tests Unitarios de Dominio**
   - Archivo: `tests/unit/domain/test_conversation_messaging.py`
 
 ---
