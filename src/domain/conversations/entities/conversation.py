@@ -49,6 +49,23 @@ class Conversation(AggregateRoot):
         instance.record_event(ConversationCreatedDomainEvent(conversation_id=instance.id))
         return instance
 
+    @classmethod
+    def reconstitute(
+        cls,
+        conversation_id: UUID,
+        title: str,
+        created_at: datetime,
+        messages: tuple[Message, ...] | list[Message] = (),
+    ) -> "Conversation":
+        """Reconstitute aggregate from storage without emitting creation events."""
+        instance = cls(
+            id=conversation_id,
+            title=title,
+            created_at=created_at,
+        )
+        instance._messages = list(messages)
+        return instance
+
     def append_user_message(self, content: str) -> Message:
         """Append a user message to the conversation."""
         if self._messages and self._messages[-1].role == MessageRole.USER:

@@ -38,15 +38,15 @@ Reemplazar los adaptadores temporales en memoria por adaptadores de producción 
 
 *Modelos de tablas relacionales y traducción desacoplada con el Dominio.*
 
-- [ ] **Dependencias de Base de Datos en `pyproject.toml`**
+- [x] **Dependencias de Base de Datos en `pyproject.toml`**
   - Instalar `sqlmodel`, `pymssql` (o `aioodbc`) y `alembic`.
-- [ ] **Modelos Físicos Relacionales**
+- [x] **Modelos Físicos Relacionales**
   - Archivo: `src/infrastructure/persistence/mssql/models.py`
   - Modelos: `ConversationModel`, `MessageModel`, `OutboxMessageModel` (claves primarias UUID, foreign keys en cascada, índices y timestamps UTC).
-- [ ] **Mapeador Bidireccional (Data Mapper)**
+- [x] **Mapeador Bidireccional (Data Mapper)**
   - Archivo: `src/infrastructure/persistence/mssql/mapper.py`
   - Clase: `ConversationDataMapper` (`to_domain`, `to_model`, `message_to_model`).
-- [ ] **Tests Unitarios de Mapeo**
+- [x] **Tests Unitarios de Mapeo**
   - Archivo: `tests/unit/infrastructure/mssql/test_conversation_mapper.py`
 
 ---
