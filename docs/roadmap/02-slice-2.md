@@ -51,7 +51,7 @@ Permitir que un cliente envíe un mensaje a una conversación existente, reciba 
 - [x] **Nuevos Eventos de Dominio**
   - Archivo: `src/domain/conversations/events/message_appended.py` (`MessageAppendedDomainEvent`)
   - Archivo: `src/domain/conversations/events/assistant_response_completed.py` (`AssistantResponseCompletedDomainEvent`)
-- [ ] **Puerto para Cliente LLM (Driven Port)**
+- [x] **Puerto para Cliente LLM (Driven Port)**
   - Archivo: `src/application/shared/ports/llm_client.py`
   - Contrato abstracto: `LlmClientPort` con método `stream_chat(messages, ...)` retornando `AsyncIterator[str]`.
 - [ ] **Tests Unitarios de Dominio**
