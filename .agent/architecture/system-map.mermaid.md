@@ -42,6 +42,8 @@ graph TD
         OutboxDispatcher["OutboxDispatcher"]
         FakeLlmClient["FakeLlmClientAdapter"]
         HttpxLlmClient["HttpxLlmClientAdapter"]
+        MssqlModels["MSSQL Models (SQLModel)"]
+        ConversationMapper["ConversationDataMapper"]
     end
 
     %% Interfaces to Application
@@ -90,4 +92,6 @@ graph TD
     FakeLlmClient -- Implementa --> LLMClientPort
     HttpxLlmClient -- Implementa --> LLMClientPort
     HttpxClient -- Implementa --> HTTPClientPort
+    ConversationMapper --> MssqlModels
+    ConversationMapper --> ConvAggregate
 ```
