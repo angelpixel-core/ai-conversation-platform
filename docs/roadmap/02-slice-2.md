@@ -42,7 +42,7 @@ Permitir que un cliente envíe un mensaje a una conversación existente, reciba 
 ### Fase 1: Dominio (Domain Layer)
 *Extensión del agregado para soportar roles, tokens y validaciones.*
 
-- [ ] **Value Object de Mensaje**
+- [x] **Value Object de Mensaje**
   - Archivo: `src/domain/conversations/value_objects/message.py`
   - Encapsula `role` (`user`, `assistant`, `system`), `content`, `created_at`.
 - [ ] **Extensión de la Entidad de Dominio**
