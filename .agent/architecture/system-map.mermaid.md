@@ -15,6 +15,8 @@ graph TD
         SendMessageHandler["SendMessageHandler"]
         AppendAssistantCmd["AppendAssistantMessageCommand"]
         AppendAssistantHandler["AppendAssistantMessageHandler"]
+        StreamConvQuery["StreamConversationQuery"]
+        StreamConvHandler["StreamConversationQueryHandler"]
         UOWPort["UnitOfWork Port"]
         LLMClientPort["LlmClientPort"]
         EventPubPort["EventPublisherPort"]
@@ -43,6 +45,7 @@ graph TD
     CLIExport --> RouterFastAPI
     RouterFastAPI --> CreateConvHandler
     RouterFastAPI -.-> SendMessageHandler
+    RouterFastAPI -.-> StreamConvHandler
 
     %% Application orchestration
     CreateConvHandler --> CreateConvCmd
@@ -58,6 +61,11 @@ graph TD
     AppendAssistantHandler --> ConvAggregate
     AppendAssistantHandler --> ConvNotFoundErr
     AppendAssistantHandler --> UOWPort
+
+    StreamConvHandler --> StreamConvQuery
+    StreamConvHandler --> ConvRepoPort
+    StreamConvHandler --> ConvNotFoundErr
+    StreamConvHandler --> LLMClientPort
 
     %% Domain Relationships
     ConvAggregate --> MessageVO

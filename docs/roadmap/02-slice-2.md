@@ -11,6 +11,7 @@ Este documento detalla la ruta de desarrollo, orquestación asíncrona y verific
 ---
 
 ## 🎯 Objetivo del Slice 2
+
 Permitir que un cliente envíe un mensaje a una conversación existente, reciba confirmación inmediata (`202 Accepted` / `200 OK`), persista el mensaje de usuario transaccionalmente en la base de datos junto a un evento de Outbox, y habilite el streaming reactivo token a token (vía Server-Sent Events / SSE o WebSockets) mientras el LLM genera la respuesta.
 
 ---
@@ -40,6 +41,7 @@ Permitir que un cliente envíe un mensaje a una conversación existente, reciba 
 ## 📋 Lista de Tareas y Checkboxes
 
 ### Fase 1: Dominio (Domain Layer)
+
 *Extensión del agregado para soportar roles, tokens y validaciones.*
 
 - [x] **Value Object de Mensaje**
@@ -60,22 +62,24 @@ Permitir que un cliente envíe un mensaje a una conversación existente, reciba 
 ---
 
 ### Fase 2: Aplicación (Application Layer - CQRS & Handlers)
+
 *Comandos de mensajería y orquestación del streaming.*
 
 - [x] **Comando: Send Message (Ingesta de usuario)**
   - Archivo: `src/application/conversations/commands/send_message.py` (`SendMessageCommand`, `SendMessageHandler`)
 - [x] **Comando: Append Assistant Message (Cierre de stream)**
   - Archivo: `src/application/conversations/commands/append_assistant_message.py` (`AppendAssistantMessageCommand`, `AppendAssistantMessageHandler`)
-- [ ] **Query: Stream Conversation Response (Lectura reactiva)**
+- [x] **Query: Stream Conversation Response (Lectura reactiva)**
   - Archivo: `src/application/conversations/queries/stream_conversation.py` (`StreamConversationQuery`, `StreamConversationQueryHandler`)
-- [ ] **Tests Unitarios de Aplicación**
+- [x] **Tests Unitarios de Aplicación**
   - [x] Archivo: `tests/unit/application/test_send_message_command.py`
   - [x] Archivo: `tests/unit/application/test_append_assistant_message_command.py`
-  - [ ] Archivo: `tests/unit/application/test_stream_conversation_query.py`
+  - [x] Archivo: `tests/unit/application/test_stream_conversation_query.py`
 
 ---
 
 ### Fase 3: Infraestructura (Infrastructure Layer)
+
 *Outbox pattern y conexión con el proveedor de IA.*
 
 - [ ] **Implementación del Patrón Outbox**
@@ -91,6 +95,7 @@ Permitir que un cliente envíe un mensaje a una conversación existente, reciba 
 ---
 
 ### Fase 4: Interfaces (HTTP & SSE / Streaming)
+
 *Endpoints de ingesta y canal de salida en tiempo real.*
 
 - [ ] **Esquemas DTO HTTP (Pydantic v2)**
@@ -105,6 +110,7 @@ Permitir que un cliente envíe un mensaje a una conversación existente, reciba 
 ---
 
 ### Fase 5: Ensamble, Container y Actualización Documental
+
 - [ ] **Inyección de Dependencias**
   - Archivo: `src/main.py` (registrar `LlmClientPort`, `OutboxDispatcher` y nuevos handlers)
 - [ ] **Actualización del Diagrama Vivo**
@@ -115,6 +121,7 @@ Permitir que un cliente envíe un mensaje a una conversación existente, reciba 
 ---
 
 ## 🔍 Criterios de Aceptación del Slice 2
+
 1. `POST /conversations/{id}/messages` responde `202 Accepted` o `200 OK` en menos de 50ms sin esperar la respuesta del LLM.
 2. `GET /conversations/{id}/stream` abre un canal SSE y transmite tokens de forma progresiva.
 3. Si el streaming se corta a la mitad por desconexión de red, la integridad de la base de datos se mantiene coherente.
