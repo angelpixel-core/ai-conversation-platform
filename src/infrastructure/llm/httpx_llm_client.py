@@ -46,9 +46,7 @@ class HttpxLlmClientAdapter(LlmClientPort):
         }
 
         client = (
-            self._client
-            if self._client is not None
-            else httpx.AsyncClient(timeout=self._timeout)
+            self._client if self._client is not None else httpx.AsyncClient(timeout=self._timeout)
         )
         should_close = self._client is None
 

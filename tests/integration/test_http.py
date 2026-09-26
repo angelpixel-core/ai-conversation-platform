@@ -148,4 +148,3 @@ def test_endpoints__when_handlers_not_configured__return_500() -> None:
 
     resp_stream = client.get(f"/conversations/{random_id}/stream")
     assert resp_stream.status_code == 500
-

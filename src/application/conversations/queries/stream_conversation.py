@@ -61,8 +61,7 @@ class StreamConversationQueryHandler:
             raise DomainError("Cannot stream response when the last message is not from user.")
 
         formatted_messages = [
-            {"role": msg.role.value, "content": msg.content}
-            for msg in conversation.messages
+            {"role": msg.role.value, "content": msg.content} for msg in conversation.messages
         ]
 
         stream_or_coroutine = self._llm_client.stream_chat(
