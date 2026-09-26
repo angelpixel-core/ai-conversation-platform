@@ -62,15 +62,15 @@ Permitir que un cliente envíe un mensaje a una conversación existente, reciba 
 ### Fase 2: Aplicación (Application Layer - CQRS & Handlers)
 *Comandos de mensajería y orquestación del streaming.*
 
-- [ ] **Comando: Send Message (Ingesta de usuario)**
+- [x] **Comando: Send Message (Ingesta de usuario)**
   - Archivo: `src/application/conversations/commands/send_message.py` (`SendMessageCommand`, `SendMessageHandler`)
 - [ ] **Comando: Append Assistant Message (Cierre de stream)**
   - Archivo: `src/application/conversations/commands/append_assistant_message.py` (`AppendAssistantMessageCommand`, `AppendAssistantMessageHandler`)
 - [ ] **Query: Stream Conversation Response (Lectura reactiva)**
   - Archivo: `src/application/conversations/queries/stream_conversation.py` (`StreamConversationQuery`, `StreamConversationQueryHandler`)
 - [ ] **Tests Unitarios de Aplicación**
-  - Archivo: `tests/unit/application/test_send_message_command.py`
-  - Archivo: `tests/unit/application/test_stream_conversation_query.py`
+  - [x] Archivo: `tests/unit/application/test_send_message_command.py`
+  - [ ] Archivo: `tests/unit/application/test_stream_conversation_query.py`
 
 ---
 
