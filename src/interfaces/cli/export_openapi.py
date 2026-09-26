@@ -24,7 +24,10 @@ def generate_static_docs(output_dir: Path | str = "public") -> None:
     template_path = Path(__file__).parent / "templates" / "redoc.html"
     template = Template(template_path.read_text(encoding="utf-8"))
 
-    html_content = template.substitute(title=title, spec_url="openapi.json")
+    html_content = template.substitute(
+        title=title,
+        spec_json=json.dumps(openapi_schema),
+    )
     html_path = target_dir / "index.html"
     html_path.write_text(html_content, encoding="utf-8")
     print(f"✅ Generated static OpenAPI docs in '{target_dir}' directory.")
