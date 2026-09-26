@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from string import Template
 
 from src.main import create_app
 
@@ -18,28 +19,12 @@ def generate_static_docs(output_dir: Path | str = "public") -> None:
     json_path = target_dir / "openapi.json"
     json_path.write_text(json.dumps(openapi_schema, indent=2), encoding="utf-8")
 
-    # 2. Export index.html (ReDoc standalone interface)
+    # 2. Export index.html using template
     title = openapi_schema.get("info", {}).get("title", "API Documentation")
-    html_content = f"""<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <title>{title}</title>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700" rel="stylesheet">
-    <style>
-      body {{
-        margin: 0;
-        padding: 0;
-      }}
-    </style>
-  </head>
-  <body>
-    <redoc spec-url='openapi.json'></redoc>
-    <script src="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js"> </script>
-  </body>
-</html>
-"""
+    template_path = Path(__file__).parent / "templates" / "redoc.html"
+    template = Template(template_path.read_text(encoding="utf-8"))
+
+    html_content = template.substitute(title=title, spec_url="openapi.json")
     html_path = target_dir / "index.html"
     html_path.write_text(html_content, encoding="utf-8")
     print(f"✅ Generated static OpenAPI docs in '{target_dir}' directory.")
