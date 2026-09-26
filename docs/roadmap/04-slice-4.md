@@ -51,7 +51,7 @@ Desacoplar completamente el ciclo de vida del servidor HTTP del procesamiento de
   - Archivo: `src/domain/shared/events/event_envelope.py` (`id`, `event_type`, `payload`, `correlation_id`, `occurred_on`).
   - Template canónico: `.agent/templates/domain/events/event_envelope.tt.py`.
   - Test template: `.agent/templates/domain/events/test_event_envelope.tt.py`.
-- [ ] **Puertos de Broker y Consumo (Application Ports)**
+- [x] **Puertos de Broker y Consumo (Application Ports)**
   - Archivo: `src/application/shared/ports/message_broker_port.py` (`publish(queue/topic, envelope)`).
   - Archivo: `src/application/shared/ports/event_consumer_port.py` (`subscribe(topic, handler)`).
   - Template canónico: `.agent/templates/application/shared/ports/message_broker_port.tt.py`.

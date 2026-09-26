@@ -21,6 +21,8 @@ graph TD
         LLMClientPort["LlmClientPort"]
         EventPubPort["EventPublisherPort"]
         HTTPClientPort["HttpClientPort"]
+        MsgBrokerPort["MessageBrokerPort (Port)"]
+        EventConsumerPortNode["EventConsumerPort (Port)"]
     end
 
     subgraph Domain ["Domain Layer (Core Business)"]

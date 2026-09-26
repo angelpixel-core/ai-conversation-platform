@@ -2,6 +2,7 @@
 
 from collections.abc import Awaitable, Callable
 from uuid import uuid4
+
 import pytest
 
 from src.application.shared.ports.event_consumer_port import EventConsumerPort
