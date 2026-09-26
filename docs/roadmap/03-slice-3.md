@@ -75,10 +75,10 @@ Reemplazar los adaptadores temporales en memoria por adaptadores de producción 
 *Versionado de esquema relacional y orquestación local.*
 
 - [x] **Inicialización de Alembic**
-  - Archivos: `alembic.ini`, `migrations/env.py`, `migrations/script.py.mako`.
+  - Archivos: `alembic.ini`, `src/infrastructure/persistence/mssql/migrations/env.py`, `src/infrastructure/persistence/mssql/migrations/script.py.mako`.
   - Configurar `target_metadata = SQLModel.metadata`.
 - [x] **Generación de la Migración Inicial**
-  - Archivo: `migrations/versions/*_initial_mssql_schema.py`
+  - Archivo: `src/infrastructure/persistence/mssql/migrations/versions/*_initial_mssql_schema.py`
   - Creación de tablas `conversations`, `messages` y `outbox_messages` con índices foráneos.
 - [x] **Verificación del Contenedor Docker**
   - Archivo: `docker-compose.yml` (validar servicio `mssql_db` con SQL Server 2022 y base de datos `ChatbotDB`).
