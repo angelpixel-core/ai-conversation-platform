@@ -15,6 +15,7 @@ Production-grade Python reference platform for AI-powered conversational service
 ## 🚀 Implemented Capabilities (Vertical Slices)
 
 ### Slice 1: Conversation Management & Hexagonal Foundation
+
 - **Domain-Driven Design**: `Conversation` Aggregate Root with lifecycle invariants and `ConversationCreatedDomainEvent`.
 - **Ports & Adapters (Hexagonal)**: Strict isolation of business logic from framework details; zero external dependencies in the domain.
 - **CQRS Commands**: `CreateConversationCommand` and `CreateConversationHandler`.
@@ -22,6 +23,7 @@ Production-grade Python reference platform for AI-powered conversational service
 - **Primary HTTP Adapter**: FastAPI application with OpenAPI spec generation and automated static documentation via ReDoc.
 
 ### Slice 2: Messaging, Outbox Pattern & SSE Real-Time Streaming
+
 - **Message Value Object**: Invariant enforcement on conversation history (sequence order, user/assistant role transitions, message length).
 - **Domain Events**: `MessageAppendedDomainEvent` and `AssistantResponseCompletedDomainEvent`.
 - **Transactional Outbox Pattern**:
@@ -87,6 +89,7 @@ The system strictly follows the Dependency Rule of Clean Architecture:
 ## ⚡ Quickstart
 
 ### Prerequisites
+
 - Python 3.12+
 - Virtual environment (`venv`)
 
@@ -113,11 +116,13 @@ uvicorn src.main:app --reload
 ## 🧪 Usage Examples (cURL)
 
 ### 1. Check Health
+
 ```bash
 curl -s http://localhost:8000/health | jq
 ```
 
 ### 2. Create a Conversation
+
 ```bash
 CONV_ID=$(curl -s -X POST http://localhost:8000/conversations \
   -H "Content-Type: application/json" \
@@ -127,6 +132,7 @@ echo "Created Conversation ID: $CONV_ID"
 ```
 
 ### 3. Send a Message
+
 ```bash
 curl -s -X POST "http://localhost:8000/conversations/${CONV_ID}/messages" \
   -H "Content-Type: application/json" \
@@ -134,6 +140,7 @@ curl -s -X POST "http://localhost:8000/conversations/${CONV_ID}/messages" \
 ```
 
 ### 4. Stream AI Response via Server-Sent Events (SSE)
+
 ```bash
 curl -N "http://localhost:8000/conversations/${CONV_ID}/stream"
 ```
