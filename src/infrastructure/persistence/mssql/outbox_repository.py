@@ -60,7 +60,7 @@ class MssqlOutboxRepository:
         statement = (
             select(OutboxMessageModel)
             .where(OutboxMessageModel.status == OutboxStatus.PENDING.value)
-            .order_by(OutboxMessageModel.created_at)  # type: ignore[arg-type]
+            .order_by(OutboxMessageModel.created_at, OutboxMessageModel.id)  # type: ignore[arg-type]
             .limit(limit)
         )
         results = self._session.exec(statement).all()

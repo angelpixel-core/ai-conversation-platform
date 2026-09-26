@@ -89,15 +89,15 @@ Reemplazar los adaptadores temporales en memoria por adaptadores de producción 
 
 *Pruebas automáticas contra base de datos relacional.*
 
-- [ ] **Fixtures de Base de Datos de Pruebas**
+- [x] **Fixtures de Base de Datos de Pruebas**
   - Archivo: `tests/integration/infrastructure/mssql/conftest.py` (creación limpia de esquema y sesión de test).
-- [ ] **Tests de Integración de Repositorio**
+- [x] **Tests de Integración de Repositorio**
   - Archivo: `tests/integration/infrastructure/mssql/test_mssql_conversation_repository.py`
   - Verificar guardado de conversación, agregado de mensajes y recuperación completa.
-- [ ] **Tests de Integración de Unit of Work y Rollback Atómico**
+- [x] **Tests de Integración de Unit of Work y Rollback Atómico**
   - Archivo: `tests/integration/infrastructure/mssql/test_mssql_unit_of_work.py`
   - Verificar que ante un error en la transacción, el mensaje y el outbox hacen rollback simultáneo.
-- [ ] **Tests de Integración de Outbox Físico**
+- [x] **Tests de Integración de Outbox Físico**
   - Archivo: `tests/integration/infrastructure/mssql/test_mssql_outbox_repository.py`
   - Verificar flujo completo: inserción -> lectura de pendientes -> actualización de estado a `dispatched`/`failed`.
 

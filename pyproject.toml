@@ -38,7 +38,7 @@ packages = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-addopts = "-q"
+addopts = "-q --import-mode=importlib"
 filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::Warning",
