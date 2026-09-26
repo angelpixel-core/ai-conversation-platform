@@ -44,6 +44,11 @@ graph TD
         HttpxLlmClient["HttpxLlmClientAdapter"]
         MssqlModels["MSSQL Models (SQLModel)"]
         ConversationMapper["ConversationDataMapper"]
+        MssqlConnection["MSSQL Connection & SessionFactory"]
+        MssqlRepo["MssqlConversationRepository"]
+        MssqlOutbox["MssqlOutboxRepository"]
+        MssqlUOW["MssqlUnitOfWork"]
+        AppSettings["Settings (Pydantic Settings)"]
     end
 
     %% Interfaces to Application
@@ -51,6 +56,7 @@ graph TD
     RouterFastAPI --> CreateConvHandler
     RouterFastAPI --> SendMessageHandler
     RouterFastAPI --> StreamConvHandler
+    RouterFastAPI --> AppSettings
 
     %% Application orchestration
     CreateConvHandler --> CreateConvCmd
@@ -83,10 +89,21 @@ graph TD
     UOWPort --> ConvRepoPort
 
     %% Infrastructure Implementations
+    AppSettings --> MssqlConnection
+    AppSettings --> MssqlUOW
+    AppSettings --> InMemoryUOW
     InMemoryUOW -- Implementa --> UOWPort
     InMemoryRepo -- Implementa --> ConvRepoPort
     InMemoryUOW --> InMemoryRepo
     InMemoryUOW --> InMemoryOutbox
+    MssqlUOW -- Implementa --> UOWPort
+    MssqlRepo -- Implementa --> ConvRepoPort
+    MssqlUOW --> MssqlRepo
+    MssqlUOW --> MssqlOutbox
+    MssqlUOW --> MssqlConnection
+    MssqlRepo --> ConversationMapper
+    MssqlRepo --> MssqlModels
+    MssqlOutbox --> MssqlModels
     OutboxDispatcher --> InMemoryOutbox
     OutboxDispatcher --> EventPubPort
     FakeLlmClient -- Implementa --> LLMClientPort
