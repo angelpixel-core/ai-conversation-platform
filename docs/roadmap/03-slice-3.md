@@ -105,13 +105,13 @@ Reemplazar los adaptadores temporales en memoria por adaptadores de producción 
 
 ### Fase 5: Configuración (Settings), Ensamble & Documentación
 
-- [ ] **Configuración Tipada con Pydantic Settings**
+- [x] **Configuración Tipada con Pydantic Settings**
   - Archivo: `src/infrastructure/shared/config/settings.py` (`DatabaseSettings`, variable `PERSISTENCE_DRIVER`).
-- [ ] **Inyección Dinámica de Persistencia en `src/main.py`**
+- [x] **Inyección Dinámica de Persistencia en `src/main.py`**
   - Soporte transparente para elegir entre `MssqlUnitOfWork` e `InMemoryUnitOfWork` sin alterar contratos.
-- [ ] **Actualización del Diagrama Vivo del Sistema**
-  - Archivo: `.agent/architecture/system-map.mermaid.md` (incorporar nodos de MSSQL Models, Mappers, Repositorios y UoW).
-- [ ] **Verificación de Calidad Completa**
+- [x] **Actualización del Diagrama Vivo del Sistema**
+  - Archivo: `.agent/architecture/system-map.mermaid.md` (incorporar nodos de MSSQL Models, Mappers, Repositorios, UoW y Settings).
+- [x] **Verificación de Calidad Completa**
   - Ejecutar `make check-all` (Ruff format, lint, Pyright, Bandit y Pytest).
 
 ---

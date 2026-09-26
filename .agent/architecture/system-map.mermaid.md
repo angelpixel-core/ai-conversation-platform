@@ -48,6 +48,7 @@ graph TD
         MssqlRepo["MssqlConversationRepository"]
         MssqlOutbox["MssqlOutboxRepository"]
         MssqlUOW["MssqlUnitOfWork"]
+        AppSettings["Settings (Pydantic Settings)"]
     end
 
     %% Interfaces to Application
@@ -55,6 +56,7 @@ graph TD
     RouterFastAPI --> CreateConvHandler
     RouterFastAPI --> SendMessageHandler
     RouterFastAPI --> StreamConvHandler
+    RouterFastAPI --> AppSettings
 
     %% Application orchestration
     CreateConvHandler --> CreateConvCmd
@@ -87,6 +89,9 @@ graph TD
     UOWPort --> ConvRepoPort
 
     %% Infrastructure Implementations
+    AppSettings --> MssqlConnection
+    AppSettings --> MssqlUOW
+    AppSettings --> InMemoryUOW
     InMemoryUOW -- Implementa --> UOWPort
     InMemoryRepo -- Implementa --> ConvRepoPort
     InMemoryUOW --> InMemoryRepo
