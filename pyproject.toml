@@ -38,7 +38,7 @@ packages = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-addopts = "-q"
+addopts = "-q --import-mode=importlib"
 filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::Warning",
@@ -63,13 +63,14 @@ ignore = ["S101", "B024"]  # Allow assert in tests and base classes without abst
 
 [tool.pyright]
 include = ["src", "tests"]
+exclude = ["src/infrastructure/persistence/mssql/migrations"]
 extraPaths = ["."]
 venvPath = "."
 venv = ".venv"
 
 [tool.coverage.run]
 source = ["src"]
-omit = ["tests/*"]
+omit = ["tests/*", "src/infrastructure/persistence/mssql/migrations/*"]
 
 [tool.coverage.report]
 show_missing = true

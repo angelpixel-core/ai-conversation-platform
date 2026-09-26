@@ -14,7 +14,8 @@ class ConversationDataMapper:
     def to_domain(model: ConversationModel) -> Conversation:
         """Reconstitute Conversation aggregate root from SQLModel database model."""
         messages: list[Message] = []
-        for msg_model in model.messages:
+        sorted_models = sorted(model.messages, key=lambda m: m.created_at)
+        for msg_model in sorted_models:
             messages.append(
                 Message(
                     role=MessageRole(msg_model.role),

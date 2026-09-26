@@ -55,16 +55,16 @@ Reemplazar los adaptadores temporales en memoria por adaptadores de producción 
 
 *Implementación de los Driven Adapters de persistencia sobre SQL Server.*
 
-- [ ] **Fábrica de Conexión y Sesiones MSSQL**
+- [x] **Fábrica de Conexión y Sesiones MSSQL**
   - Archivo: `src/infrastructure/persistence/mssql/connection.py`
   - Funciones para inicializar el `Engine` y `session_factory` con pooling de conexiones y timeouts configurables.
-- [ ] **Adaptador de Repositorio de Conversaciones**
+- [x] **Adaptador de Repositorio de Conversaciones**
   - Archivo: `src/infrastructure/persistence/mssql/repository.py` (`MssqlConversationRepository`)
-  - Implementa `ConversationRepository` (`add`, `get`).
-- [ ] **Adaptador de Repositorio de Outbox Físico**
+  - Implementa `ConversationRepository` (`add`, `get`, `list`).
+- [x] **Adaptador de Repositorio de Outbox Físico**
   - Archivo: `src/infrastructure/persistence/mssql/outbox_repository.py` (`MssqlOutboxRepository`)
-  - Métodos: `save`, `get_pending`, `mark_as_dispatched`, `mark_as_failed`.
-- [ ] **Adaptador Unit of Work Transaccional**
+  - Métodos: `save`, `add`, `get_by_id`, `get_pending`, `mark_as_dispatched`, `mark_as_completed`, `mark_as_failed`.
+- [x] **Adaptador Unit of Work Transaccional**
   - Archivo: `src/infrastructure/persistence/mssql/unit_of_work.py` (`MssqlUnitOfWork`)
   - Implementa `UnitOfWork` gestionando transacciones ACID atómicas.
 
@@ -74,13 +74,13 @@ Reemplazar los adaptadores temporales en memoria por adaptadores de producción 
 
 *Versionado de esquema relacional y orquestación local.*
 
-- [ ] **Inicialización de Alembic**
-  - Archivos: `alembic.ini`, `migrations/env.py`, `migrations/script.py.mako`.
+- [x] **Inicialización de Alembic**
+  - Archivos: `alembic.ini`, `src/infrastructure/persistence/mssql/migrations/env.py`, `src/infrastructure/persistence/mssql/migrations/script.py.mako`.
   - Configurar `target_metadata = SQLModel.metadata`.
-- [ ] **Generación de la Migración Inicial**
-  - Archivo: `migrations/versions/0001_initial_mssql_schema.py`
+- [x] **Generación de la Migración Inicial**
+  - Archivo: `src/infrastructure/persistence/mssql/migrations/versions/*_initial_mssql_schema.py`
   - Creación de tablas `conversations`, `messages` y `outbox_messages` con índices foráneos.
-- [ ] **Verificación del Contenedor Docker**
+- [x] **Verificación del Contenedor Docker**
   - Archivo: `docker-compose.yml` (validar servicio `mssql_db` con SQL Server 2022 y base de datos `ChatbotDB`).
 
 ---
@@ -89,15 +89,15 @@ Reemplazar los adaptadores temporales en memoria por adaptadores de producción 
 
 *Pruebas automáticas contra base de datos relacional.*
 
-- [ ] **Fixtures de Base de Datos de Pruebas**
+- [x] **Fixtures de Base de Datos de Pruebas**
   - Archivo: `tests/integration/infrastructure/mssql/conftest.py` (creación limpia de esquema y sesión de test).
-- [ ] **Tests de Integración de Repositorio**
+- [x] **Tests de Integración de Repositorio**
   - Archivo: `tests/integration/infrastructure/mssql/test_mssql_conversation_repository.py`
   - Verificar guardado de conversación, agregado de mensajes y recuperación completa.
-- [ ] **Tests de Integración de Unit of Work y Rollback Atómico**
+- [x] **Tests de Integración de Unit of Work y Rollback Atómico**
   - Archivo: `tests/integration/infrastructure/mssql/test_mssql_unit_of_work.py`
   - Verificar que ante un error en la transacción, el mensaje y el outbox hacen rollback simultáneo.
-- [ ] **Tests de Integración de Outbox Físico**
+- [x] **Tests de Integración de Outbox Físico**
   - Archivo: `tests/integration/infrastructure/mssql/test_mssql_outbox_repository.py`
   - Verificar flujo completo: inserción -> lectura de pendientes -> actualización de estado a `dispatched`/`failed`.
 
@@ -105,13 +105,13 @@ Reemplazar los adaptadores temporales en memoria por adaptadores de producción 
 
 ### Fase 5: Configuración (Settings), Ensamble & Documentación
 
-- [ ] **Configuración Tipada con Pydantic Settings**
+- [x] **Configuración Tipada con Pydantic Settings**
   - Archivo: `src/infrastructure/shared/config/settings.py` (`DatabaseSettings`, variable `PERSISTENCE_DRIVER`).
-- [ ] **Inyección Dinámica de Persistencia en `src/main.py`**
+- [x] **Inyección Dinámica de Persistencia en `src/main.py`**
   - Soporte transparente para elegir entre `MssqlUnitOfWork` e `InMemoryUnitOfWork` sin alterar contratos.
-- [ ] **Actualización del Diagrama Vivo del Sistema**
-  - Archivo: `.agent/architecture/system-map.mermaid.md` (incorporar nodos de MSSQL Models, Mappers, Repositorios y UoW).
-- [ ] **Verificación de Calidad Completa**
+- [x] **Actualización del Diagrama Vivo del Sistema**
+  - Archivo: `.agent/architecture/system-map.mermaid.md` (incorporar nodos de MSSQL Models, Mappers, Repositorios, UoW y Settings).
+- [x] **Verificación de Calidad Completa**
   - Ejecutar `make check-all` (Ruff format, lint, Pyright, Bandit y Pytest).
 
 ---
