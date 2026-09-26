@@ -1,0 +1,56 @@
+"""Data mapper between Conversation aggregate root and MSSQL physical models."""
+
+from uuid import UUID
+
+from src.domain.conversations.entities.conversation import Conversation
+from src.domain.conversations.value_objects.message import Message, MessageRole
+from src.infrastructure.persistence.mssql.models import ConversationModel, MessageModel
+
+
+class ConversationDataMapper:
+    """Bidirectional data mapper between domain entities and SQLModel database models."""
+
+    @staticmethod
+    def to_domain(model: ConversationModel) -> Conversation:
+        """Reconstitute Conversation aggregate root from SQLModel database model."""
+        messages: list[Message] = []
+        for msg_model in model.messages:
+            messages.append(
+                Message(
+                    role=MessageRole(msg_model.role),
+                    content=msg_model.content,
+                    created_at=msg_model.created_at,
+                )
+            )
+
+        return Conversation.reconstitute(
+            conversation_id=model.id,
+            title=model.title,
+            created_at=model.created_at,
+            messages=messages,
+        )
+
+    @staticmethod
+    def to_model(entity: Conversation) -> ConversationModel:
+        """Map Conversation aggregate root to SQLModel database model."""
+        model = ConversationModel(
+            id=entity.id,
+            title=entity.title,
+            created_at=entity.created_at,
+            updated_at=entity.created_at,
+        )
+        model.messages = [
+            ConversationDataMapper.message_to_model(msg, conversation_id=entity.id)
+            for msg in entity.messages
+        ]
+        return model
+
+    @staticmethod
+    def message_to_model(message: Message, conversation_id: UUID) -> MessageModel:
+        """Map Message value object to MessageModel database record."""
+        return MessageModel(
+            conversation_id=conversation_id,
+            role=message.role.value,
+            content=message.content,
+            created_at=message.created_at,
+        )

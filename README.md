@@ -169,7 +169,7 @@ make check-all     # Run full quality barrier (format + lint + types + security 
 
 - [x] **Slice 1:** Create Conversation, DDD Domain Model & Hexagonal Architecture Base
 - [x] **Slice 2:** User Messaging, Transactional Outbox Pattern & SSE Token Streaming
-- [ ] **Slice 3:** Persistent Storage with PostgreSQL & SQLModel (Transactional Outbox DB)
+- [ ] **Slice 3:** Persistent Storage with Microsoft SQL Server & SQLModel (Transactional Outbox DB)
 - [ ] **Slice 4:** Decoupled Event Broker Worker (RabbitMQ / Redis PubSub)
 - [ ] **Slice 5:** Conversation History Retrieval & Redis Cache
 - [ ] **Slice 6:** Knowledge Ingestion Pipeline & Document Chunking
