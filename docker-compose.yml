@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chatbot_api
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_SERVER=db
+      - DB_PORT=1433
+      - DB_NAME=ChatbotDB
+      - DB_USER=sa
+      - DB_PASSWORD=YourStrong@Password123
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mssql_db
+    user: root
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=YourStrong@Password123
+    volumes:
+      - mssql_data:/var/opt/mssql/data
+    restart: unless-stopped
+
+volumes:
+  mssql_data:
