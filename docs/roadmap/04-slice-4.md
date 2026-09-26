@@ -58,13 +58,14 @@ Desacoplar completamente el ciclo de vida del servidor HTTP del procesamiento de
   - Test template: `.agent/templates/application/shared/ports/test_message_broker_port.tt.py`.
   - Template canónico: `.agent/templates/application/shared/ports/event_consumer_port.tt.py`.
   - Test template: `.agent/templates/application/shared/ports/test_event_consumer_port.tt.py`.
-- [ ] **Broker en Memoria para Pruebas (Fake / InMemory Broker)**
+- [x] **Broker en Memoria para Pruebas (Fake / InMemory Broker)**
   - Archivo: `src/infrastructure/messaging/in_memory/in_memory_message_broker.py` (implementa `MessageBrokerPort` y `EventConsumerPort` usando streams en memoria con `anyio`).
   - Template canónico: `.agent/templates/infrastructure/messaging/in_memory/in_memory_message_broker.tt.py`.
   - Test template: `.agent/templates/infrastructure/messaging/in_memory/test_in_memory_message_broker.tt.py`.
-- [ ] **Tests Unitarios de Contratos y Envelopes (`anyio`)**
+- [x] **Tests Unitarios de Contratos y Envelopes (`anyio`)**
   - Archivo: `tests/unit/domain/test_event_envelope.py`
   - Archivo: `tests/unit/application/test_message_broker_ports.py`
+  - Archivo: `tests/unit/infrastructure/messaging/test_in_memory_message_broker.py`
 
 ---
 

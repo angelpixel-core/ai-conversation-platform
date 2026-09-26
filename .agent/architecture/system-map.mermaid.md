@@ -51,6 +51,7 @@ graph TD
         MssqlRepo["MssqlConversationRepository"]
         MssqlOutbox["MssqlOutboxRepository"]
         MssqlUOW["MssqlUnitOfWork"]
+        InMemoryMsgBroker["InMemoryMessageBroker"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 
@@ -112,6 +113,8 @@ graph TD
     FakeLlmClient -- Implementa --> LLMClientPort
     HttpxLlmClient -- Implementa --> LLMClientPort
     HttpxClient -- Implementa --> HTTPClientPort
+    InMemoryMsgBroker -- Implementa --> MsgBrokerPort
+    InMemoryMsgBroker -- Implementa --> EventConsumerPortNode
     ConversationMapper --> MssqlModels
     ConversationMapper --> ConvAggregate
 ```

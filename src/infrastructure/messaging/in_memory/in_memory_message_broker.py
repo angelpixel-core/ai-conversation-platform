@@ -1,11 +1,4 @@
-"""Template canónico para el Adaptador en Memoria de Message Broker (InMemoryMessageBroker).
-
-Reglas:
-- Pertenece a src/infrastructure/messaging/in_memory/.
-- Implementa MessageBrokerPort y EventConsumerPort.
-- Emplea estructuras en memoria para despacho asíncrono sin dependencias externas.
-- Ideal para pruebas unitarias y de aplicación.
-"""
+"""InMemoryMessageBroker adapter implementing MessageBrokerPort and EventConsumerPort."""
 
 from src.application.shared.ports.event_consumer_port import (
     EventConsumerPort,
