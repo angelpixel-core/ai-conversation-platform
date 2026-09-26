@@ -1,14 +1,22 @@
-"""In-memory Transactional Outbox pattern implementation."""
+"""Template canónico para el Patrón Transactional Outbox & Dispatcher Worker.
+
+Reglas:
+- Modelo de mensaje de Outbox registrado en la misma transacción que los agregados de dominio.
+- Repositorio de Outbox desacoplado para almacenar y consultar mensajes.
+- Dispatcher asíncrono que recibe el repositorio y EventPublisher inyectados por constructor.
+- Marcado de eventos procesados o fallidos con registro de reintentos y marca temporal.
+"""
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
+import inspect
 from uuid import UUID, uuid4
+
+from src.application.shared.ports.event_publisher import EventPublisher
 
 
 class OutboxStatus(StrEnum):
-    """Lifecycle status for an outbox message."""
-
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -17,7 +25,7 @@ class OutboxStatus(StrEnum):
 
 @dataclass
 class OutboxMessage:
-    """Model for transactional persistence of domain events in Outbox."""
+    """Modelo para persistencia transaccional de eventos de dominio en Outbox."""
 
     id: UUID
     aggregate_type: str
@@ -59,26 +67,13 @@ class OutboxMessage:
 
 
 class InMemoryOutboxRepository:
-    """In-memory repository adapter for Outbox messages."""
+    """Adaptador de persistencia en memoria para mensajes de Outbox."""
 
     def __init__(self) -> None:
         self._messages: dict[UUID, OutboxMessage] = {}
 
     def save(self, message: OutboxMessage) -> None:
         self._messages[message.id] = message
-
-    def add(self, event: object) -> None:
-        """Compatibility method for raw event appending."""
-        if isinstance(event, OutboxMessage):
-            self.save(event)
-        else:
-            msg = OutboxMessage.create(
-                aggregate_type="DomainEvent",
-                aggregate_id=uuid4(),
-                event_type=type(event).__name__,
-                payload=str(event),
-            )
-            self.save(msg)
 
     def get_by_id(self, message_id: UUID) -> OutboxMessage | None:
         return self._messages.get(message_id)
@@ -90,5 +85,26 @@ class InMemoryOutboxRepository:
         return list(self._messages.values())
 
 
-# Alias for backward compatibility
-InMemoryOutbox = InMemoryOutboxRepository
+class OutboxDispatcher:
+    """Worker asíncrono para despacho de eventos de Outbox."""
+
+    def __init__(
+        self,
+        repository: InMemoryOutboxRepository,
+        event_publisher: EventPublisher,
+    ) -> None:
+        self._repository = repository
+        self._publisher = event_publisher
+
+    async def dispatch_pending(self) -> int:
+        pending = self._repository.get_pending()
+        for message in pending:
+            try:
+                res = self._publisher.publish(message)
+                if inspect.isawaitable(res):
+                    await res
+                message.mark_completed()
+            except Exception as exc:
+                message.mark_failed(str(exc))
+            self._repository.save(message)
+        return len(pending)
