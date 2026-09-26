@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main, development ]
 
+# Concurrency handling to avoid collisions during consecutive commits.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   lint-and-format:
     name: Lint & Format Check
@@ -85,13 +90,12 @@ jobs:
         with:
           python-version: "3.12"
           cache: "pip"
-      - run: pip install .[dev]
+      - name: Install dependencies
+        run: pip install .[dev]
       - name: Export OpenAPI Schema & HTML
         run: python scripts/export_openapi.py
       - name: Setup Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:
