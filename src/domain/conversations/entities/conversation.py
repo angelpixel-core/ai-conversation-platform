@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 from src.domain.conversations.events.assistant_response_completed import (
@@ -76,6 +76,15 @@ class Conversation(AggregateRoot):
         except ValueError as exc:
             raise DomainError(str(exc)) from exc
 
+        if self._messages:
+            min_next_time = self._messages[-1].created_at + timedelta(milliseconds=10)
+            if msg.created_at < min_next_time:
+                msg = Message(
+                    role=msg.role,
+                    content=msg.content,
+                    created_at=min_next_time,
+                )
+
         self._messages.append(msg)
         self.record_event(MessageAppendedDomainEvent(conversation_id=self.id, message=msg))
         return msg
@@ -89,6 +98,15 @@ class Conversation(AggregateRoot):
             msg = Message.create_assistant_message(content)
         except ValueError as exc:
             raise DomainError(str(exc)) from exc
+
+        if self._messages:
+            min_next_time = self._messages[-1].created_at + timedelta(milliseconds=10)
+            if msg.created_at < min_next_time:
+                msg = Message(
+                    role=msg.role,
+                    content=msg.content,
+                    created_at=min_next_time,
+                )
 
         self._messages.append(msg)
         self.record_event(MessageAppendedDomainEvent(conversation_id=self.id, message=msg))
