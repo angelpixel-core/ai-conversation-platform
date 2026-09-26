@@ -12,6 +12,10 @@ install-dev:
 lint:
 	.venv/bin/python -m ruff check src tests
 
+# Formatear código con Ruff
+format:
+	.venv/bin/python -m ruff format src tests
+
 # Verificar formato del código
 format-check:
 	.venv/bin/python -m ruff format --check src tests
@@ -47,6 +51,9 @@ test-file:
 	.venv/bin/python -m pytest $(FILE)
 
 .PHONY: install install-dev test test-file coverage lint format-check typecheck security check-all docker-up docker-down stack/up stack/down stack-up stack-down docs-build
+
+# Ejecutar todas las comprobaciones de calidad, tipado, seguridad y tests
+check-all: format-check lint typecheck security test
 
 # Generar documentación estática de la API (OpenAPI JSON y ReDoc HTML)
 docs-build:
