@@ -38,7 +38,8 @@ graph TD
         InMemoryUOW["InMemoryUnitOfWork"]
         InMemoryRepo["InMemoryConversationRepository"]
         HttpxClient["HttpxClientAdapter"]
-        InMemoryOutbox["InMemoryOutbox"]
+        InMemoryOutbox["InMemoryOutboxRepository"]
+        OutboxDispatcher["OutboxDispatcher"]
     end
 
     %% Interfaces to Application
@@ -82,6 +83,7 @@ graph TD
     InMemoryRepo -- Implementa --> ConvRepoPort
     InMemoryUOW --> InMemoryRepo
     InMemoryUOW --> InMemoryOutbox
-    InMemoryOutbox -.-> EventPubPort
+    OutboxDispatcher --> InMemoryOutbox
+    OutboxDispatcher --> EventPubPort
     HttpxClient -- Implementa --> HTTPClientPort
 ```
