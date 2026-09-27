@@ -75,14 +75,17 @@ Desacoplar completamente el ciclo de vida del servidor HTTP del procesamiento de
 
 - [x] **Dependencias en `pyproject.toml`**
   - Agregar `aio-pika>=9.4,<10.0` para AMQP 0-9-1 asíncrono sobre `anyio`.
-- [ ] **Gestor de Conexión Resiliente**
+- [x] **Gestor de Conexión Resiliente**
   - Archivo: `src/infrastructure/messaging/rabbitmq/rabbitmq_connection_manager.py` (reconexión automática ante caídas del broker).
-- [ ] **Configuración de Topología (Exchanges, Queues & DLQ)**
+  - Template canónico: `.agent/templates/infrastructure/messaging/rabbitmq/rabbitmq_connection_manager.tt.py`.
+- [x] **Configuración de Topología (Exchanges, Queues & DLQ)**
   - Archivo: `src/infrastructure/messaging/rabbitmq/rabbitmq_topology_config.py`.
   - Exchange: `ai_platform.events` (Tipo: Topic, durable).
   - Queue principal: `conversation.llm_processing.queue` (durable, dead-letter-exchange a DLQ).
   - Dead Letter Queue: `conversation.llm_processing.dlq` (durable).
   - Routing key: `conversation.message.appended`.
+  - Template canónico: `.agent/templates/infrastructure/messaging/rabbitmq/rabbitmq_topology_config.tt.py`.
+  - Test template: `.agent/templates/infrastructure/messaging/rabbitmq/test_rabbitmq_connection_and_topology.tt.py`.
 - [ ] **Adaptadores de Publicación y Consumo**
   - Archivo: `src/infrastructure/messaging/rabbitmq/rabbitmq_publisher_adapter.py` (implementa `MessageBrokerPort`).
   - Archivo: `src/infrastructure/messaging/rabbitmq/rabbitmq_consumer_adapter.py` (soporte de `ack`, `nack`, `reject` y prefetch count).

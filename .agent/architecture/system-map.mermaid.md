@@ -52,6 +52,8 @@ graph TD
         MssqlOutbox["MssqlOutboxRepository"]
         MssqlUOW["MssqlUnitOfWork"]
         InMemoryMsgBroker["InMemoryMessageBroker"]
+        RabbitMQConnManager["RabbitMQConnectionManager"]
+        RabbitMQTopology["RabbitMQTopologyConfig"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 

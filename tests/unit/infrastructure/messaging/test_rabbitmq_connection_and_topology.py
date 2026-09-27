@@ -1,6 +1,7 @@
 """Unit tests for RabbitMQ Connection Manager and Topology Configuration (Infrastructure Layer)."""
 
 from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
 
 from src.infrastructure.messaging.rabbitmq.rabbitmq_connection_manager import (
@@ -99,12 +100,16 @@ async def test_topology_config_declares_exchanges_queues_and_dlq() -> None:
     fake_main_queue.bind = AsyncMock()
     fake_dlq.bind = AsyncMock()
 
-    async def mock_declare_exchange(name: str, exchange_type: str, durable: bool = True):
+    async def mock_declare_exchange(
+        name: str, type: str = "direct", durable: bool = True, **kwargs
+    ):
         if "dlx" in name:
             return fake_dlx_exchange
         return fake_main_exchange
 
-    async def mock_declare_queue(name: str, durable: bool = True, arguments: dict | None = None):
+    async def mock_declare_queue(
+        name: str, durable: bool = True, arguments: dict | None = None, **kwargs
+    ):
         if "dlq" in name:
             return fake_dlq
         return fake_main_queue
