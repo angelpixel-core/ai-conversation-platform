@@ -92,9 +92,9 @@ Desacoplar completamente el ciclo de vida del servidor HTTP del procesamiento de
   - Template canónico: `.agent/templates/infrastructure/messaging/rabbitmq/rabbitmq_publisher_adapter.tt.py`.
   - Template canónico: `.agent/templates/infrastructure/messaging/rabbitmq/rabbitmq_consumer_adapter.tt.py`.
   - Test template: `.agent/templates/infrastructure/messaging/rabbitmq/test_rabbitmq_adapters.tt.py`.
-- [ ] **Tests Unitarios y de Integración de RabbitMQ**
+- [x] **Tests Unitarios y de Integración de RabbitMQ**
   - [x] Archivo: `tests/unit/infrastructure/messaging/test_rabbitmq_adapters.py` (usando mocks/stubs de canal).
-  - [ ] Archivo: `tests/integration/infrastructure/messaging/test_rabbitmq_publisher_consumer.py` (contra contenedor real de RabbitMQ).
+  - [x] Archivo: `tests/integration/infrastructure/messaging/test_rabbitmq_publisher_consumer.py` (contra contenedor real de RabbitMQ).
 
 ---
 

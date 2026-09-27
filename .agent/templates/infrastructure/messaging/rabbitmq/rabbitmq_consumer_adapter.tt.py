@@ -3,6 +3,7 @@
 Reglas:
 - Pertenece a src/infrastructure/messaging/rabbitmq/.
 - Implementa EventConsumerPort.
+- Soporta passive=True para enlazar colas pre-declaradas por la topología sin re-declarar argumentos.
 - Configura QoS con prefetch_count.
 - Soporta semántica ack en éxito y reject(requeue=False) ante fallas para desvío a DLQ.
 """
@@ -33,10 +34,14 @@ class RabbitMQConsumerAdapter(EventConsumerPort):
         connection_manager: RabbitMQConnectionManager,
         queue_name: str = "conversation.llm_processing.queue",
         prefetch_count: int = 10,
+        queue_arguments: dict[str, Any] | None = None,
+        passive: bool = False,
     ) -> None:
         self.connection_manager = connection_manager
         self.queue_name = queue_name
         self.prefetch_count = prefetch_count
+        self.queue_arguments = queue_arguments
+        self.passive = passive
 
         self._handlers: dict[str, list[EventHandler]] = {}
         self._is_consuming: bool = False
@@ -53,10 +58,20 @@ class RabbitMQConsumerAdapter(EventConsumerPort):
         self._channel = await self.connection_manager.get_channel()
         await self._channel.set_qos(prefetch_count=self.prefetch_count)
 
-        self._queue = await self._channel.declare_queue(
-            self.queue_name,
-            durable=True,
-        )
+        if self.passive:
+            self._queue = await self._channel.get_queue(
+                self.queue_name,
+                ensure=False,
+            )
+        else:
+            kwargs: dict[str, Any] = {}
+            if self.queue_arguments is not None:
+                kwargs["arguments"] = self.queue_arguments
+            self._queue = await self._channel.declare_queue(
+                self.queue_name,
+                durable=True,
+                **kwargs,
+            )
 
         self._consumer_tag = await self._queue.consume(self._process_message)
         self._is_consuming = True

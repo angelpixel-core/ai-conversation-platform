@@ -284,3 +284,37 @@ async def test_consumer_stop_consuming_cancels_active_subscription(
 
     fake_connection_manager.fake_queue.cancel.assert_called_once_with("test-consumer-tag")
     assert consumer._is_consuming is False
+
+
+@pytest.mark.anyio
+async def test_publisher_uses_get_exchange_when_passive(
+    fake_connection_manager: MagicMock,
+) -> None:
+    publisher = RabbitMQPublisherAdapter(
+        connection_manager=fake_connection_manager,
+        exchange_name="ai_platform.events",
+        passive=True,
+    )
+    fake_connection_manager.fake_channel.get_exchange = AsyncMock(
+        return_value=fake_connection_manager.fake_exchange
+    )
+    envelope = EventEnvelope.create(event_type="test", payload={})
+    await publisher.publish("test.topic", envelope)
+    fake_connection_manager.fake_channel.get_exchange.assert_called_once_with(
+        "ai_platform.events", ensure=False
+    )
+
+
+@pytest.mark.anyio
+async def test_consumer_passes_queue_arguments_when_provided(
+    fake_connection_manager: MagicMock,
+) -> None:
+    consumer = RabbitMQConsumerAdapter(
+        connection_manager=fake_connection_manager,
+        queue_name="test.queue",
+        queue_arguments={"x-message-ttl": 60000},
+    )
+    await consumer.start_consuming()
+    fake_connection_manager.fake_channel.declare_queue.assert_called_once_with(
+        "test.queue", durable=True, arguments={"x-message-ttl": 60000}
+    )

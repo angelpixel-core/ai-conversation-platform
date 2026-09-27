@@ -19,9 +19,11 @@ class RabbitMQPublisherAdapter(MessageBrokerPort):
         self,
         connection_manager: RabbitMQConnectionManager,
         exchange_name: str = "ai_platform.events",
+        passive: bool = False,
     ) -> None:
         self.connection_manager = connection_manager
         self.exchange_name = exchange_name
+        self.passive = passive
 
     async def publish(self, topic: str, envelope: EventEnvelope) -> None:
         """Publish an EventEnvelope to RabbitMQ.
@@ -31,11 +33,14 @@ class RabbitMQPublisherAdapter(MessageBrokerPort):
             envelope: EventEnvelope containing metadata and event payload.
         """
         channel = await self.connection_manager.get_channel()
-        exchange = await channel.declare_exchange(
-            self.exchange_name,
-            type="topic",
-            durable=True,
-        )
+        if self.passive:
+            exchange = await channel.get_exchange(self.exchange_name, ensure=False)
+        else:
+            exchange = await channel.declare_exchange(
+                self.exchange_name,
+                type="topic",
+                durable=True,
+            )
 
         body_bytes = json.dumps(envelope.to_dict()).encode("utf-8")
         message = aio_pika.Message(
