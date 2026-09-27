@@ -1,13 +1,13 @@
 """Unit tests for InMemoryIdempotencyRepositoryAdapter."""
 
 import pytest
-from src.infrastructure.persistence.in_memory.in_memory_idempotency_repository import (
-    InMemoryIdempotencyRepositoryAdapter,
-)
 
 from src.application.shared.ports.idempotency_repository_port import (
     IdempotencyRepositoryPort,
     IdempotencyStatus,
+)
+from src.infrastructure.persistence.in_memory.in_memory_idempotency_repository import (
+    InMemoryIdempotencyRepositoryAdapter,
 )
 
 

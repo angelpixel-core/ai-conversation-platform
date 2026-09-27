@@ -1,12 +1,12 @@
 """Unit tests for InMemoryAuditRepositoryAdapter."""
 
 import pytest
-from src.infrastructure.persistence.in_memory.in_memory_audit_repository import (
-    InMemoryAuditRepositoryAdapter,
-)
 
 from src.domain.audit.audit_log_entity import AuditLogRecord
 from src.domain.audit.ports.audit_repository_port import AuditRepositoryPort
+from src.infrastructure.persistence.in_memory.in_memory_audit_repository import (
+    InMemoryAuditRepositoryAdapter,
+)
 
 
 @pytest.mark.anyio
