@@ -73,7 +73,7 @@ Desacoplar completamente el ciclo de vida del servidor HTTP del procesamiento de
 
 *Implementación concreta de conexión resiliente, topología de colas duraderas, confirmaciones y DLQ.*
 
-- [ ] **Dependencias en `pyproject.toml`**
+- [x] **Dependencias en `pyproject.toml`**
   - Agregar `aio-pika>=9.4,<10.0` para AMQP 0-9-1 asíncrono sobre `anyio`.
 - [ ] **Gestor de Conexión Resiliente**
   - Archivo: `src/infrastructure/messaging/rabbitmq/rabbitmq_connection_manager.py` (reconexión automática ante caídas del broker).
