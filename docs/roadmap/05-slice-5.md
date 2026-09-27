@@ -115,7 +115,7 @@ Dotar al sistema de resiliencia y trazabilidad de grado financiero/enterprise:
 
 *Extensión del stack relacional existente con `pymssql` y SQLModel.*
 
-- [ ] **Modelos Físicos de SQL Server (Tablas Empresariales)**
+- [x] **Modelos Físicos de SQL Server (Tablas Empresariales)**
   - Archivo: `src/infrastructure/persistence/mssql/models.py` (extender con `IdempotencyRecordModel`, `AuditLogModel`, `StreamBufferChunkModel`).
 
 - [ ] **Adaptadores de Repositorio MSSQL**
