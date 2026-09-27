@@ -132,9 +132,11 @@ graph TD
     OutboxRelay --> EventEnvelopeVO
     ConversationMapper --> MssqlModels
     ConversationMapper --> ConvAggregate
+    MssqlRepo --> EventEnvelopeVO
     WorkerProcess --> WorkerContainerNode
     WorkerContainerNode --> WorkerHandlerNode
     WorkerContainerNode --> RabbitMQConsumer
+    WorkerContainerNode --> RabbitMQTopology
     WorkerContainerNode --> MssqlUOW
     WorkerHandlerNode --> AppendAssistantHandler
     WorkerHandlerNode --> LLMClientPort

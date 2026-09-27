@@ -7,10 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased] — Slice 4: Decoupled Event Broker Worker
+## [0.4.0] - 2026-09-27 — Slice 4: Decoupled Event Broker Worker
 
 ### Added
 
+- **Multi-Container Orchestration & Operational Interfaces:**
+  - Added autonomous `worker` service to `docker-compose.yml` (`chatbot_worker` executing `python -m src.worker`).
+  - Added explicit environment variable configuration (`PERSISTENCE_DRIVER=mssql`, `MESSAGING_DRIVER=rabbitmq`) across `api` and `worker` services.
+  - Expanded `Makefile` with developer targets: `run-api`, `run-worker`, `db/upgrade`, `db/downgrade`, `stack/up-build`, `stack/status`, and `audit`.
+  - Documented design rationale in Architectural Decision Record `ADR 0003` (`.agent/architecture/decisions/0003-decoupled-worker-and-rabbitmq.md`).
+  - Updated live system architecture map (`.agent/architecture/system-map.mermaid.md`) and comprehensive documentation (`README.md`).
 - **RabbitMQ Resilient Connection & Topology:**
   - Implemented `RabbitMQConnectionManager` (`src/infrastructure/messaging/rabbitmq/rabbitmq_connection_manager.py`) with automatic reconnection and channel acquisition.
   - Implemented `RabbitMQTopologyConfig` (`src/infrastructure/messaging/rabbitmq/rabbitmq_topology_config.py`) declaring durable `ai_platform.events` topic exchange, main durable queue `conversation.llm_processing.queue`, direct DLX `ai_platform.events.dlx`, and DLQ `conversation.llm_processing.dlq`.

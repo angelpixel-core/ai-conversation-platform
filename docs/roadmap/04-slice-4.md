@@ -142,14 +142,14 @@ Desacoplar completamente el ciclo de vida del servidor HTTP del procesamiento de
 
 *Orquestación multi-contenedor y formalización arquitectónica.*
 
-- [ ] **Actualización de `docker-compose.yml`**
+- [x] **Actualización de `docker-compose.yml`**
   - Servicio `api`: Proceso FastAPI web (puerto 8000).
   - Servicio `worker`: Proceso autónomo `python -m src.worker`.
   - Servicio `broker`: RabbitMQ (imagen `rabbitmq:3-management-alpine` con puertos 5672 y 15672).
   - Servicio `db`: Microsoft SQL Server 2022 (`mcr.microsoft.com/mssql/server:2022-latest`, puerto 1433).
-- [ ] **Documento de Decisión Arquitectónica (ADR)**
+- [x] **Documento de Decisión Arquitectónica (ADR)**
   - Archivo: `.agent/architecture/decisions/0003-decoupled-worker-and-rabbitmq.md`.
-- [ ] **Actualización del Diagrama Vivo**
+- [x] **Actualización del Diagrama Vivo**
   - Archivo: `.agent/architecture/system-map.mermaid.md` (separación explícita de nodos y pods entre API y Worker).
 
 ---

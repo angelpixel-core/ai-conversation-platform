@@ -36,6 +36,20 @@ Production-grade Python reference platform for AI-powered conversational service
   - `POST /conversations/{id}/messages`: Ingests user input synchronously (<50ms) and queues domain events.
   - `GET /conversations/{id}/stream`: Real-time token-by-token streaming using Server-Sent Events (`text/event-stream`).
 
+### Slice 3: Persistent Storage with Microsoft SQL Server & SQLModel
+- **Enterprise Relational Persistence**: Microsoft SQL Server 2022 engine integration via `SQLModel` / `SQLAlchemy` with transactional `pymssql` driver.
+- **Relational Models & Schemas**: Dedicated relational mappings for `conversations`, `messages`, and `outbox_messages` with cascading foreign keys and optimized indexes.
+- **ACID Unit of Work & Repository**: `MssqlUnitOfWork`, `MssqlConversationRepository`, and `MssqlOutboxRepository` guaranteeing aggregate state and domain events commit atomically.
+- **Database Migrations**: Alembic migration suite configured with single-command `make db/upgrade` and `make db/downgrade`.
+
+### Slice 4: Decoupled Event Broker Worker (RabbitMQ & Autonomous Worker)
+- **AMQP 0-9-1 Messaging Broker**: `RabbitMQConnectionManager`, `RabbitMQTopologyConfig`, `RabbitMQPublisherAdapter`, and `RabbitMQConsumerAdapter` with resilient reconnect handling via `aio-pika`.
+- **Transactional Outbox Relay**: `OutboxRelayService` extracting pending events from SQL Server with non-blocking row locks (`WITH (UPDLOCK, READPAST)`) and publishing to RabbitMQ (`conversation.events` topic exchange).
+- **Autonomous Background Worker**: Standalone background daemon (`src/worker.py` and `WorkerContainer`) consuming from `conversation.llm_processing.queue`, invoking LLM inference, and appending assistant responses.
+- **Dead Letter Queue (DLQ) & Fault Tolerance**: Non-recoverable processing errors are safely rejected to `conversation.llm_processing.dlq` via `conversation.dlx` without message loss.
+- **Structured Concurrency & Graceful Shutdown**: Native `anyio` task groups and POSIX signal management (`SIGINT`/`SIGTERM`) for safe termination.
+- **Multi-Container Orchestration**: Full `docker-compose.yml` configuration (API, Worker, SQL Server 2022, RabbitMQ) and dedicated `Makefile` developer targets.
+
 ---
 
 ## 🏛️ Architecture Overview
@@ -45,14 +59,14 @@ The system strictly follows the Dependency Rule of Clean Architecture:
 ```text
                ┌────────────────────────────────────────────────────────┐
                │              Interfaces (Primary Adapters)             │
-               │            • FastAPI Router    • CLI Exporter          │
+               │   • FastAPI Router  • CLI Exporter  • Worker Process   │
                └──────────────────────────┬─────────────────────────────┘
                                           │ (uses)
                                           ▼
                ┌────────────────────────────────────────────────────────┐
                │               Application (CQRS Use Cases)             │
                │   • Commands & Handlers      • Queries & Streamers     │
-               │   • Abstract Ports (UoW, LLMClient, EventPublisher)   │
+               │   • Worker Use Cases         • Abstract Domain Ports   │
                └──────────────────────────┬─────────────────────────────┘
                                           │ (uses)
                                           ▼
@@ -64,12 +78,12 @@ The system strictly follows the Dependency Rule of Clean Architecture:
                                           │ (implements ports)
                ┌──────────────────────────┴─────────────────────────────┐
                │             Infrastructure (Secondary Adapters)        │
-               │   • InMemory Repository & UoW   • Outbox Dispatcher   │
-               │   • Fake / HTTPX LLM Clients    • Telemetry & Logging  │
+               │   • MSSQL & InMemory Repos   • Outbox Relay Service    │
+               │   • RabbitMQ Publisher/Consumer • HTTPX LLM Clients    │
                └────────────────────────────────────────────────────────┘
 ```
 
-> **Key Rule**: The Domain and Application layers have **zero** dependencies on external libraries (no FastAPI, SQLAlchemy, Redis, OpenAI SDK, etc.).
+> **Key Rule**: The Domain and Application layers have **zero** dependencies on external libraries (no FastAPI, SQLAlchemy, RabbitMQ, OpenAI SDK, etc.).
 
 ---
 
@@ -92,23 +106,43 @@ The system strictly follows the Dependency Rule of Clean Architecture:
 
 - Python 3.12+
 - Virtual environment (`venv`)
+- Docker & Docker Compose (for SQL Server and RabbitMQ)
 
-### Installation & Run
+### 1. Local Development
 
 ```bash
-# 1. Clone the repository and navigate to the API directory
+# Clone the repository and navigate to the API directory
 git clone https://github.com/angelpixel-core/ai-conversation-platform.git
 cd ai-conversation-platform/apps/chatbot/service/api
 
-# 2. Create and activate a virtual environment
+# Create and activate a virtual environment
 python -m venv .venv
 source .venv/bin/activate
 
-# 3. Install project dependencies in editable mode with development extras
+# Install dependencies in editable mode with development tools
 make install-dev
 
-# 4. Start the local development server
-uvicorn src.main:app --reload
+# Apply database migrations
+make db/upgrade
+
+# Start the local FastAPI server
+make run-api
+
+# In a separate terminal, start the background worker process
+make run-worker
+```
+
+### 2. Multi-Container Stack (Docker Compose)
+
+```bash
+# Launch the full stack (API + Worker + MSSQL + RabbitMQ)
+make stack/up-build
+
+# Check running container health and status
+make stack/status
+
+# Tear down the stack
+make stack/down
 ```
 
 ---
@@ -152,14 +186,23 @@ curl -N "http://localhost:8000/conversations/${CONV_ID}/stream"
 A comprehensive `Makefile` provides one-command access to all quality barriers:
 
 ```bash
-make test          # Run all 157 unit & integration tests
+make test          # Run all 192 unit & integration tests
 make coverage      # Generate detailed test coverage report (>= 90%)
 make lint          # Run static code analysis with Ruff
 make format-check  # Verify code formatting conformance with Ruff
 make format        # Automatically format all source files with Ruff
 make typecheck     # Run Pyright strict static type checking
 make security      # Run Bandit SAST security vulnerability scan
+make audit         # Run dependency vulnerability audit with pip-audit
 make docs-build    # Export static OpenAPI schema and standalone ReDoc HTML
+make run-api       # Run FastAPI server in reload mode (uvicorn)
+make run-worker    # Run autonomous LLM background worker process
+make db/upgrade    # Apply pending database migrations with Alembic
+make db/downgrade  # Rollback last database migration with Alembic
+make stack/up      # Launch multi-container stack via Docker Compose
+make stack/up-build# Rebuild and launch multi-container stack via Docker Compose
+make stack/status  # Inspect Docker Compose service status
+make stack/down    # Stop and tear down Docker Compose stack
 make check-all     # Run full quality barrier (format + lint + types + security + tests)
 ```
 
@@ -170,7 +213,7 @@ make check-all     # Run full quality barrier (format + lint + types + security 
 - [x] **Slice 1:** Create Conversation, DDD Domain Model & Hexagonal Architecture Base
 - [x] **Slice 2:** User Messaging, Transactional Outbox Pattern & SSE Token Streaming
 - [x] **Slice 3:** Persistent Storage with Microsoft SQL Server & SQLModel (Transactional Outbox DB)
-- [ ] **Slice 4:** Decoupled Event Broker Worker (RabbitMQ / Redis PubSub)
+- [x] **Slice 4:** Decoupled Event Broker Worker (RabbitMQ Pub/Sub & Autonomous Background Worker)
 - [ ] **Slice 5:** Conversation History Retrieval & Redis Cache
 - [ ] **Slice 6:** Knowledge Ingestion Pipeline & Document Chunking
 - [ ] **Slice 7:** Vector Embeddings & pgvector Integration
