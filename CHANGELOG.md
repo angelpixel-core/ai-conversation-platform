@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Implemented `RabbitMQConnectionManager` (`src/infrastructure/messaging/rabbitmq/rabbitmq_connection_manager.py`) with automatic reconnection and channel acquisition.
   - Implemented `RabbitMQTopologyConfig` (`src/infrastructure/messaging/rabbitmq/rabbitmq_topology_config.py`) declaring durable `ai_platform.events` topic exchange, main durable queue `conversation.llm_processing.queue`, direct DLX `ai_platform.events.dlx`, and DLQ `conversation.llm_processing.dlq`.
   - Added unit test suite `tests/unit/infrastructure/messaging/test_rabbitmq_connection_and_topology.py` with 100% code coverage.
+- **RabbitMQ Publisher & Consumer Adapters:**
+  - Implemented `RabbitMQPublisherAdapter` (`src/infrastructure/messaging/rabbitmq/rabbitmq_publisher_adapter.py`) fulfilling `MessageBrokerPort` with persistent delivery and metadata headers.
+  - Implemented `RabbitMQConsumerAdapter` (`src/infrastructure/messaging/rabbitmq/rabbitmq_consumer_adapter.py`) fulfilling `EventConsumerPort` with QoS prefetch count, message dispatching, and Dead-Letter Queue (DLQ) rejection on error.
+  - Added unit test suite `tests/unit/infrastructure/messaging/test_rabbitmq_adapters.py` with 100% code coverage.
 - **Messaging Ports & Domain Envelopes:**
   - Implemented `EventEnvelope` (`src/domain/shared/events/event_envelope.py`) value object encapsulating event identifiers, types, payloads, correlation IDs, and ISO-8601 timestamps.
   - Implemented application ports `MessageBrokerPort` and `EventConsumerPort` (`src/application/shared/ports/`).
@@ -21,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added unit test suites for event envelopes, message broker ports, and in-memory broker.
 - **Dependencies & Canonical Templates:**
   - Added `aio-pika>=9.4,<10.0` for asynchronous AMQP 0-9-1 broker communication.
-  - Created canonical and test templates in `.agent/templates/` for event envelopes, messaging ports, in-memory broker, connection manager, and topology configuration.
+  - Created canonical and test templates in `.agent/templates/` for event envelopes, messaging ports, in-memory broker, connection manager, topology configuration, and RabbitMQ adapters.
 
 ---
 

@@ -54,6 +54,8 @@ graph TD
         InMemoryMsgBroker["InMemoryMessageBroker"]
         RabbitMQConnManager["RabbitMQConnectionManager"]
         RabbitMQTopology["RabbitMQTopologyConfig"]
+        RabbitMQPub["RabbitMQPublisherAdapter"]
+        RabbitMQConsumer["RabbitMQConsumerAdapter"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 
@@ -117,6 +119,10 @@ graph TD
     HttpxClient -- Implementa --> HTTPClientPort
     InMemoryMsgBroker -- Implementa --> MsgBrokerPort
     InMemoryMsgBroker -- Implementa --> EventConsumerPortNode
+    RabbitMQPub -- Implementa --> MsgBrokerPort
+    RabbitMQConsumer -- Implementa --> EventConsumerPortNode
+    RabbitMQPub --> RabbitMQConnManager
+    RabbitMQConsumer --> RabbitMQConnManager
     ConversationMapper --> MssqlModels
     ConversationMapper --> ConvAggregate
 ```

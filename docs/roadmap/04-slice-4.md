@@ -86,13 +86,15 @@ Desacoplar completamente el ciclo de vida del servidor HTTP del procesamiento de
   - Routing key: `conversation.message.appended`.
   - Template canónico: `.agent/templates/infrastructure/messaging/rabbitmq/rabbitmq_topology_config.tt.py`.
   - Test template: `.agent/templates/infrastructure/messaging/rabbitmq/test_rabbitmq_connection_and_topology.tt.py`.
-- [ ] **Adaptadores de Publicación y Consumo**
+- [x] **Adaptadores de Publicación y Consumo**
   - Archivo: `src/infrastructure/messaging/rabbitmq/rabbitmq_publisher_adapter.py` (implementa `MessageBrokerPort`).
   - Archivo: `src/infrastructure/messaging/rabbitmq/rabbitmq_consumer_adapter.py` (soporte de `ack`, `nack`, `reject` y prefetch count).
-  - Templates canónicos y test templates en `.agent/templates/infrastructure/messaging/rabbitmq/`.
+  - Template canónico: `.agent/templates/infrastructure/messaging/rabbitmq/rabbitmq_publisher_adapter.tt.py`.
+  - Template canónico: `.agent/templates/infrastructure/messaging/rabbitmq/rabbitmq_consumer_adapter.tt.py`.
+  - Test template: `.agent/templates/infrastructure/messaging/rabbitmq/test_rabbitmq_adapters.tt.py`.
 - [ ] **Tests Unitarios y de Integración de RabbitMQ**
-  - Archivo: `tests/unit/infrastructure/messaging/test_rabbitmq_adapters.py` (usando mocks/stubs de canal).
-  - Archivo: `tests/integration/infrastructure/messaging/test_rabbitmq_publisher_consumer.py` (contra contenedor real de RabbitMQ).
+  - [x] Archivo: `tests/unit/infrastructure/messaging/test_rabbitmq_adapters.py` (usando mocks/stubs de canal).
+  - [ ] Archivo: `tests/integration/infrastructure/messaging/test_rabbitmq_publisher_consumer.py` (contra contenedor real de RabbitMQ).
 
 ---
 
