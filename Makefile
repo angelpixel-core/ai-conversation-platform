@@ -50,7 +50,7 @@ test-file:
 	fi
 	.venv/bin/python -m pytest $(FILE)
 
-.PHONY: install install-dev test test-file coverage lint format-check typecheck security check-all docker-up docker-down stack/up stack/down stack-up stack-down docs-build
+.PHONY: install install-dev test test-file coverage lint format format-check typecheck security audit check-all docs-build run-api run-worker db/upgrade db/downgrade stack/up stack/up-build stack/down stack/status
 
 # Ejecutar todas las comprobaciones de calidad, tipado, seguridad y tests
 check-all: format-check lint typecheck security test
@@ -59,10 +59,34 @@ check-all: format-check lint typecheck security test
 docs-build:
 	.venv/bin/python -m src.interfaces.cli.export_openapi
 
-# Levantar servicios con Docker Compose (API + SQL Server)
+# Ejecutar API FastAPI en modo desarrollo
+run-api:
+	.venv/bin/uvicorn src.main:app --reload
+
+# Ejecutar Worker de procesamiento de eventos en modo desarrollo
+run-worker:
+	.venv/bin/python -m src.worker
+
+# Aplicar migraciones pendientes de base de datos
+db/upgrade:
+	.venv/bin/alembic upgrade head
+
+# Revertir última migración de base de datos
+db/downgrade:
+	.venv/bin/alembic downgrade -1
+
+# Levantar servicios con Docker Compose (API + Worker + SQL Server + RabbitMQ)
 stack/up:
 	docker compose up
+
+# Reconstruir y levantar servicios con Docker Compose
+stack/up-build:
+	docker compose up --build
 
 # Detener servicios de Docker Compose
 stack/down:
 	docker compose down
+
+# Ver estado de los servicios de Docker Compose
+stack/status:
+	docker compose ps

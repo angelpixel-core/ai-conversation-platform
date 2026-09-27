@@ -1,5 +1,6 @@
-"""MSSQL Conversation Repository adapter using SQLModel."""
+"""MSSQL Conversation Repository adapter using SQLModel and Transactional Outbox."""
 
+import json
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -7,8 +8,10 @@ from sqlmodel import Session, select
 
 from src.domain.conversations.entities.conversation import Conversation
 from src.domain.conversations.ports.conversation_repository import ConversationRepository
+from src.domain.shared.events.event_envelope import EventEnvelope
 from src.infrastructure.persistence.mssql.mapper import ConversationDataMapper
-from src.infrastructure.persistence.mssql.models import ConversationModel
+from src.infrastructure.persistence.mssql.models import ConversationModel, OutboxMessageModel
+from src.infrastructure.shared.persistence.outbox.in_memory import OutboxStatus
 
 
 class MssqlConversationRepository(ConversationRepository):
@@ -38,6 +41,18 @@ class MssqlConversationRepository(ConversationRepository):
                     msg, conversation_id=conversation.id
                 )
                 self._session.add(msg_model)
+
+        # Synchronize and drain domain events to the outbox table within the same transaction
+        for event in conversation.pull_events():
+            envelope = EventEnvelope.from_domain_event(event)
+            outbox_model = OutboxMessageModel(
+                id=envelope.id,
+                event_type=type(event).__name__,
+                payload=json.dumps(envelope.to_dict()),
+                status=OutboxStatus.PENDING.value,
+                created_at=envelope.occurred_on,
+            )
+            self._session.add(outbox_model)
 
     def get(self, conversation_id: UUID) -> Conversation | None:
         """Retrieve a Conversation aggregate by its unique identifier."""

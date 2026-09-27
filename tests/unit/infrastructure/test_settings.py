@@ -2,6 +2,8 @@
 
 from src.infrastructure.shared.config.settings import (
     DatabaseSettings,
+    MessagingDriver,
+    MessagingSettings,
     PersistenceDriver,
     Settings,
     get_settings,
@@ -56,3 +58,26 @@ def test_get_settings_cached() -> None:
     s1 = get_settings()
     s2 = get_settings()
     assert s1 is s2
+
+
+def test_default_messaging_driver_is_in_memory() -> None:
+    settings = Settings()
+    assert settings.MESSAGING_DRIVER == MessagingDriver.IN_MEMORY
+
+
+def test_messaging_settings_rabbitmq_url_construction() -> None:
+    msg_settings = MessagingSettings(
+        RABBITMQ_HOST="rabbit.example.com",
+        RABBITMQ_PORT=5672,
+        RABBITMQ_USER="guest",
+        RABBITMQ_PASSWORD="p@ssword#123",  # noqa: S106
+    )
+    url = msg_settings.get_rabbitmq_url()
+    assert "amqp://guest:p%40ssword%23123@rabbit.example.com:5672/" == url
+
+
+def test_messaging_settings_rabbitmq_url_override() -> None:
+    msg_settings = MessagingSettings(
+        RABBITMQ_URL="amqp://custom:secret@cluster:5672/vhost",
+    )
+    assert msg_settings.get_rabbitmq_url() == "amqp://custom:secret@cluster:5672/vhost"
