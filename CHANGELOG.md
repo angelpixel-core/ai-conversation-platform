@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] — Slice 4: Decoupled Event Broker Worker
 
 ### Added
+
 - **RabbitMQ Resilient Connection & Topology:**
   - Implemented `RabbitMQConnectionManager` (`src/infrastructure/messaging/rabbitmq/rabbitmq_connection_manager.py`) with automatic reconnection and channel acquisition.
   - Implemented `RabbitMQTopologyConfig` (`src/infrastructure/messaging/rabbitmq/rabbitmq_topology_config.py`) declaring durable `ai_platform.events` topic exchange, main durable queue `conversation.llm_processing.queue`, direct DLX `ai_platform.events.dlx`, and DLQ `conversation.llm_processing.dlq`.
@@ -20,6 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added unit test suite `tests/unit/infrastructure/messaging/test_rabbitmq_adapters.py` with 100% code coverage.
   - Added integration test suite `tests/integration/infrastructure/messaging/test_rabbitmq_publisher_consumer.py` verifying real end-to-end publish/consume and DLQ routing against a live RabbitMQ broker.
   - Configured `rabbitmq:3-management-alpine` service and volume in `docker-compose.yml`.
+- **Autonomous Background Worker & LLM Processing:**
+  - Implemented `LlmMessageProcessingWorker` (`src/application/conversations/workers/llm_message_processing_worker.py`) consuming `MessageAppendedDomainEvent`, running model inference via `LlmClientPort`, and persisting assistant replies via `AppendAssistantMessageHandler`.
+  - Implemented `WorkerContainer` (`src/worker_container.py`) composition root assembling SQL Server connection, `MssqlUnitOfWork`, `LlmClientPort`, and `RabbitMQConsumerAdapter` without FastAPI dependencies.
+  - Implemented autonomous worker process script `src/worker.py` with structured concurrency and POSIX signal handling (`SIGINT`, `SIGTERM`) via `anyio`.
+  - Added unit test suites `tests/unit/application/test_llm_message_processing_worker.py`, `tests/unit/test_worker_container.py`, and `tests/unit/test_worker_entrypoint.py` with 100% code coverage.
+  - Added full-cycle integration test suite `tests/integration/workers/test_llm_message_processing_worker.py` validating end-to-end user message consumption, LLM completion, SQL Server persistence, and dead-letter queue routing on errors.
+  - Added canonical and test templates in `.agent/templates/` for worker handlers and entrypoints.
 - **Outbox Publisher Relay & Concurrency:**
   - Extended `OutboxStatus` with `PUBLISHED` state and added `mark_as_published()` to `MssqlOutboxRepository` and `OutboxMessage`.
   - Implemented `OutboxRelayService` (`src/infrastructure/persistence/outbox/outbox_relay_service.py`) performing transactional polling with SQL Server locking hints (`WITH (UPDLOCK, READPAST)`), guaranteed at-least-once delivery to RabbitMQ, and atomic `PUBLISHED` state transitions.
@@ -40,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] - 2026-09-26 — Slice 3: Persistent Storage with Microsoft SQL Server
 
 ### Added
+
 - Microsoft SQL Server 2022 database persistence via `sqlmodel`, `sqlalchemy`, and `pymssql`.
 - Alembic database migration environment and initial schema migration in `src/infrastructure/persistence/mssql/migrations/`.
 - Relational data models (`ConversationModel`, `MessageModel`, `OutboxMessageModel`) and data mappers (`ConversationDataMapper`).
@@ -52,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - 2026-09-25 — Slice 2: Streaming Assistant Messages & Transactional Outbox
 
 ### Added
+
 - Server-Sent Events (SSE) streaming endpoint `GET /conversations/{id}/stream`.
 - Application queries and commands: `StreamConversationQuery`, `AppendAssistantMessageCommand`, and `SendMessageCommand`.
 - LLM driven port `LlmClientPort` with concrete implementations:
@@ -65,6 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2026-09-24 — Slice 1: Core Conversation Domain & In-Memory CQRS
 
 ### Added
+
 - Core Domain Model: `Conversation` aggregate root and `Message` value object.
 - CQRS application commands: `CreateConversationCommand` and `CreateConversationHandler`.
 - Ports and in-memory adapters: `ConversationRepository`, `UnitOfWorkPort`, `InMemoryConversationRepository`, `InMemoryUnitOfWork`.

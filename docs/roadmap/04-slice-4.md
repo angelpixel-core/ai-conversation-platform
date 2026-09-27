@@ -122,17 +122,17 @@ Desacoplar completamente el ciclo de vida del servidor HTTP del procesamiento de
 
 *Entrypoint y contenedor desacoplado para inferencia LLM en segundo plano.*
 
-- [ ] **Ensamblador de Dependencias del Worker (Composition Root)**
+- [x] **Ensamblador de Dependencias del Worker (Composition Root)**
   - Archivo: `src/worker_container.py` (ensambla conexión a SQL Server, `MssqlUnitOfWork`, `LlmClientPort` y `RabbitMQConsumerAdapter` sin dependencias de FastAPI).
-- [ ] **Handler Consumidor de Inferencia LLM**
+- [x] **Handler Consumidor de Inferencia LLM**
   - Archivo: `src/application/conversations/workers/llm_message_processing_worker.py`.
   - Deserializa `EventEnvelope`, procesa la inferencia del modelo LLM mediante `LlmClientPort`.
   - Persiste la respuesta del asistente mediante `AppendAssistantMessageHandler` dentro de una transacción `UnitOfWork`.
   - Emite `ack()` si el procesamiento es exitoso o `reject(requeue=False)` hacia DLQ ante error irrecuperable.
-- [ ] **Script Entrypoint del Proceso Worker**
+- [x] **Script Entrypoint del Proceso Worker**
   - Archivo: `src/worker.py` (manejo de señales POSIX `SIGINT`/`SIGTERM` con `anyio` para graceful shutdown).
   - Templates canónicos: `.agent/templates/interfaces/worker/worker_entrypoint.tt.py` y `test_worker_entrypoint.tt.py`.
-- [ ] **Tests de Ciclo Completo del Worker**
+- [x] **Tests de Ciclo Completo del Worker**
   - Archivo: `tests/unit/application/test_llm_message_processing_worker.py`.
   - Archivo: `tests/integration/workers/test_llm_message_processing_worker.py`.
 

@@ -6,6 +6,8 @@ graph TD
     subgraph Interfaces ["Interfaces (Driver Adapters)"]
         RouterFastAPI["FastAPI App (build_api)"]
         CLIExport["CLI export-openapi"]
+        WorkerProcess["Worker Process (src/worker.py)"]
+        WorkerContainerNode["WorkerContainer (src/worker_container.py)"]
     end
 
     subgraph Application ["Application Layer (CQRS & Ports)"]
@@ -23,6 +25,7 @@ graph TD
         HTTPClientPort["HttpClientPort"]
         MsgBrokerPort["MessageBrokerPort (Port)"]
         EventConsumerPortNode["EventConsumerPort (Port)"]
+        WorkerHandlerNode["LlmMessageProcessingWorker"]
     end
 
     subgraph Domain ["Domain Layer (Core Business)"]
@@ -129,4 +132,12 @@ graph TD
     OutboxRelay --> EventEnvelopeVO
     ConversationMapper --> MssqlModels
     ConversationMapper --> ConvAggregate
+    WorkerProcess --> WorkerContainerNode
+    WorkerContainerNode --> WorkerHandlerNode
+    WorkerContainerNode --> RabbitMQConsumer
+    WorkerContainerNode --> MssqlUOW
+    WorkerHandlerNode --> AppendAssistantHandler
+    WorkerHandlerNode --> LLMClientPort
+    WorkerHandlerNode --> UOWPort
+    AppSettings --> RabbitMQConnManager
 ```
