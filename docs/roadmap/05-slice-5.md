@@ -100,11 +100,11 @@ Dotar al sistema de resiliencia y trazabilidad de grado financiero/enterprise:
   - Template canónico: `.agent/templates/application/services/stream_recovery_service.tt.py`
   - Test template: `.agent/templates/application/services/test_stream_recovery_service.tt.py`
 
-- [ ] **Query: Resume Stream by Last-Event-ID**
+- [x] **Query: Resume Stream by Last-Event-ID**
   - Query DTO: `src/application/conversations/queries/resume_stream_query.py`
   - Handler: `src/application/conversations/queries/resume_stream_query_handler.py`
 
-- [ ] **Tests Unitarios de Aplicación con AnyIO**
+- [x] **Tests Unitarios de Aplicación con AnyIO**
   - Archivo: `tests/unit/application/test_idempotent_command_executor.py`
   - Archivo: `tests/unit/application/test_resume_stream_query_handler.py`
   - Archivo: `tests/unit/application/test_stream_recovery_service.py`

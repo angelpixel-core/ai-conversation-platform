@@ -30,6 +30,8 @@ graph TD
         StreamBufferRepoPort["StreamBufferRepository (Port)"]
         IdempotentExecutor["IdempotentCommandExecutor"]
         StreamRecoveryServiceNode["StreamRecoveryService"]
+        ResumeStreamQueryNode["ResumeStreamQuery"]
+        ResumeStreamHandlerNode["ResumeStreamQueryHandler"]
     end
 
     subgraph Domain ["Domain Layer (Core Business)"]
@@ -102,6 +104,8 @@ graph TD
     IdempotentExecutor --> IdempotencyRepoPort
     StreamRecoveryServiceNode --> StreamBufferRepoPort
     StreamRecoveryServiceNode --> StreamChunkVO
+    ResumeStreamHandlerNode --> ResumeStreamQueryNode
+    ResumeStreamHandlerNode --> StreamRecoveryServiceNode
 
     %% Domain Relationships
     ConvAggregate --> MessageVO
