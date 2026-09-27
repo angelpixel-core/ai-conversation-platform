@@ -26,6 +26,8 @@ graph TD
         MsgBrokerPort["MessageBrokerPort (Port)"]
         EventConsumerPortNode["EventConsumerPort (Port)"]
         WorkerHandlerNode["LlmMessageProcessingWorker"]
+        IdempotencyRepoPort["IdempotencyRepository (Port)"]
+        StreamBufferRepoPort["StreamBufferRepository (Port)"]
     end
 
     subgraph Domain ["Domain Layer (Core Business)"]
@@ -41,6 +43,7 @@ graph TD
         IdempotencyKeyVO["IdempotencyKey (ValueObject)"]
         StreamChunkVO["StreamChunk (ValueObject)"]
         AuditLogEntity["AuditLogRecord (Entity)"]
+        AuditRepoPort["AuditRepository (Port)"]
     end
 
     subgraph Infrastructure ["Infrastructure (Driven Adapters)"]

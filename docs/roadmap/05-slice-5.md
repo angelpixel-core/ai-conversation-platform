@@ -60,7 +60,7 @@ Dotar al sistema de resiliencia y trazabilidad de grado financiero/enterprise:
   - Template canónico: `.agent/templates/domain/entities/audit_log_record.tt.py`
   - Test template: `.agent/templates/domain/entities/test_audit_log_record.tt.py`
 
-- [ ] **Puertos de Persistencia de Idempotencia, Auditoría y Stream Buffer (Driven Ports)**
+- [x] **Puertos de Persistencia de Idempotencia, Auditoría y Stream Buffer (Driven Ports)**
   - Archivo: `src/application/shared/ports/idempotency_repository_port.py`
   - Template canónico: `.agent/templates/application/shared/ports/idempotency_repository_port.tt.py`
   - Test template: `.agent/templates/application/shared/ports/test_idempotency_repository_port.tt.py`
