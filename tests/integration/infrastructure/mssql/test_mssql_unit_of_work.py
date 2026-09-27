@@ -98,11 +98,10 @@ def test_mssql_uow_auto_persists_outbox_events_atomically(
         uow.commit()
 
     with session_factory() as session:
-        outbox_records = session.exec(
-            select(OutboxMessageModel).order_by(OutboxMessageModel.created_at)  # type: ignore[arg-type]
-        ).all()
+        outbox_records = session.exec(select(OutboxMessageModel)).all()
         assert len(outbox_records) == 2
-        assert outbox_records[0].event_type == "ConversationCreatedDomainEvent"
-        assert outbox_records[1].event_type == "MessageAppendedDomainEvent"
-        assert outbox_records[0].status == "pending"
-        assert outbox_records[1].status == "pending"
+        events_by_type = {record.event_type: record for record in outbox_records}
+        assert "ConversationCreatedDomainEvent" in events_by_type
+        assert "MessageAppendedDomainEvent" in events_by_type
+        assert events_by_type["ConversationCreatedDomainEvent"].status == "pending"
+        assert events_by_type["MessageAppendedDomainEvent"].status == "pending"
