@@ -4,6 +4,7 @@ import uuid
 from datetime import UTC, datetime
 
 import pytest
+
 from src.domain.audit.audit_log_entity import AuditLogRecord
 
 

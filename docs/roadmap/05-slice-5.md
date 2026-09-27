@@ -55,7 +55,7 @@ Dotar al sistema de resiliencia y trazabilidad de grado financiero/enterprise:
   - Template canónico: `.agent/templates/domain/value_objects/stream_chunk.tt.py`
   - Test template: `.agent/templates/domain/value_objects/test_stream_chunk.tt.py`
 
-- [ ] **Entidad de Dominio: Audit Log Record**
+- [x] **Entidad de Dominio: Audit Log Record**
   - Archivo: `src/domain/audit/audit_log_entity.py`
   - Template canónico: `.agent/templates/domain/entities/audit_log_record.tt.py`
   - Test template: `.agent/templates/domain/entities/test_audit_log_record.tt.py`

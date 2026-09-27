@@ -40,6 +40,7 @@ graph TD
         EventEnvelopeVO["EventEnvelope (ValueObject)"]
         IdempotencyKeyVO["IdempotencyKey (ValueObject)"]
         StreamChunkVO["StreamChunk (ValueObject)"]
+        AuditLogEntity["AuditLogRecord (Entity)"]
     end
 
     subgraph Infrastructure ["Infrastructure (Driven Adapters)"]
