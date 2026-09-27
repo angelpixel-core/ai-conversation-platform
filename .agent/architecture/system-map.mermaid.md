@@ -28,6 +28,7 @@ graph TD
         WorkerHandlerNode["LlmMessageProcessingWorker"]
         IdempotencyRepoPort["IdempotencyRepository (Port)"]
         StreamBufferRepoPort["StreamBufferRepository (Port)"]
+        IdempotentExecutor["IdempotentCommandExecutor"]
     end
 
     subgraph Domain ["Domain Layer (Core Business)"]
@@ -97,6 +98,7 @@ graph TD
     StreamConvHandler --> ConvRepoPort
     StreamConvHandler --> ConvNotFoundErr
     StreamConvHandler --> LLMClientPort
+    IdempotentExecutor --> IdempotencyRepoPort
 
     %% Domain Relationships
     ConvAggregate --> MessageVO

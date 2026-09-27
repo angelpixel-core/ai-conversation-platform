@@ -90,7 +90,7 @@ Dotar al sistema de resiliencia y trazabilidad de grado financiero/enterprise:
 
 *Orquestadores y ejecutores basados en concurrencia estructurada.*
 
-- [ ] **Pipeline / Ejecutor de Idempotencia para Commands**
+- [x] **Pipeline / Ejecutor de Idempotencia para Commands**
   - Archivo: `src/application/shared/idempotency/idempotent_command_executor.py` (bloqueo atómico, ejecución y almacenamiento de resultado previo).
   - Template canónico: `.agent/templates/application/shared/idempotency/idempotent_command_executor.tt.py`
   - Test template: `.agent/templates/application/shared/idempotency/test_idempotent_command_executor.tt.py`
