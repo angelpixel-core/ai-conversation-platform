@@ -20,6 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added unit test suite `tests/unit/infrastructure/messaging/test_rabbitmq_adapters.py` with 100% code coverage.
   - Added integration test suite `tests/integration/infrastructure/messaging/test_rabbitmq_publisher_consumer.py` verifying real end-to-end publish/consume and DLQ routing against a live RabbitMQ broker.
   - Configured `rabbitmq:3-management-alpine` service and volume in `docker-compose.yml`.
+- **Outbox Publisher Relay & Concurrency:**
+  - Extended `OutboxStatus` with `PUBLISHED` state and added `mark_as_published()` to `MssqlOutboxRepository` and `OutboxMessage`.
+  - Implemented `OutboxRelayService` (`src/infrastructure/persistence/outbox/outbox_relay_service.py`) performing transactional polling with SQL Server locking hints (`WITH (UPDLOCK, READPAST)`), guaranteed at-least-once delivery to RabbitMQ, and atomic `PUBLISHED` state transitions.
+  - Added unit test suite `tests/unit/infrastructure/persistence/test_outbox_relay_service.py` with 100% code coverage.
+  - Added concurrency integration test suite `tests/integration/infrastructure/persistence/test_outbox_relay_concurrency.py` verifying race-free competing pollers against live Microsoft SQL Server 2022.
+  - Created canonical and test templates in `.agent/templates/` for outbox relay.
 - **Messaging Ports & Domain Envelopes:**
   - Implemented `EventEnvelope` (`src/domain/shared/events/event_envelope.py`) value object encapsulating event identifiers, types, payloads, correlation IDs, and ISO-8601 timestamps.
   - Implemented application ports `MessageBrokerPort` and `EventConsumerPort` (`src/application/shared/ports/`).

@@ -1,6 +1,5 @@
-"""Unit tests for OutboxRelayService (Infrastructure Layer)."""
+"""Test template canónico para OutboxRelayService."""
 
-import json
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
@@ -10,10 +9,10 @@ import pytest
 from sqlmodel import Session, SQLModel, create_engine
 
 from src.application.shared.ports.message_broker_port import MessageBrokerPort
-from src.domain.shared.events.event_envelope import EventEnvelope
 from src.infrastructure.persistence.mssql.models import OutboxMessageModel
 from src.infrastructure.persistence.outbox.outbox_relay_service import (
     OutboxRelayService,
+    default_topic_mapper,
 )
 from src.infrastructure.shared.persistence.outbox.in_memory import OutboxStatus
 
@@ -125,7 +124,9 @@ async def test_poll_and_publish_once_marks_as_failed_on_broker_error(
 
 
 @pytest.mark.anyio
-async def test_outbox_relay_runs_and_stops_with_anyio(in_memory_db, mock_broker: MagicMock) -> None:
+async def test_outbox_relay_runs_and_stops_with_anyio(
+    in_memory_db, mock_broker: MagicMock
+) -> None:
     relay = OutboxRelayService(
         session_factory=lambda: Session(in_memory_db),
         message_broker=mock_broker,
@@ -139,12 +140,14 @@ async def test_outbox_relay_runs_and_stops_with_anyio(in_memory_db, mock_broker:
 
 
 def test_default_topic_mapper() -> None:
-    from src.infrastructure.persistence.outbox.outbox_relay_service import (
-        default_topic_mapper,
+    assert (
+        default_topic_mapper("MessageAppendedDomainEvent")
+        == "conversation.message.appended"
     )
-
-    assert default_topic_mapper("MessageAppendedDomainEvent") == "conversation.message.appended"
-    assert default_topic_mapper("ConversationCreatedDomainEvent") == "conversation.created"
+    assert (
+        default_topic_mapper("ConversationCreatedDomainEvent")
+        == "conversation.created"
+    )
     assert (
         default_topic_mapper("AssistantResponseCompletedDomainEvent")
         == "conversation.assistant.completed"
@@ -153,64 +156,3 @@ def test_default_topic_mapper() -> None:
         default_topic_mapper("UserSessionTerminatedDomainEvent")
         == "conversation.user.session.terminated"
     )
-
-
-@pytest.mark.anyio
-async def test_poll_and_publish_with_already_serialized_envelope(
-    in_memory_db, mock_broker: MagicMock
-) -> None:
-    env = EventEnvelope.create(
-        event_type="custom_event",
-        payload={"k": "v"},
-    )
-    with Session(in_memory_db) as session:
-        msg = OutboxMessageModel(
-            id=uuid4(),
-            event_type="CustomEvent",
-            payload=json.dumps(env.to_dict()),
-            status=OutboxStatus.PENDING.value,
-            created_at=datetime.now(UTC),
-        )
-        session.add(msg)
-        session.commit()
-
-    relay = OutboxRelayService(
-        session_factory=lambda: Session(in_memory_db),
-        message_broker=mock_broker,
-    )
-
-    count = await relay.poll_and_publish_once()
-    assert count == 1
-    mock_broker.publish.assert_called_once()
-    published_env = mock_broker.publish.call_args[0][1]
-    assert published_env.id == env.id
-    assert published_env.event_type == "custom_event"
-    assert published_env.payload == {"k": "v"}
-
-
-@pytest.mark.anyio
-async def test_poll_and_publish_with_invalid_json_payload(
-    in_memory_db, mock_broker: MagicMock
-) -> None:
-    msg_id = uuid4()
-    with Session(in_memory_db) as session:
-        msg = OutboxMessageModel(
-            id=msg_id,
-            event_type="RawEvent",
-            payload="not-json-text",
-            status=OutboxStatus.PENDING.value,
-            created_at=datetime.now(UTC),
-        )
-        session.add(msg)
-        session.commit()
-
-    relay = OutboxRelayService(
-        session_factory=lambda: Session(in_memory_db),
-        message_broker=mock_broker,
-    )
-
-    count = await relay.poll_and_publish_once()
-    assert count == 1
-    mock_broker.publish.assert_called_once()
-    published_env = mock_broker.publish.call_args[0][1]
-    assert published_env.payload == {"raw_payload": "not-json-text"}

@@ -56,6 +56,7 @@ graph TD
         RabbitMQTopology["RabbitMQTopologyConfig"]
         RabbitMQPub["RabbitMQPublisherAdapter"]
         RabbitMQConsumer["RabbitMQConsumerAdapter"]
+        OutboxRelay["OutboxRelayService"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 
@@ -123,6 +124,9 @@ graph TD
     RabbitMQConsumer -- Implementa --> EventConsumerPortNode
     RabbitMQPub --> RabbitMQConnManager
     RabbitMQConsumer --> RabbitMQConnManager
+    OutboxRelay --> MssqlOutbox
+    OutboxRelay --> MsgBrokerPort
+    OutboxRelay --> EventEnvelopeVO
     ConversationMapper --> MssqlModels
     ConversationMapper --> ConvAggregate
 ```

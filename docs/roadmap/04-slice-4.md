@@ -102,19 +102,19 @@ Desacoplar completamente el ciclo de vida del servidor HTTP del procesamiento de
 
 *Servicio poller concurrente para mover eventos de `outbox_messages` hacia RabbitMQ.*
 
-- [ ] **Extensión de `OutboxStatus`**
+- [x] **Extensión de `OutboxStatus`**
   - Actualizar `OutboxStatus` con el estado `PUBLISHED` (`PENDING` $\rightarrow$ `PUBLISHED` $\rightarrow$ `COMPLETED` / `FAILED`).
-- [ ] **Servicio Outbox Relay con Concurrencia Estructurada (`anyio`)**
+- [x] **Servicio Outbox Relay con Concurrencia Estructurada (`anyio`)**
   - Archivo: `src/infrastructure/persistence/outbox/outbox_relay_service.py`.
-  - Consulta registros con `select(OutboxMessageModel).with_for_update(skip_locked=True)` (compilada a `WITH (UPDLOCK, READPAST)` en dialecto MSSQL) evitando condiciones de carrera entre múltiples instancias del relay.
+  - Consulta registros con `select(OutboxMessageModel).with_hint(..., 'WITH (UPDLOCK, READPAST)', 'mssql')` evitando condiciones de carrera entre múltiples instancias del relay.
   - Publica el `EventEnvelope` hacia RabbitMQ mediante `MessageBrokerPort`.
   - Marca atómicamente el estado a `PUBLISHED` con timestamp de despacho.
   - Bucle de polling resiliente con `anyio.sleep` y cancelación ordenada ante shutdown.
   - Template canónico: `.agent/templates/infrastructure/shared/persistence/outbox/outbox_relay.tt.py`.
   - Test template: `.agent/templates/infrastructure/shared/persistence/outbox/test_outbox_relay.tt.py`.
-- [ ] **Tests de Concurrencia de Outbox Relay**
-  - Archivo: `tests/unit/infrastructure/persistence/test_outbox_relay_service.py`.
-  - Archivo: `tests/integration/infrastructure/persistence/test_outbox_relay_concurrency.py` (múltiples pollers concurrentes contra SQL Server 2022).
+- [x] **Tests de Concurrencia de Outbox Relay**
+  - [x] Archivo: `tests/unit/infrastructure/persistence/test_outbox_relay_service.py`.
+  - [x] Archivo: `tests/integration/infrastructure/persistence/test_outbox_relay_concurrency.py` (múltiples pollers concurrentes contra SQL Server 2022).
 
 ---
 

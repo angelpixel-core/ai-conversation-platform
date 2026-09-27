@@ -11,6 +11,7 @@ class OutboxStatus(StrEnum):
 
     PENDING = "pending"
     PROCESSING = "processing"
+    PUBLISHED = "published"
     COMPLETED = "completed"
     FAILED = "failed"
 
@@ -47,6 +48,10 @@ class OutboxMessage:
             status=OutboxStatus.PENDING,
             created_at=datetime.now(UTC),
         )
+
+    def mark_published(self) -> None:
+        self.status = OutboxStatus.PUBLISHED
+        self.processed_at = datetime.now(UTC)
 
     def mark_completed(self) -> None:
         self.status = OutboxStatus.COMPLETED
