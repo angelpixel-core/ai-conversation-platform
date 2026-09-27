@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added canonical and test templates in `.agent/templates/` for worker handlers and entrypoints.
 - **Outbox Publisher Relay & Concurrency:**
   - Extended `OutboxStatus` with `PUBLISHED` state and added `mark_as_published()` to `MssqlOutboxRepository` and `OutboxMessage`.
+  - Enhanced `MssqlConversationRepository.add()` to automatically drain and persist domain events to `outbox_messages` as `EventEnvelope` instances in the same ACID transaction.
   - Implemented `OutboxRelayService` (`src/infrastructure/persistence/outbox/outbox_relay_service.py`) performing transactional polling with SQL Server locking hints (`WITH (UPDLOCK, READPAST)`), guaranteed at-least-once delivery to RabbitMQ, and atomic `PUBLISHED` state transitions.
   - Added unit test suite `tests/unit/infrastructure/persistence/test_outbox_relay_service.py` with 100% code coverage.
   - Added concurrency integration test suite `tests/integration/infrastructure/persistence/test_outbox_relay_concurrency.py` verifying race-free competing pollers against live Microsoft SQL Server 2022.
