@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
+
 from src.application.shared.ports.idempotency_repository_port import (
     IdempotencyRecord,
     IdempotencyRepositoryPort,

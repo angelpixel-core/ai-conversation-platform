@@ -1,10 +1,10 @@
 """Unit contract tests for StreamBufferRepositoryPort."""
 
 import pytest
+
 from src.application.shared.ports.stream_buffer_repository_port import (
     StreamBufferRepositoryPort,
 )
-
 from src.domain.conversations.value_objects.stream_chunk import StreamChunk
 
 
@@ -17,9 +17,7 @@ class FakeStreamBufferRepository(StreamBufferRepositoryPort):
     async def append_chunk(self, stream_id: str, chunk: StreamChunk) -> None:
         self.buffers.setdefault(stream_id, []).append(chunk)
 
-    async def get_chunks_since(
-        self, stream_id: str, since_sequence: int
-    ) -> list[StreamChunk]:
+    async def get_chunks_since(self, stream_id: str, since_sequence: int) -> list[StreamChunk]:
         chunks = self.buffers.get(stream_id, [])
         return [c for c in chunks if c.sequence_number > since_sequence]
 

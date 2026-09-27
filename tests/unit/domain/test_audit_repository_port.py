@@ -1,9 +1,9 @@
 """Unit contract tests for AuditRepositoryPort."""
 
 import pytest
-from src.domain.audit.ports.audit_repository_port import AuditRepositoryPort
 
 from src.domain.audit.audit_log_entity import AuditLogRecord
+from src.domain.audit.ports.audit_repository_port import AuditRepositoryPort
 
 
 class FakeAuditRepository(AuditRepositoryPort):
@@ -15,9 +15,7 @@ class FakeAuditRepository(AuditRepositoryPort):
     async def record(self, log_entry: AuditLogRecord) -> None:
         self.entries.append(log_entry)
 
-    async def list_by_resource(
-        self, resource_type: str, resource_id: str
-    ) -> list[AuditLogRecord]:
+    async def list_by_resource(self, resource_type: str, resource_id: str) -> list[AuditLogRecord]:
         return [
             entry
             for entry in self.entries
