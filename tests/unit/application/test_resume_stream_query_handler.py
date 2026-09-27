@@ -1,13 +1,13 @@
 """Unit tests for ResumeStreamQuery and ResumeStreamQueryHandler."""
 
 import pytest
+
 from src.application.conversations.queries.resume_stream_query import (
     ResumeStreamQuery,
 )
 from src.application.conversations.queries.resume_stream_query_handler import (
     ResumeStreamQueryHandler,
 )
-
 from src.application.conversations.services.stream_recovery_service import (
     StreamRecoveryService,
 )
