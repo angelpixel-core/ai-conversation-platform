@@ -71,7 +71,7 @@ Dotar al sistema de resiliencia y trazabilidad de grado financiero/enterprise:
   - Template canónico: `.agent/templates/application/shared/ports/stream_buffer_repository_port.tt.py`
   - Test template: `.agent/templates/application/shared/ports/test_stream_buffer_repository_port.tt.py`
 
-- [ ] **Adaptadores en Memoria para Testing (In-Memory Adapters)**
+- [x] **Adaptadores en Memoria para Testing (In-Memory Adapters)**
   - Archivo: `src/infrastructure/persistence/in_memory/in_memory_idempotency_repository.py`
   - Template canónico: `.agent/templates/infrastructure/persistence/in_memory/in_memory_idempotency_repository.tt.py`
   - Test template: `.agent/templates/infrastructure/persistence/in_memory/test_in_memory_idempotency_repository.tt.py`
@@ -79,7 +79,7 @@ Dotar al sistema de resiliencia y trazabilidad de grado financiero/enterprise:
   - Template canónico: `.agent/templates/infrastructure/persistence/in_memory/in_memory_audit_repository.tt.py`
   - Test template: `.agent/templates/infrastructure/persistence/in_memory/test_in_memory_audit_repository.tt.py`
 
-- [ ] **Tests Unitarios de Dominio**
+- [x] **Tests Unitarios de Dominio**
   - Archivo: `tests/unit/domain/test_idempotency_key.py`
   - Archivo: `tests/unit/domain/test_stream_chunk_sequence.py`
   - Archivo: `tests/unit/domain/test_audit_log_record.py`

@@ -66,6 +66,8 @@ graph TD
         RabbitMQPub["RabbitMQPublisherAdapter"]
         RabbitMQConsumer["RabbitMQConsumerAdapter"]
         OutboxRelay["OutboxRelayService"]
+        InMemoryIdempotencyRepo["InMemoryIdempotencyRepositoryAdapter"]
+        InMemoryAuditRepo["InMemoryAuditRepositoryAdapter"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 
@@ -148,4 +150,6 @@ graph TD
     WorkerHandlerNode --> LLMClientPort
     WorkerHandlerNode --> UOWPort
     AppSettings --> RabbitMQConnManager
+    InMemoryIdempotencyRepo -- Implementa --> IdempotencyRepoPort
+    InMemoryAuditRepo -- Implementa --> AuditRepoPort
 ```
