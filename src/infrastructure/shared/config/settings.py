@@ -43,7 +43,45 @@ class DatabaseSettings(BaseSettings):
         )
 
 
-class Settings(DatabaseSettings):
+class MessagingDriver(StrEnum):
+    """Supported event messaging backend drivers."""
+
+    IN_MEMORY = "in_memory"
+    RABBITMQ = "rabbitmq"
+
+
+class MessagingSettings(BaseSettings):
+    """Message broker and event streaming configuration."""
+
+    MESSAGING_DRIVER: MessagingDriver = MessagingDriver.IN_MEMORY
+    RABBITMQ_HOST: str = "localhost"
+    RABBITMQ_PORT: int = 5672
+    RABBITMQ_USER: str = "guest"
+    RABBITMQ_PASSWORD: str = "guest"  # noqa: S105 # nosec S105
+    RABBITMQ_URL: str | None = None
+    RABBITMQ_PREFETCH_COUNT: int = 10
+    RABBITMQ_EXCHANGE: str = "ai_platform.events"
+    RABBITMQ_QUEUE: str = "conversation.llm_processing.queue"
+    RABBITMQ_DLX_EXCHANGE: str = "ai_platform.events.dlx"
+    RABBITMQ_DLQ: str = "conversation.llm_processing.dlq"
+    RABBITMQ_ROUTING_KEY: str = "conversation.message.appended"
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    def get_rabbitmq_url(self) -> str:
+        """Return explicit RABBITMQ_URL or construct one with URL-safe credentials."""
+        if self.RABBITMQ_URL:
+            return self.RABBITMQ_URL
+
+        safe_pass = quote_plus(self.RABBITMQ_PASSWORD)
+        return f"amqp://{self.RABBITMQ_USER}:{safe_pass}@{self.RABBITMQ_HOST}:{self.RABBITMQ_PORT}/"
+
+
+class Settings(DatabaseSettings, MessagingSettings):
     """Unified application settings."""
 
 
