@@ -66,6 +66,14 @@ class MssqlOutboxRepository:
         results = self._session.exec(statement).all()
         return [self._to_outbox_message(m) for m in results]
 
+    def mark_as_published(self, message_id: UUID) -> None:
+        """Mark an outbox message as successfully published to the event broker."""
+        model = self._session.get(OutboxMessageModel, message_id)
+        if model is not None:
+            model.status = OutboxStatus.PUBLISHED.value
+            model.processed_at = datetime.now(UTC)
+            self._session.add(model)
+
     def mark_as_dispatched(self, message_id: UUID) -> None:
         """Mark an outbox message as successfully dispatched."""
         model = self._session.get(OutboxMessageModel, message_id)

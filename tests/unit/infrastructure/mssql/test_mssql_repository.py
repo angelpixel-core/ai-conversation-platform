@@ -1,10 +1,13 @@
 """Unit tests for MssqlConversationRepository adapter."""
 
+import json
 from uuid import uuid4
 
-from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel import Session, SQLModel, create_engine, select
 
 from src.domain.conversations.entities.conversation import Conversation
+from src.domain.shared.events.event_envelope import EventEnvelope
+from src.infrastructure.persistence.mssql.models import OutboxMessageModel
 from src.infrastructure.persistence.mssql.repository import MssqlConversationRepository
 
 
@@ -116,3 +119,41 @@ def test_repository_list_conversations() -> None:
         assert len(all_convs) == 2
         titles = {c.title for c in all_convs}
         assert titles == {"First Conv", "Second Conv"}
+
+
+def test_repository_add_automatically_drains_and_persists_domain_events_to_outbox() -> None:
+    engine = create_engine("sqlite:///:memory:")
+    SQLModel.metadata.create_all(engine)
+
+    conversation = Conversation.create(title="Outbox Drain Test")
+    conversation.append_user_message("Hello transactional outbox")
+
+    with Session(engine) as session:
+        repo = MssqlConversationRepository(session=session)
+        repo.add(conversation)
+        session.commit()
+
+    # The domain events on the aggregate should now be drained (empty)
+    assert len(conversation.pull_events()) == 0
+
+    # The outbox_messages table should contain the persisted events
+    with Session(engine) as session:
+        outbox_records = session.exec(
+            select(OutboxMessageModel).order_by(OutboxMessageModel.created_at)  # type: ignore[arg-type]
+        ).all()
+        assert len(outbox_records) == 2
+        assert outbox_records[0].event_type == "ConversationCreatedDomainEvent"
+        assert outbox_records[1].event_type == "MessageAppendedDomainEvent"
+        assert outbox_records[0].status == "pending"
+        assert outbox_records[1].status == "pending"
+
+        # Payloads should deserialize back to EventEnvelope
+        payload_1 = json.loads(outbox_records[0].payload)
+        env_1 = EventEnvelope.from_dict(payload_1)
+        assert env_1.event_type == "conversation_created"
+        assert env_1.payload["conversation_id"] == str(conversation.id)
+
+        payload_2 = json.loads(outbox_records[1].payload)
+        env_2 = EventEnvelope.from_dict(payload_2)
+        assert env_2.event_type == "message_appended"
+        assert env_2.payload["message"]["content"] == "Hello transactional outbox"

@@ -207,3 +207,32 @@ def test_outbox_repository_mark_as_completed_alias() -> None:
         loaded = repo.get_by_id(msg.id)
         assert loaded is not None
         assert loaded.status == OutboxStatus.COMPLETED
+
+
+def test_outbox_repository_mark_as_published() -> None:
+    engine = create_engine("sqlite:///:memory:")
+    SQLModel.metadata.create_all(engine)
+
+    msg = OutboxMessage.create(
+        aggregate_type="Conversation",
+        aggregate_id=uuid4(),
+        event_type="PublishedEvent",
+        payload="{}",
+    )
+
+    with Session(engine) as session:
+        repo = MssqlOutboxRepository(session=session)
+        repo.save(msg)
+        session.commit()
+
+    with Session(engine) as session:
+        repo = MssqlOutboxRepository(session=session)
+        repo.mark_as_published(msg.id)
+        session.commit()
+
+    with Session(engine) as session:
+        repo = MssqlOutboxRepository(session=session)
+        loaded = repo.get_by_id(msg.id)
+        assert loaded is not None
+        assert loaded.status == OutboxStatus.PUBLISHED
+        assert loaded.processed_at is not None
