@@ -2,10 +2,10 @@
 
 import anyio
 import pytest
+
 from src.application.conversations.services.stream_recovery_service import (
     StreamRecoveryService,
 )
-
 from src.application.shared.ports.stream_buffer_repository_port import (
     StreamBufferRepositoryPort,
 )
