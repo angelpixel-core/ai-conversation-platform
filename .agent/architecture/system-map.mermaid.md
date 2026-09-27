@@ -6,6 +6,8 @@ graph TD
     subgraph Interfaces ["Interfaces (Driver Adapters)"]
         RouterFastAPI["FastAPI App (build_api)"]
         CLIExport["CLI export-openapi"]
+        WorkerProcess["Worker Process (src/worker.py)"]
+        WorkerContainerNode["WorkerContainer (src/worker_container.py)"]
     end
 
     subgraph Application ["Application Layer (CQRS & Ports)"]
@@ -21,6 +23,9 @@ graph TD
         LLMClientPort["LlmClientPort"]
         EventPubPort["EventPublisherPort"]
         HTTPClientPort["HttpClientPort"]
+        MsgBrokerPort["MessageBrokerPort (Port)"]
+        EventConsumerPortNode["EventConsumerPort (Port)"]
+        WorkerHandlerNode["LlmMessageProcessingWorker"]
     end
 
     subgraph Domain ["Domain Layer (Core Business)"]
@@ -32,6 +37,7 @@ graph TD
         ConvRepoPort["ConversationRepository (Port)"]
         ConvNotFoundErr["ConversationNotFoundError"]
         DomainError["DomainError"]
+        EventEnvelopeVO["EventEnvelope (ValueObject)"]
     end
 
     subgraph Infrastructure ["Infrastructure (Driven Adapters)"]
@@ -48,6 +54,12 @@ graph TD
         MssqlRepo["MssqlConversationRepository"]
         MssqlOutbox["MssqlOutboxRepository"]
         MssqlUOW["MssqlUnitOfWork"]
+        InMemoryMsgBroker["InMemoryMessageBroker"]
+        RabbitMQConnManager["RabbitMQConnectionManager"]
+        RabbitMQTopology["RabbitMQTopologyConfig"]
+        RabbitMQPub["RabbitMQPublisherAdapter"]
+        RabbitMQConsumer["RabbitMQConsumerAdapter"]
+        OutboxRelay["OutboxRelayService"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 
@@ -109,6 +121,25 @@ graph TD
     FakeLlmClient -- Implementa --> LLMClientPort
     HttpxLlmClient -- Implementa --> LLMClientPort
     HttpxClient -- Implementa --> HTTPClientPort
+    InMemoryMsgBroker -- Implementa --> MsgBrokerPort
+    InMemoryMsgBroker -- Implementa --> EventConsumerPortNode
+    RabbitMQPub -- Implementa --> MsgBrokerPort
+    RabbitMQConsumer -- Implementa --> EventConsumerPortNode
+    RabbitMQPub --> RabbitMQConnManager
+    RabbitMQConsumer --> RabbitMQConnManager
+    OutboxRelay --> MssqlOutbox
+    OutboxRelay --> MsgBrokerPort
+    OutboxRelay --> EventEnvelopeVO
     ConversationMapper --> MssqlModels
     ConversationMapper --> ConvAggregate
+    MssqlRepo --> EventEnvelopeVO
+    WorkerProcess --> WorkerContainerNode
+    WorkerContainerNode --> WorkerHandlerNode
+    WorkerContainerNode --> RabbitMQConsumer
+    WorkerContainerNode --> RabbitMQTopology
+    WorkerContainerNode --> MssqlUOW
+    WorkerHandlerNode --> AppendAssistantHandler
+    WorkerHandlerNode --> LLMClientPort
+    WorkerHandlerNode --> UOWPort
+    AppSettings --> RabbitMQConnManager
 ```

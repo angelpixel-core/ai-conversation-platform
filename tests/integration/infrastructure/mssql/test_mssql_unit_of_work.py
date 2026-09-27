@@ -2,6 +2,7 @@
 
 import pytest
 from sqlalchemy.engine import Engine
+from sqlmodel import select
 
 from src.domain.conversations.entities.conversation import Conversation
 from src.infrastructure.persistence.mssql.connection import create_session_factory
@@ -80,3 +81,27 @@ def test_mssql_uow_explicit_rollback(mssql_engine: Engine, clean_db: None) -> No
     with session_factory() as session:
         saved_conv = session.get(ConversationModel, conversation.id)
         assert saved_conv is None
+
+
+def test_mssql_uow_auto_persists_outbox_events_atomically(
+    mssql_engine: Engine, clean_db: None
+) -> None:
+    session_factory = create_session_factory(mssql_engine)
+    uow = MssqlUnitOfWork(session_factory=session_factory)
+
+    conversation = Conversation.create(title="Auto Outbox Persist")
+    conversation.append_user_message("Test message for auto outbox")
+
+    with uow:
+        # Note: we ONLY add the conversation; outbox events must be automatically drained and saved
+        uow.conversations.add(conversation)
+        uow.commit()
+
+    with session_factory() as session:
+        outbox_records = session.exec(select(OutboxMessageModel)).all()
+        assert len(outbox_records) == 2
+        events_by_type = {record.event_type: record for record in outbox_records}
+        assert "ConversationCreatedDomainEvent" in events_by_type
+        assert "MessageAppendedDomainEvent" in events_by_type
+        assert events_by_type["ConversationCreatedDomainEvent"].status == "pending"
+        assert events_by_type["MessageAppendedDomainEvent"].status == "pending"
