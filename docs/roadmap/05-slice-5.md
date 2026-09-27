@@ -47,7 +47,7 @@ Dotar al sistema de resiliencia y trazabilidad de grado financiero/enterprise:
 
 *Reglas puras para detección de duplicados, tokens de auditoría y chunks versionados.*
 
-- [ ] **Value Objects de Idempotencia y Secuencia de Chunks**
+- [x] **Value Objects de Idempotencia y Secuencia de Chunks**
   - Archivo: `src/domain/conversations/value_objects/idempotency_key.py`
   - Template canónico: `.agent/templates/domain/value_objects/idempotency_key.tt.py`
   - Test template: `.agent/templates/domain/value_objects/test_idempotency_key.tt.py`

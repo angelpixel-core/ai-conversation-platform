@@ -38,6 +38,8 @@ graph TD
         ConvNotFoundErr["ConversationNotFoundError"]
         DomainError["DomainError"]
         EventEnvelopeVO["EventEnvelope (ValueObject)"]
+        IdempotencyKeyVO["IdempotencyKey (ValueObject)"]
+        StreamChunkVO["StreamChunk (ValueObject)"]
     end
 
     subgraph Infrastructure ["Infrastructure (Driven Adapters)"]
