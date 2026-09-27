@@ -95,7 +95,7 @@ Dotar al sistema de resiliencia y trazabilidad de grado financiero/enterprise:
   - Template canónico: `.agent/templates/application/shared/idempotency/idempotent_command_executor.tt.py`
   - Test template: `.agent/templates/application/shared/idempotency/test_idempotent_command_executor.tt.py`
 
-- [ ] **Servicio de Recuperación de Stream (Stream Recovery)**
+- [x] **Servicio de Recuperación de Stream (Stream Recovery)**
   - Archivo: `src/application/conversations/services/stream_recovery_service.py` (reemite chunks perdidos desde el sequence_number solicitado mediante AnyIO).
   - Template canónico: `.agent/templates/application/services/stream_recovery_service.tt.py`
   - Test template: `.agent/templates/application/services/test_stream_recovery_service.tt.py`

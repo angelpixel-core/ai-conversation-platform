@@ -29,6 +29,7 @@ graph TD
         IdempotencyRepoPort["IdempotencyRepository (Port)"]
         StreamBufferRepoPort["StreamBufferRepository (Port)"]
         IdempotentExecutor["IdempotentCommandExecutor"]
+        StreamRecoveryServiceNode["StreamRecoveryService"]
     end
 
     subgraph Domain ["Domain Layer (Core Business)"]
@@ -99,6 +100,8 @@ graph TD
     StreamConvHandler --> ConvNotFoundErr
     StreamConvHandler --> LLMClientPort
     IdempotentExecutor --> IdempotencyRepoPort
+    StreamRecoveryServiceNode --> StreamBufferRepoPort
+    StreamRecoveryServiceNode --> StreamChunkVO
 
     %% Domain Relationships
     ConvAggregate --> MessageVO
