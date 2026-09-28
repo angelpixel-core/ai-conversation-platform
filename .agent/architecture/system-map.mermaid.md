@@ -72,6 +72,8 @@ graph TD
         FallbackActivatedEvent["ModelRouteFallbackActivatedDomainEvent"]
         TenantRepoPort["TenantRepositoryPort (Port)"]
         ModelCatalogPortNode["ModelCatalogPort (Port)"]
+        EmbeddingVectorVO["EmbeddingVector (ValueObject)"]
+        CitationVO["Citation (ValueObject)"]
     end
 
     subgraph Infrastructure ["Infrastructure (Driven Adapters)"]

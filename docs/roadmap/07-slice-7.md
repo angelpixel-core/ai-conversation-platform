@@ -88,7 +88,7 @@ Debido a que el entorno de despliegue utiliza Microsoft SQL Server 2022 (`mcr.mi
 
 *Entidades de documentos, value objects de chunks, embeddings, citas y eventos de dominio.*
 
-* [ ] **Value Objects de Embeddings y Citas**
+* [x] **Value Objects de Embeddings y Citas**
   * Archivo: `src/domain/knowledge/value_objects/embedding_vector.py` (lista inmutable de flotantes tipada, normalización $L_2$, dot product cosine similarity).
   * Archivo: `src/domain/knowledge/value_objects/citation.py` (referencia inmutable de citación: source_document_id, document_name, chunk_id, page_number, similarity_score, snippet).
 * [ ] **Entidades de Dominio: Document & DocumentChunk**
