@@ -5,13 +5,13 @@ from uuid import uuid4
 
 from sqlalchemy.engine import Engine
 from sqlmodel import Session, SQLModel, create_engine, select
-from src.infrastructure.persistence.mssql.tenant_repository import MssqlTenantRepository
 
 from src.domain.tenants.entities.tenant import Tenant
 from src.domain.tenants.value_objects.monetary_budget import MonetaryBudget
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.infrastructure.persistence.mssql.connection import create_session_factory
 from src.infrastructure.persistence.mssql.models import ConversationModel
+from src.infrastructure.persistence.mssql.tenant_repository import MssqlTenantRepository
 
 
 def test_tenant_isolation_conversations_sqlite() -> None:

@@ -5,12 +5,12 @@ from decimal import Decimal
 
 import pytest
 from sqlmodel import Session, SQLModel, create_engine
-from src.infrastructure.persistence.mssql.tenant_repository import MssqlTenantRepository
 
 from src.domain.tenants.entities.tenant import Tenant, TenantStatus
 from src.domain.tenants.entities.tenant_policy import TenantPolicy, TenantTier
 from src.domain.tenants.value_objects.monetary_budget import MonetaryBudget
 from src.domain.tenants.value_objects.tenant_id import TenantId
+from src.infrastructure.persistence.mssql.tenant_repository import MssqlTenantRepository
 
 
 @pytest.fixture(name="sqlite_session")

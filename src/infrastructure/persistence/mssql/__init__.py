@@ -18,12 +18,16 @@ from src.infrastructure.persistence.mssql.models import (
     MessageModel,
     OutboxMessageModel,
     StreamBufferChunkModel,
+    TenantModel,
+    TenantPolicyModel,
 )
 from src.infrastructure.persistence.mssql.outbox_repository import MssqlOutboxRepository
 from src.infrastructure.persistence.mssql.repository import MssqlConversationRepository
 from src.infrastructure.persistence.mssql.stream_buffer_repository import (
     MssqlStreamBufferRepository,
 )
+from src.infrastructure.persistence.mssql.tenant_mapper import TenantDataMapper
+from src.infrastructure.persistence.mssql.tenant_repository import MssqlTenantRepository
 from src.infrastructure.persistence.mssql.unit_of_work import MssqlUnitOfWork
 
 __all__ = [
@@ -37,9 +41,13 @@ __all__ = [
     "MssqlIdempotencyRepository",
     "MssqlOutboxRepository",
     "MssqlStreamBufferRepository",
+    "MssqlTenantRepository",
     "MssqlUnitOfWork",
     "OutboxMessageModel",
     "StreamBufferChunkModel",
+    "TenantDataMapper",
+    "TenantModel",
+    "TenantPolicyModel",
     "create_mssql_engine",
     "create_session_factory",
 ]

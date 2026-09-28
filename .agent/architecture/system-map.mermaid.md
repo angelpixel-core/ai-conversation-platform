@@ -96,6 +96,9 @@ graph TD
         MssqlIdempotencyRepo["MssqlIdempotencyRepository"]
         MssqlAuditRepo["MssqlAuditRepository"]
         MssqlStreamBufferRepo["MssqlStreamBufferRepository"]
+        TenantDataMapperNode["TenantDataMapper"]
+        MssqlTenantRepoNode["MssqlTenantRepository"]
+        InMemoryTenantRepoNode["InMemoryTenantRepositoryAdapter"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 
@@ -220,4 +223,12 @@ graph TD
     SettleQuotaHandler --> TenantRepoPort
     ModelRouterServiceNode --> ModelCatalogPortNode
     ModelRouterServiceNode --> TenantAggregate
+    MssqlTenantRepoNode -- Implementa --> TenantRepoPort
+    InMemoryTenantRepoNode -- Implementa --> TenantRepoPort
+    MssqlTenantRepoNode --> TenantDataMapperNode
+    MssqlTenantRepoNode --> MssqlModels
+    TenantDataMapperNode --> TenantAggregate
+    TenantDataMapperNode --> MssqlModels
+    MssqlUOW --> MssqlTenantRepoNode
+    InMemoryUOW --> InMemoryTenantRepoNode
 ```

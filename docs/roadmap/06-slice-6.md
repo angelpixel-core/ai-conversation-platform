@@ -100,20 +100,20 @@ Evolucionar la plataforma hacia una solución SaaS Enterprise multi-inquilino co
 
 *Aislamiento transaccional, índices compuestos y concurrencia segura en SQL Server.*
 
-- [ ] **Modelos ORM Físicos en MSSQL (`src/infrastructure/persistence/mssql/models.py`)**
+- [x] **Modelos ORM Físicos en MSSQL (`src/infrastructure/persistence/mssql/models.py`)**
   - Incorporar `TenantModel` (tabla `tenants`: `id`, `name`, `status`, `balance_usd`, `currency`, `created_at`, `updated_at`).
   - Incorporar `TenantPolicyModel` (tabla `tenant_policies`: `tenant_id`, `tier`, `max_tokens_per_request`, `monthly_budget_usd`, `allowed_models_json`).
   - Actualizar `ConversationModel`, `AuditLogModel` y `StreamBufferChunkModel` incorporando columna indexada `tenant_id: str = Field(index=True, max_length=64, nullable=False)` e índices compuestos `(tenant_id, id)`.
-- [ ] **Mapeador de Datos Relacional (`TenantMapper`)**
+- [x] **Mapeador de Datos Relacional (`TenantMapper`)**
   - Archivo: `src/infrastructure/persistence/mssql/tenant_mapper.py` (Mapeo bidireccional entre la entidad `Tenant` y los modelos SQLModel).
-- [ ] **Adaptadores de Repositorio MSSQL e In-Memory**
+- [x] **Adaptadores de Repositorio MSSQL e In-Memory**
   - Archivo: `src/infrastructure/persistence/mssql/tenant_repository.py` (Implementa `MssqlTenantRepository` utilizando `SELECT ... WITH (ROWLOCK, UPDLOCK)` para reservas atómicas).
   - Archivo: `src/infrastructure/persistence/in_memory/tenant_repository.py` (`InMemoryTenantRepositoryAdapter` para tests unitarios ultrarrápidos).
-- [ ] **Actualización de `MssqlUnitOfWork` e `InMemoryUnitOfWork`**
+- [x] **Actualización de `MssqlUnitOfWork` e `InMemoryUnitOfWork`**
   - Integrar propiedad `tenants` en ambos adaptadores transaccionales.
-- [ ] **Migración de Esquema Alembic para MSSQL**
-  - Archivo: `src/infrastructure/persistence/mssql/migrations/versions/0003_multi_tenant_and_budgets.py` (con `down_revision = "0002_enterprise_auditing_and_idempotency"`).
-- [ ] **Tests Unitarios y de Integración MSSQL**
+- [x] **Migración de Esquema Alembic para MSSQL**
+  - Archivo: `src/infrastructure/persistence/mssql/migrations/versions/0003_multi_tenant_and_budgets.py` (con `down_revision = "0002_enterprise_auditing"`).
+- [x] **Tests Unitarios y de Integración MSSQL**
   - Archivos:
     - `tests/unit/infrastructure/mssql/test_tenant_model.py`
     - `tests/unit/infrastructure/mssql/test_tenant_mapper.py`

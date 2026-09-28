@@ -2,13 +2,12 @@
 
 from decimal import Decimal
 
-from src.infrastructure.persistence.mssql.tenant_mapper import TenantDataMapper
-
 from src.domain.tenants.entities.tenant import Tenant, TenantStatus
 from src.domain.tenants.entities.tenant_policy import TenantPolicy, TenantTier
 from src.domain.tenants.value_objects.monetary_budget import MonetaryBudget
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.infrastructure.persistence.mssql.models import TenantModel, TenantPolicyModel
+from src.infrastructure.persistence.mssql.tenant_mapper import TenantDataMapper
 
 
 def test_mapper_to_model_and_back_roundtrip() -> None:

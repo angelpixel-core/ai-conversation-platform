@@ -4,13 +4,14 @@ import threading
 from decimal import Decimal
 
 from sqlalchemy.engine import Engine
+from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine
-from src.infrastructure.persistence.mssql.tenant_repository import MssqlTenantRepository
 
 from src.domain.tenants.entities.tenant import Tenant
 from src.domain.tenants.value_objects.monetary_budget import MonetaryBudget
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.infrastructure.persistence.mssql.connection import create_session_factory
+from src.infrastructure.persistence.mssql.tenant_repository import MssqlTenantRepository
 
 
 def test_concurrent_reservations_prevent_overdraft_sqlite() -> None:
@@ -66,7 +67,11 @@ def test_concurrent_reservations_prevent_overdraft_sqlite() -> None:
 
 def test_concurrent_threads_reservation_simulation() -> None:
     """Validate multi-threaded race simulation ensuring only valid reservations commit."""
-    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
     SQLModel.metadata.create_all(engine)
 
     with Session(engine) as session:

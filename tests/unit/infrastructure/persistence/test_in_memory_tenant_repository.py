@@ -2,14 +2,13 @@
 
 from decimal import Decimal
 
-from src.infrastructure.persistence.in_memory.tenant_repository import (
-    InMemoryTenantRepositoryAdapter,
-)
-
 from src.domain.tenants.entities.tenant import Tenant
 from src.domain.tenants.ports.tenant_repository_port import TenantRepositoryPort
 from src.domain.tenants.value_objects.monetary_budget import MonetaryBudget
 from src.domain.tenants.value_objects.tenant_id import TenantId
+from src.infrastructure.persistence.in_memory.tenant_repository import (
+    InMemoryTenantRepositoryAdapter,
+)
 
 
 def test_in_memory_tenant_repository_satisfies_port() -> None:

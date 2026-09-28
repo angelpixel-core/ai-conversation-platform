@@ -46,6 +46,8 @@ def clean_db(mssql_engine: Engine) -> Generator[None, None, None]:
             session.execute(text("DELETE FROM stream_buffer_chunks"))
             session.execute(text("DELETE FROM audit_logs"))
             session.execute(text("DELETE FROM idempotency_keys"))
+            session.execute(text("DELETE FROM tenant_policies"))
+            session.execute(text("DELETE FROM tenants"))
             session.commit()
 
     _truncate_tables()
