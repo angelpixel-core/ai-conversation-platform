@@ -1,9 +1,6 @@
 """Unit tests for AnyioToolExecutionWorker."""
 
 import pytest
-from src.infrastructure.messaging.rabbitmq.anyio_tool_execution_worker import (
-    AnyioToolExecutionWorker,
-)
 
 from src.application.shared.ports.event_publisher import EventPublisher
 from src.domain.shared.events.event_envelope import EventEnvelope
@@ -16,6 +13,9 @@ from src.domain.tools.ports.tool_registry_port import ToolRegistryPort
 from src.domain.tools.value_objects.tool_call import ToolCall
 from src.domain.tools.value_objects.tool_definition import ToolDefinition
 from src.domain.tools.value_objects.tool_result import ToolResult
+from src.infrastructure.messaging.rabbitmq.anyio_tool_execution_worker import (
+    AnyioToolExecutionWorker,
+)
 
 
 class FakeRunner(SandboxedToolRunnerPort):
@@ -41,6 +41,7 @@ class FakeRegistry(ToolRegistryPort):
                 parameters_schema={},
             )
         }
+        self.allowed: dict[str, set[str]] = {"corp-acme": {"get_weather"}}
 
     def get_tool(self, name: str) -> ToolDefinition | None:
         return self.tools.get(name)
@@ -49,7 +50,7 @@ class FakeRegistry(ToolRegistryPort):
         return list(self.tools.values())
 
     def is_tool_allowed(self, tenant_id: TenantId, tool_name: str) -> bool:
-        return tool_name in self.tools
+        return tool_name in self.allowed.get(str(tenant_id), set())
 
 
 class FakePublisher(EventPublisher):
@@ -71,9 +72,8 @@ async def test_worker_processes_single_envelope() -> None:
         event_publisher=publisher,
     )
 
-    envelope = EventEnvelope.wrap(
+    envelope = EventEnvelope.create(
         event_type="tools.execute",
-        source="application.tools",
         payload={
             "tenant_id": "corp-acme",
             "conversation_id": "conv-1",
@@ -111,9 +111,8 @@ async def test_worker_processes_batch_concurrently() -> None:
     )
 
     envelopes = [
-        EventEnvelope.wrap(
+        EventEnvelope.create(
             event_type="tools.execute",
-            source="application.tools",
             payload={
                 "tenant_id": "corp-acme",
                 "conversation_id": "conv-1",
@@ -136,6 +135,12 @@ async def test_worker_processes_batch_concurrently() -> None:
 async def test_worker_handles_unauthorized_tool() -> None:
     runner = FakeRunner()
     registry = FakeRegistry()
+    registry.tools["unauthorized_tool"] = ToolDefinition(
+        name="unauthorized_tool",
+        description="unauthorized",
+        parameters_schema={},
+    )
+    # is_tool_allowed returns False for corp-acme
     worker = AnyioToolExecutionWorker(runner=runner, tool_registry=registry)
 
     envelope = {
