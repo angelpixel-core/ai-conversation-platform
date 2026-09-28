@@ -1,5 +1,4 @@
-"""HTTP routers module."""
-
+from src.interfaces.http.routers.approvals_router import create_approvals_router
 from src.interfaces.http.routers.knowledge_router import create_knowledge_router
 from src.interfaces.http.routers.tenant_admin_router import (
     TenantBudgetResponse,
@@ -10,6 +9,7 @@ from src.interfaces.http.routers.tenant_admin_router import (
 __all__ = [
     "TenantBudgetResponse",
     "TenantPolicyResponse",
+    "create_approvals_router",
     "create_knowledge_router",
     "create_tenant_admin_router",
 ]

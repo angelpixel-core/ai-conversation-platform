@@ -37,12 +37,14 @@ Production-grade Python reference platform for AI-powered conversational service
   - `GET /conversations/{id}/stream`: Real-time token-by-token streaming using Server-Sent Events (`text/event-stream`).
 
 ### Slice 3: Persistent Storage with Microsoft SQL Server & SQLModel
+
 - **Enterprise Relational Persistence**: Microsoft SQL Server 2022 engine integration via `SQLModel` / `SQLAlchemy` with transactional `pymssql` driver.
 - **Relational Models & Schemas**: Dedicated relational mappings for `conversations`, `messages`, and `outbox_messages` with cascading foreign keys and optimized indexes.
 - **ACID Unit of Work & Repository**: `MssqlUnitOfWork`, `MssqlConversationRepository`, and `MssqlOutboxRepository` guaranteeing aggregate state and domain events commit atomically.
 - **Database Migrations**: Alembic migration suite configured with single-command `make db/upgrade` and `make db/downgrade`.
 
 ### Slice 4: Decoupled Event Broker Worker (RabbitMQ & Autonomous Worker)
+
 - **AMQP 0-9-1 Messaging Broker**: `RabbitMQConnectionManager`, `RabbitMQTopologyConfig`, `RabbitMQPublisherAdapter`, and `RabbitMQConsumerAdapter` with resilient reconnect handling via `aio-pika`.
 - **Transactional Outbox Relay**: `OutboxRelayService` extracting pending events from SQL Server with non-blocking row locks (`WITH (UPDLOCK, READPAST)`) and publishing to RabbitMQ (`conversation.events` topic exchange).
 - **Autonomous Background Worker**: Standalone background daemon (`src/worker.py` and `WorkerContainer`) consuming from `conversation.llm_processing.queue`, invoking LLM inference, and appending assistant responses.
@@ -51,12 +53,14 @@ Production-grade Python reference platform for AI-powered conversational service
 - **Multi-Container Orchestration**: Full `docker-compose.yml` configuration (API, Worker, SQL Server 2022, RabbitMQ) and dedicated `Makefile` developer targets.
 
 ### Slice 5: Enterprise Auditing, Distributed Idempotency & Resilient Stream Recovery
+
 - **Distributed Idempotency (Deduplication)**: `IdempotencyKey` Value Object, `IdempotencyRepositoryPort`, and `IdempotentCommandExecutor` ensuring exactly-once processing on mutating endpoints (`POST /conversations`, `POST /conversations/{id}/messages`) with automated conflict detection (`HTTP 409 Conflict`).
 - **Immutable Enterprise Auditing**: `AuditLogRecord` domain entity and `AuditRepositoryPort` persisting structured audit trails and token consumption metrics in MSSQL.
 - **Resilient SSE Stream Recovery**: `StreamChunk` Value Object, `StreamBufferRepositoryPort`, and `StreamRecoveryService` supporting network drop reconnections via `Last-Event-ID` without re-triggering LLM inference.
 - **Structured Concurrency with AnyIO**: Native `anyio.create_task_group()` and `contextvars` management ensuring clean context propagation and non-leaking asynchronous workflows.
 
 ### Slice 6: Multi-Tenant Policy Engine, Dynamic Model Routing & Cost Budgets
+
 - **Strict Multi-Tenant Isolation**: Scoped logical data segregation across database tables, repositories, and messaging queues using `TenantId` slugs and `TenantContext`.
 - **Atomic Pessimistic Budgeting (MSSQL)**: Two-phase quota governance (`ReserveQuotaCommand` and `SettleQuotaCommand`) acquiring `WITH (ROWLOCK, UPDLOCK)` row-level locks on SQL Server to eliminate double-spending race conditions.
 - **Quota Rejection (`HTTP 402 Payment Required`)**: Automated rejection with financial details when a tenant's available balance is insufficient.
@@ -64,11 +68,21 @@ Production-grade Python reference platform for AI-powered conversational service
 - **Tenant Administration & Governance**: Dedicated management router (`/admin/tenants/{id}/budget`, `/admin/tenants/{id}/policy`, `/admin/tenants/{id}/reserve`) and `TenantContextMiddleware` enforcing tenant header checks on protected routes.
 
 ### Slice 7: Semantic Vector Search, Hybrid RAG & Knowledge Grounding
+
 - **Normalized Vector Embeddings**: `EmbeddingVector` Value Object enforcing L2-normalization, cosine similarity, and dimensional consistency validation for high-dimensional vector representations.
 - **Portable Hybrid Relational Storage (MSSQL 2022 & SQLite)**: `DocumentModel` and `DocumentChunkModel` with serialized vector arrays, providing fast cosine similarity combined with token lexical overlap without requiring proprietary vector database extensions.
 - **Asynchronous Ingestion Pipeline with AnyIO**: `AnyioDocumentIndexerWorker` consuming document upload events from RabbitMQ (`ai_platform.knowledge_events` topic exchange / `knowledge.indexing.queue`), chunking text, and generating batch embeddings concurrently using `anyio.create_task_group()` and `anyio.Semaphore`.
 - **Knowledge Ingestion REST API**: `POST /tenants/{tenant_id}/documents` (`HTTP 202 Accepted`) and `GET /tenants/{tenant_id}/documents/{document_id}/status` (`HTTP 200 OK`) with strict multi-tenant isolation.
 - **Streaming Citations & Conversational Grounding**: Server-Sent Events (SSE) emitting structured `event: citation` payloads containing document metadata, page numbers, snippets, and similarity scores; automatic context retrieval and prompt augmentation in `LlmMessageProcessingWorker`.
+
+### Slice 8: Secure Tool Calling, Sandboxed Execution & Human-in-the-Loop (HITL)
+
+- **Tool Definition & Catalog Gating**: `ToolDefinition`, `ToolCall`, and `ToolResult` Value Objects standardizing parameters schemas, deterministic properties, and strict authorization per tenant via `ToolRegistryPort`.
+- **Human-in-the-Loop (HITL) Approval Lifecycle**: `ToolApprovalRequest` Aggregate managing state transitions (`PENDING` ➔ `APPROVED` / `REJECTED` / `EXPIRED`), recording operator identity and audit justification, and preventing unauthorized execution of high-risk actions.
+- **Pessimistic Concurrency in SQL Server**: `MssqlToolApprovalRepository` using `WITH (ROWLOCK, UPDLOCK)` row locks to prevent dual-operator race conditions, alongside immutable `ToolExecutionAuditModel` logs.
+- **Isolated Sandboxed Execution with AnyIO**: `AnyioSandboxedToolRunner` enforcing strict timeouts via `anyio.fail_after()` and defensive error handling without worker termination or memory leaks.
+- **Decoupled RabbitMQ Tool Pipeline**: `ToolsTopologyConfig` (`ai_platform.tools` exchange and DLQ) and `AnyioToolExecutionWorker` processing authorized tool executions in parallel using `anyio.create_task_group()` and `anyio.Semaphore`.
+- **HITL Management REST API & Streaming Notifications**: Endpoints `GET /tenants/{tenant_id}/approvals/pending` and `POST /tenants/{tenant_id}/approvals/{approval_id}/decision`; real-time streaming notifications over SSE (`event: tool_approval_required` and `event: tool_call_started`).
 
 ---
 
@@ -127,6 +141,20 @@ The system strictly follows the Dependency Rule of Clean Architecture:
 | `GET` | `/admin/tenants/{id}/budget` | Inspect tenant balance, reserved funds, and available budget | *(None)* | `200 OK` / `404 Not Found` |
 | `PATCH` | `/admin/tenants/{id}/policy` | Update governance policy (tier, max tokens, allowed models) | *(None)* | `200 OK` / `404 Not Found` |
 | `POST` | `/admin/tenants/{id}/reserve` | Transactionally reserve inference budget | `X-Tenant-ID` | `200 OK` / `402 Payment Required` / `404` |
+
+### Knowledge & RAG Ingestion Endpoints
+
+| Method | Path | Description | Required Headers | Status Code |
+| :--- | :--- | :--- | :--- | :--- |
+| `POST` | `/tenants/{tenant_id}/documents` | Ingest and chunk document for RAG vector embedding | *(None)* | `202 Accepted` |
+| `GET` | `/tenants/{tenant_id}/documents/{document_id}/status` | Retrieve document indexing lifecycle status and chunk count | *(None)* | `200 OK` / `404 Not Found` |
+
+### Human-in-the-Loop (HITL) & Tool Execution Endpoints
+
+| Method | Path | Description | Required Headers | Status Code |
+| :--- | :--- | :--- | :--- | :--- |
+| `GET` | `/tenants/{tenant_id}/approvals/pending` | List all tool executions pending human operator review | *(None)* | `200 OK` |
+| `POST` | `/tenants/{tenant_id}/approvals/{approval_id}/decision` | Approve or reject a pending tool execution | *(None)* | `200 OK` / `400` / `404` |
 
 ### Key Request Headers
 
@@ -361,12 +389,39 @@ curl -N -H "X-Tenant-ID: corp-acme" \
 
 ---
 
+### Step 8: Secure Tool Calling & Human-in-the-Loop Approval (Slice 8)
+
+Demonstrate sandboxed tool execution, human review gating, and streaming tool events:
+
+```bash
+# 8.1 List pending tool approvals awaiting supervisor sign-off
+curl -s http://localhost:8000/tenants/corp-acme/approvals/pending | jq
+
+# 8.2 Approve a pending tool execution (or pass "decision": "reject" to abort)
+curl -s -X POST http://localhost:8000/tenants/corp-acme/approvals/{approval_id}/decision \
+  -H "Content-Type: application/json" \
+  -d '{
+    "decision": "approve",
+    "resolved_by": "sec-officer@corp.com",
+    "reason": "Verified operational credentials"
+  }' | jq
+
+# 8.3 Stream conversation to observe real-time tool lifecycle events
+curl -N -H "X-Tenant-ID: corp-acme" \
+  "http://localhost:8000/conversations/${CONV_ID}/stream"
+# Output includes:
+# event: tool_approval_required
+# data: {"approval_id": "...", "tool_name": "...", "arguments": {...}}
+```
+
+---
+
 ## 🛠️ Developer Tooling & Verification
 
 A comprehensive `Makefile` provides one-command access to all quality barriers:
 
 ```bash
-make test          # Run all 408 unit & integration tests
+make test          # Run all 474 unit & integration tests
 make coverage      # Generate detailed test coverage report (>= 90%)
 make lint          # Run static code analysis with Ruff
 make format-check  # Verify code formatting conformance with Ruff
@@ -390,12 +445,17 @@ make check-all     # Run full quality barrier (format + lint + types + security 
 
 ## 🗺️ Project Roadmap
 
-- [x] **Slice 1:** Create Conversation, DDD Domain Model & Hexagonal Architecture Base
-- [x] **Slice 2:** User Messaging, Transactional Outbox Pattern & SSE Token Streaming
-- [x] **Slice 3:** Persistent Storage with Microsoft SQL Server & SQLModel (Transactional Outbox DB)
-- [x] **Slice 4:** Decoupled Event Broker Worker (RabbitMQ Pub/Sub & Autonomous Background Worker)
-- [x] **Slice 5:** Enterprise Auditing, Distributed Idempotency & Resilient Stream Recovery
-- [x] **Slice 6:** Multi-Tenant Policy Engine, Dynamic Model Routing & Cost Budgets
-- [x] **Slice 7:** Semantic Vector Search, Hybrid RAG & Knowledge Grounding
-- [ ] **Slice 8:** Autonomous Multi-Agent Tool Execution & Production Deployment
-
+- [x] [**Slice 1:** Create Conversation, DDD Domain Model & Hexagonal Architecture Base](docs/roadmap/01-create-conversation.md)
+- [x] [**Slice 2:** User Messaging, Transactional Outbox Pattern & SSE Token Streaming](docs/roadmap/02-send-message-and-streaming.md)
+- [x] [**Slice 3:** Persistent Storage with Microsoft SQL Server & SQLModel (Transactional Outbox DB)](docs/roadmap/03-mssql-persistent-storage.md)
+- [x] [**Slice 4:** Decoupled Event Broker Worker (RabbitMQ Pub/Sub & Autonomous Background Worker)](docs/roadmap/04-decoupled-event-broker-worker.md)
+  - 📄 Architecture Decision: [ADR 0003: Decoupled Worker & RabbitMQ Broker](.agent/architecture/decisions/0003-decoupled-worker-and-rabbitmq.md)
+- [x] [**Slice 5:** Enterprise Auditing, Distributed Idempotency & Resilient Stream Recovery](docs/roadmap/05-auditing-idempotency-and-stream-recovery.md)
+  - 📄 Architecture Decision: [ADR 0004: Distributed Idempotency & Resilient Stream Recovery](.agent/architecture/decisions/0004-distributed-idempotency-and-stream-recovery.md)
+- [x] [**Slice 6:** Multi-Tenant Policy Engine, Dynamic Model Routing & Cost Budgets](docs/roadmap/06-multi-tenant-policy-engine-and-budgets.md)
+  - 📄 Architecture Decision: [ADR 0005: Multi-Tenancy, Dynamic Model Routing & Budget Controls](.agent/architecture/decisions/0005-multi-tenancy-dynamic-routing-and-budget-controls.md)
+- [x] [**Slice 7:** Semantic Vector Search, Hybrid RAG & Knowledge Grounding](docs/roadmap/07-semantic-vector-search-and-hybrid-rag.md)
+  - 📄 Architecture Decision: [ADR 0006: Semantic Vector Search, Hybrid RAG & Knowledge Grounding](.agent/architecture/decisions/0006-hybrid-rag-and-mssql-vector-search.md)
+- [x] [**Slice 8:** Secure Tool Calling, Sandboxed Execution & Human-in-the-Loop (HITL)](docs/roadmap/08-secure-tool-calling-and-hitl.md)
+  - 📄 Architecture Decision: [ADR 0007: Secure Tool Calling, Sandboxed Execution & Human-in-the-Loop](.agent/architecture/decisions/0007-secure-tool-calling-and-hitl.md)
+- [ ] **Slice 9:** Autonomous Multi-Agent Orchestration, Observability & Production Deployment

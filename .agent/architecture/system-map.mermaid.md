@@ -17,6 +17,9 @@ graph TD
         KnowledgeRouterNode["KnowledgeRouter (/tenants/{tenant_id}/documents)"]
         KnowledgeSchemasNode["KnowledgeSchemas (DTOs)"]
         CitationsSSENode["Streaming Citations (SSE: citation)"]
+        ApprovalsRouterNode["ApprovalsRouter (/tenants/{tenant_id}/approvals)"]
+        ToolsSchemasNode["ToolsSchemas (DTOs)"]
+        ToolSSENode["Streaming Tool Events (SSE: tool_approval_required, tool_call_started)"]
     end
 
     subgraph Application ["Application Layer (CQRS & Ports)"]
@@ -52,6 +55,13 @@ graph TD
         IndexChunksCmd["IndexDocumentChunksCommand"]
         IndexChunksHandler["IndexDocumentChunksHandler"]
         HybridRetrieverServiceNode["HybridRetrieverService"]
+        ToolPolicyEvaluatorServiceNode["ToolPolicyEvaluatorService"]
+        ApproveToolExecutionCmd["ApproveToolExecutionCommand"]
+        ApproveToolExecutionHandlerNode["ApproveToolExecutionHandler"]
+        RejectToolExecutionCmd["RejectToolExecutionCommand"]
+        RejectToolExecutionHandlerNode["RejectToolExecutionHandler"]
+        ExecuteSandboxedToolCmd["ExecuteSandboxedToolCommand"]
+        ExecuteSandboxedToolHandlerNode["ExecuteSandboxedToolHandler"]
     end
 
     subgraph Domain ["Domain Layer (Core Business)"]
@@ -91,6 +101,20 @@ graph TD
         KnowledgeRepoPortNode["KnowledgeRepositoryPort (Port)"]
         EmbeddingClientPortNode["EmbeddingClientPort (Port)"]
         DocumentNotFoundErr["DocumentNotFoundError"]
+        ToolDefinitionVO["ToolDefinition (ValueObject)"]
+        ToolCallVO["ToolCall (ValueObject)"]
+        ToolResultVO["ToolResult (ValueObject)"]
+        ToolApprovalRequestAggregate["ToolApprovalRequest (AggregateRoot)"]
+        ToolCallRequestedEvent["ToolCallRequestedDomainEvent"]
+        ToolApprovalRequiredEvent["ToolApprovalRequiredDomainEvent"]
+        ToolExecutionCompletedEvent["ToolExecutionCompletedDomainEvent"]
+        ToolApprovalResolvedEvent["ToolApprovalResolvedDomainEvent"]
+        ToolRegistryPortNode["ToolRegistryPort (Port)"]
+        ToolApprovalRepoPortNode["ToolApprovalRepositoryPort (Port)"]
+        SandboxedToolRunnerPortNode["SandboxedToolRunnerPort (Port)"]
+        ToolNotFoundErr["ToolNotFoundError"]
+        ToolExecutionErr["ToolExecutionError"]
+        InvalidApprovalStateErr["InvalidApprovalStateError"]
     end
 
     subgraph Infrastructure ["Infrastructure (Driven Adapters)"]
@@ -129,6 +153,12 @@ graph TD
         HttpxEmbeddingClientNode["HttpxEmbeddingClientAdapter"]
         KnowledgeTopologyNode["KnowledgeTopologyConfig"]
         AnyioDocumentIndexerWorkerNode["AnyioDocumentIndexerWorker"]
+        ToolApprovalDataMapperNode["ToolApprovalMapper"]
+        MssqlToolApprovalRepoNode["MssqlToolApprovalRepository"]
+        InMemoryToolApprovalRepoNode["InMemoryToolApprovalRepositoryAdapter"]
+        AnyioSandboxedToolRunnerNode["AnyioSandboxedToolRunner"]
+        ToolsTopologyNode["ToolsTopologyConfig"]
+        AnyioToolExecutionWorkerNode["AnyioToolExecutionWorker"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 
@@ -181,6 +211,17 @@ graph TD
     StreamRecoveryServiceNode --> StreamChunkVO
     ResumeStreamHandlerNode --> ResumeStreamQueryNode
     ResumeStreamHandlerNode --> StreamRecoveryServiceNode
+    ApproveToolExecutionHandlerNode --> ApproveToolExecutionCmd
+    ApproveToolExecutionHandlerNode --> ToolApprovalRequestAggregate
+    ApproveToolExecutionHandlerNode --> ToolApprovalRepoPortNode
+    RejectToolExecutionHandlerNode --> RejectToolExecutionCmd
+    RejectToolExecutionHandlerNode --> ToolApprovalRequestAggregate
+    RejectToolExecutionHandlerNode --> ToolApprovalRepoPortNode
+    ExecuteSandboxedToolHandlerNode --> ExecuteSandboxedToolCmd
+    ExecuteSandboxedToolHandlerNode --> SandboxedToolRunnerPortNode
+    ExecuteSandboxedToolHandlerNode --> ToolRegistryPortNode
+    ToolPolicyEvaluatorServiceNode --> ToolDefinitionVO
+    ToolPolicyEvaluatorServiceNode --> TenantAggregate
 
     %% Domain Relationships
     ConvAggregate --> MessageVO
@@ -192,6 +233,12 @@ graph TD
     DocumentAggregate -.-> DocumentUploadedEvent
     DocumentAggregate -.-> DocumentIndexedEvent
     DocumentChunkEntity --> EmbeddingVectorVO
+    ToolApprovalRequestAggregate --> ToolCallVO
+    ToolApprovalRequestAggregate -.-> ToolApprovalRequiredEvent
+    ToolApprovalRequestAggregate -.-> ToolApprovalResolvedEvent
+    ToolNotFoundErr -- Deriva de --> DomainError
+    ToolExecutionErr -- Deriva de --> DomainError
+    InvalidApprovalStateErr -- Deriva de --> DomainError
 
     %% Application to Domain Ports
     UOWPort --> ConvRepoPort
@@ -279,11 +326,17 @@ graph TD
     AppContainerNode --> SettleQuotaHandler
     AppContainerNode --> HybridRetrieverServiceNode
     AppContainerNode --> EmbeddingClientPortNode
+    AppContainerNode --> ToolApprovalRepoPortNode
+    AppContainerNode --> SandboxedToolRunnerPortNode
+    AppContainerNode --> ToolPolicyEvaluatorServiceNode
     WorkerContainerNode --> ModelCatalogPortNode
     WorkerContainerNode --> ModelRouterServiceNode
     WorkerContainerNode --> SettleQuotaHandler
     WorkerContainerNode --> HybridRetrieverServiceNode
     WorkerContainerNode --> EmbeddingClientPortNode
+    WorkerContainerNode --> ToolApprovalRepoPortNode
+    WorkerContainerNode --> SandboxedToolRunnerPortNode
+    WorkerContainerNode --> ToolPolicyEvaluatorServiceNode
     InMemoryModelCatalogNode -- Implementa --> ModelCatalogPortNode
     UploadDocHandler --> UploadDocCmd
     UploadDocHandler --> UOWPort
@@ -321,4 +374,26 @@ graph TD
     RouterFastAPI --> CitationsSSENode
     CitationsSSENode --> HybridRetrieverServiceNode
     WorkerHandlerNode --> HybridRetrieverServiceNode
+    MssqlToolApprovalRepoNode -- Implementa --> ToolApprovalRepoPortNode
+    InMemoryToolApprovalRepoNode -- Implementa --> ToolApprovalRepoPortNode
+    AnyioSandboxedToolRunnerNode -- Implementa --> SandboxedToolRunnerPortNode
+    MssqlToolApprovalRepoNode --> ToolApprovalDataMapperNode
+    MssqlToolApprovalRepoNode --> MssqlModels
+    ToolApprovalDataMapperNode --> ToolApprovalRequestAggregate
+    ToolApprovalDataMapperNode --> MssqlModels
+    MssqlUOW --> MssqlToolApprovalRepoNode
+    InMemoryUOW --> InMemoryToolApprovalRepoNode
+    UOWPort --> ToolApprovalRepoPortNode
+    ToolsTopologyNode -- Extiende --> RabbitMQTopology
+    AnyioToolExecutionWorkerNode --> SandboxedToolRunnerPortNode
+    AnyioToolExecutionWorkerNode --> ToolRegistryPortNode
+    AnyioToolExecutionWorkerNode --> EventPubPort
+    AnyioToolExecutionWorkerNode --> ToolsTopologyNode
+    RouterFastAPI --> ApprovalsRouterNode
+    ApprovalsRouterNode --> ToolsSchemasNode
+    ApprovalsRouterNode --> UOWPort
+    ApprovalsRouterNode --> ApproveToolExecutionHandlerNode
+    ApprovalsRouterNode --> RejectToolExecutionHandlerNode
+    RouterFastAPI --> ToolSSENode
+    ToolSSENode --> UOWPort
 ```

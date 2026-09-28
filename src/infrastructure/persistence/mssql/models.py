@@ -211,3 +211,54 @@ class DocumentChunkModel(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
 
     document: DocumentModel | None = Relationship(back_populates="chunks")
+
+
+class ToolApprovalModel(SQLModel, table=True):
+    """Physical relational model for the 'tool_approvals' table."""
+
+    __tablename__ = "tool_approvals"  # pyright: ignore[reportAssignmentType]
+    __table_args__ = (
+        Index("ix_tool_approvals_tenant_id", "tenant_id"),
+        Index("ix_tool_approvals_tenant_status", "tenant_id", "status"),
+    )
+
+    id: str = Field(primary_key=True, max_length=64, nullable=False)
+    tenant_id: str = Field(
+        foreign_key="tenants.id", max_length=64, nullable=False, ondelete="CASCADE"
+    )
+    conversation_id: str = Field(
+        foreign_key="conversations.id", max_length=64, nullable=False, ondelete="CASCADE"
+    )
+    call_id: str = Field(max_length=64, nullable=False)
+    tool_name: str = Field(max_length=128, nullable=False)
+    arguments_json: str = Field(nullable=False)
+    status: str = Field(default="PENDING", max_length=20, nullable=False)
+    operator_id: str | None = Field(default=None, max_length=64, nullable=True)
+    justification: str | None = Field(default=None, nullable=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
+    resolved_at: datetime | None = Field(default=None, nullable=True)
+
+
+class ToolExecutionAuditModel(SQLModel, table=True):
+    """Physical relational model for the 'tool_execution_audits' table."""
+
+    __tablename__ = "tool_execution_audits"  # pyright: ignore[reportAssignmentType]
+    __table_args__ = (
+        Index("ix_tool_execution_audits_tenant_id", "tenant_id"),
+        Index("ix_tool_execution_audits_call_id", "call_id"),
+    )
+
+    id: str = Field(primary_key=True, max_length=64, nullable=False)
+    tenant_id: str = Field(
+        foreign_key="tenants.id", max_length=64, nullable=False, ondelete="CASCADE"
+    )
+    conversation_id: str = Field(
+        foreign_key="conversations.id", max_length=64, nullable=False, ondelete="CASCADE"
+    )
+    call_id: str = Field(max_length=64, nullable=False)
+    tool_name: str = Field(max_length=128, nullable=False)
+    arguments_json: str = Field(nullable=False)
+    output_json: str = Field(nullable=False)
+    is_error: bool = Field(default=False, nullable=False)
+    execution_time_ms: float = Field(default=0.0, nullable=False)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)

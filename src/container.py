@@ -40,6 +40,9 @@ from src.application.tenants.commands.reserve_quota_command import (
 from src.application.tenants.commands.settle_quota_command import (
     SettleQuotaCommandHandler,
 )
+from src.application.tools.services.tool_policy_evaluator_service import (
+    ToolPolicyEvaluatorService,
+)
 from src.domain.audit.ports.audit_repository_port import AuditRepositoryPort
 from src.domain.conversations.ports.conversation_repository import (
     ConversationRepository,
@@ -49,6 +52,12 @@ from src.domain.knowledge.ports.knowledge_repository_port import (
     KnowledgeRepositoryPort,
 )
 from src.domain.routing.ports.model_catalog_port import ModelCatalogPort
+from src.domain.tools.ports.sandboxed_tool_runner_port import (
+    SandboxedToolRunnerPort,
+)
+from src.domain.tools.ports.tool_approval_repository_port import (
+    ToolApprovalRepositoryPort,
+)
 from src.infrastructure.embeddings.fake_embedding_client import (
     FakeEmbeddingClientAdapter,
 )
@@ -57,6 +66,7 @@ from src.infrastructure.persistence.in_memory import (
     InMemoryAuditRepositoryAdapter,
     InMemoryIdempotencyRepositoryAdapter,
     InMemoryStreamBufferRepositoryAdapter,
+    InMemoryToolApprovalRepositoryAdapter,
     InMemoryUnitOfWork,
 )
 from src.infrastructure.persistence.mssql import (
@@ -65,6 +75,7 @@ from src.infrastructure.persistence.mssql import (
     MssqlIdempotencyRepository,
     MssqlKnowledgeRepository,
     MssqlStreamBufferRepository,
+    MssqlToolApprovalRepository,
     MssqlUnitOfWork,
     create_mssql_engine,
     create_session_factory,
@@ -76,6 +87,9 @@ from src.infrastructure.shared.config.settings import (
     PersistenceDriver,
     Settings,
     get_settings,
+)
+from src.infrastructure.tools.anyio_sandboxed_tool_runner import (
+    AnyioSandboxedToolRunner,
 )
 from src.interfaces.http.api import build_api
 
@@ -103,6 +117,9 @@ class AppContainer:
     settle_quota_handler: SettleQuotaCommandHandler
     retriever_service: HybridRetrieverService | None = None
     embedding_client: EmbeddingClientPort | None = None
+    tool_approval_repo: ToolApprovalRepositoryPort | None = None
+    tool_runner: SandboxedToolRunnerPort | None = None
+    tool_policy_evaluator: ToolPolicyEvaluatorService | None = None
 
 
 def create_app_container(
@@ -118,6 +135,7 @@ def create_app_container(
     current_settings = settings or get_settings()
     read_repo: ConversationRepository | None = None
     read_knowledge_repo: KnowledgeRepositoryPort | None = None
+    read_tool_approval_repo: ToolApprovalRepositoryPort | None = None
 
     if unit_of_work is not None:
         uow = unit_of_work
@@ -142,6 +160,12 @@ def create_app_container(
             session_factory = getattr(uow, "_session_factory", None)
             if session_factory is not None:
                 read_knowledge_repo = MssqlKnowledgeRepository(session=session_factory())
+        try:
+            read_tool_approval_repo = uow.tool_approvals
+        except RuntimeError:
+            session_factory = getattr(uow, "_session_factory", None)
+            if session_factory is not None:
+                read_tool_approval_repo = MssqlToolApprovalRepository(session=session_factory())
     elif current_settings.PERSISTENCE_DRIVER == PersistenceDriver.MSSQL:
         engine = create_mssql_engine(current_settings.get_database_url())
         session_factory = create_session_factory(engine)
@@ -151,6 +175,7 @@ def create_app_container(
         audit_repo = MssqlAuditRepository(session=session_factory)
         stream_buffer_repo = MssqlStreamBufferRepository(session=session_factory)
         read_knowledge_repo = MssqlKnowledgeRepository(session=session_factory())
+        read_tool_approval_repo = MssqlToolApprovalRepository(session=session_factory())
     else:
         uow = InMemoryUnitOfWork()
         read_repo = uow.conversations
@@ -158,6 +183,7 @@ def create_app_container(
         audit_repo = InMemoryAuditRepositoryAdapter()
         stream_buffer_repo = InMemoryStreamBufferRepositoryAdapter()
         read_knowledge_repo = uow.knowledge
+        read_tool_approval_repo = uow.tool_approvals
 
     client = llm_client if llm_client is not None else FakeLlmClientAdapter()
 
@@ -183,6 +209,13 @@ def create_app_container(
         if read_knowledge_repo is not None
         else uow.knowledge,
     )
+    tool_approval_repo = (
+        read_tool_approval_repo
+        if read_tool_approval_repo is not None
+        else getattr(uow, "tool_approvals", None) or InMemoryToolApprovalRepositoryAdapter()
+    )
+    tool_runner = AnyioSandboxedToolRunner()
+    tool_policy_evaluator = ToolPolicyEvaluatorService()
 
     use_tenant_middleware = (
         enable_tenant_middleware
@@ -219,6 +252,9 @@ def create_app_container(
         settle_quota_handler=settle_handler,
         retriever_service=retriever_service,
         embedding_client=emb_client,
+        tool_approval_repo=tool_approval_repo,
+        tool_runner=tool_runner,
+        tool_policy_evaluator=tool_policy_evaluator,
     )
 
 
