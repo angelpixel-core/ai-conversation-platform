@@ -25,3 +25,14 @@ class Citation:
             raise ValueError("El similarity_score debe estar comprendido entre 0.0 y 1.0.")
         if not self.snippet.strip():
             raise ValueError("El snippet de la cita no puede estar vacío.")
+
+    def to_dict(self) -> dict[str, object]:
+        """Serializes citation into a JSON-compatible dictionary."""
+        return {
+            "source_document_id": self.source_document_id,
+            "document_name": self.document_name,
+            "chunk_id": self.chunk_id,
+            "page_number": self.page_number,
+            "similarity_score": round(self.similarity_score, 4),
+            "snippet": self.snippet,
+        }

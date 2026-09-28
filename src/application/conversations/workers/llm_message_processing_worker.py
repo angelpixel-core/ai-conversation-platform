@@ -9,6 +9,9 @@ from src.application.conversations.commands.append_assistant_message import (
     AppendAssistantMessageCommand,
     AppendAssistantMessageHandler,
 )
+from src.application.knowledge.services.hybrid_retriever_service import (
+    HybridRetrieverService,
+)
 from src.application.shared.ports.idempotency_repository_port import (
     IdempotencyRepositoryPort,
     IdempotencyStatus,
@@ -47,6 +50,7 @@ class LlmMessageProcessingWorker:
         fallback_llm_client: LlmClientPort | None = None,
         settle_handler: SettleQuotaCommandHandler | None = None,
         cost_per_token: Decimal = Decimal("0.0001"),
+        retriever: HybridRetrieverService | None = None,
     ) -> None:
         self._unit_of_work = unit_of_work
         self._llm_client = llm_client
@@ -59,6 +63,7 @@ class LlmMessageProcessingWorker:
         self._fallback_llm_client = fallback_llm_client
         self._settle_handler = settle_handler
         self._cost_per_token = cost_per_token
+        self._retriever = retriever
 
     def _should_skip_event(self, envelope: EventEnvelope) -> bool:
         payload: dict[str, Any] = envelope.payload
@@ -192,6 +197,26 @@ class LlmMessageProcessingWorker:
                         {"role": msg.role.value, "content": msg.content}
                         for msg in conversation.messages
                     ]
+
+                if self._retriever is not None and messages:
+                    last_user_content = messages[-1]["content"]
+                    citations = await self._retriever.retrieve_context(
+                        tenant_id=tenant_id,
+                        query=last_user_content,
+                        top_k=3,
+                        min_score=0.2,
+                    )
+                    if citations:
+                        context_str = "\n\n".join(
+                            f"[{c.document_name} - Page {c.page_number or 1}]: {c.snippet}"
+                            for c in citations
+                        )
+                        system_prompt = (
+                            "Grounded Knowledge Context:\n"
+                            f"{context_str}\n\n"
+                            "Answer using the context above when relevant."
+                        )
+                        messages.insert(0, {"role": "system", "content": system_prompt})
 
                 stream_id = str(payload.get("stream_id") or conversation_id)
                 tokens, response = await self._stream_and_buffer_tokens(stream_id, messages)
