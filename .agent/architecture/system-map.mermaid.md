@@ -4,7 +4,10 @@
 graph TD
 
     subgraph Interfaces ["Interfaces (Driver Adapters)"]
+        AppContainerNode["AppContainer (src/container.py)"]
         RouterFastAPI["FastAPI App (build_api)"]
+        IdempotencyDep["Idempotency Header Dependency"]
+        ResumableSSE["Resumable SSE Endpoint (messages_router)"]
         CLIExport["CLI export-openapi"]
         WorkerProcess["Worker Process (src/worker.py)"]
         WorkerContainerNode["WorkerContainer (src/worker_container.py)"]
@@ -26,6 +29,12 @@ graph TD
         MsgBrokerPort["MessageBrokerPort (Port)"]
         EventConsumerPortNode["EventConsumerPort (Port)"]
         WorkerHandlerNode["LlmMessageProcessingWorker"]
+        IdempotencyRepoPort["IdempotencyRepository (Port)"]
+        StreamBufferRepoPort["StreamBufferRepository (Port)"]
+        IdempotentExecutor["IdempotentCommandExecutor"]
+        StreamRecoveryServiceNode["StreamRecoveryService"]
+        ResumeStreamQueryNode["ResumeStreamQuery"]
+        ResumeStreamHandlerNode["ResumeStreamQueryHandler"]
     end
 
     subgraph Domain ["Domain Layer (Core Business)"]
@@ -38,6 +47,10 @@ graph TD
         ConvNotFoundErr["ConversationNotFoundError"]
         DomainError["DomainError"]
         EventEnvelopeVO["EventEnvelope (ValueObject)"]
+        IdempotencyKeyVO["IdempotencyKey (ValueObject)"]
+        StreamChunkVO["StreamChunk (ValueObject)"]
+        AuditLogEntity["AuditLogRecord (Entity)"]
+        AuditRepoPort["AuditRepository (Port)"]
     end
 
     subgraph Infrastructure ["Infrastructure (Driven Adapters)"]
@@ -60,14 +73,31 @@ graph TD
         RabbitMQPub["RabbitMQPublisherAdapter"]
         RabbitMQConsumer["RabbitMQConsumerAdapter"]
         OutboxRelay["OutboxRelayService"]
+        InMemoryIdempotencyRepo["InMemoryIdempotencyRepositoryAdapter"]
+        InMemoryAuditRepo["InMemoryAuditRepositoryAdapter"]
+        MssqlIdempotencyRepo["MssqlIdempotencyRepository"]
+        MssqlAuditRepo["MssqlAuditRepository"]
+        MssqlStreamBufferRepo["MssqlStreamBufferRepository"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 
     %% Interfaces to Application
     CLIExport --> RouterFastAPI
+    AppContainerNode --> RouterFastAPI
+    AppContainerNode --> UOWPort
+    AppContainerNode --> IdempotencyRepoPort
+    AppContainerNode --> AuditRepoPort
+    AppContainerNode --> StreamBufferRepoPort
+    AppContainerNode --> StreamRecoveryServiceNode
+    AppContainerNode --> IdempotentExecutor
     RouterFastAPI --> CreateConvHandler
     RouterFastAPI --> SendMessageHandler
     RouterFastAPI --> StreamConvHandler
+    RouterFastAPI --> IdempotencyDep
+    RouterFastAPI --> ResumableSSE
+    RouterFastAPI --> IdempotentExecutor
+    RouterFastAPI --> StreamRecoveryServiceNode
+    ResumableSSE --> StreamRecoveryServiceNode
     RouterFastAPI --> AppSettings
 
     %% Application orchestration
@@ -89,6 +119,11 @@ graph TD
     StreamConvHandler --> ConvRepoPort
     StreamConvHandler --> ConvNotFoundErr
     StreamConvHandler --> LLMClientPort
+    IdempotentExecutor --> IdempotencyRepoPort
+    StreamRecoveryServiceNode --> StreamBufferRepoPort
+    StreamRecoveryServiceNode --> StreamChunkVO
+    ResumeStreamHandlerNode --> ResumeStreamQueryNode
+    ResumeStreamHandlerNode --> StreamRecoveryServiceNode
 
     %% Domain Relationships
     ConvAggregate --> MessageVO
@@ -138,8 +173,25 @@ graph TD
     WorkerContainerNode --> RabbitMQConsumer
     WorkerContainerNode --> RabbitMQTopology
     WorkerContainerNode --> MssqlUOW
+    WorkerContainerNode --> MssqlStreamBufferRepo
+    WorkerContainerNode --> MssqlAuditRepo
+    WorkerContainerNode --> MssqlIdempotencyRepo
     WorkerHandlerNode --> AppendAssistantHandler
     WorkerHandlerNode --> LLMClientPort
     WorkerHandlerNode --> UOWPort
+    WorkerHandlerNode --> StreamBufferRepoPort
+    WorkerHandlerNode --> AuditRepoPort
+    WorkerHandlerNode --> IdempotencyRepoPort
     AppSettings --> RabbitMQConnManager
+    InMemoryIdempotencyRepo -- Implementa --> IdempotencyRepoPort
+    InMemoryAuditRepo -- Implementa --> AuditRepoPort
+    MssqlIdempotencyRepo -- Implementa --> IdempotencyRepoPort
+    MssqlAuditRepo -- Implementa --> AuditRepoPort
+    MssqlStreamBufferRepo -- Implementa --> StreamBufferRepoPort
+    MssqlUOW --> MssqlIdempotencyRepo
+    MssqlUOW --> MssqlAuditRepo
+    MssqlUOW --> MssqlStreamBufferRepo
+    MssqlIdempotencyRepo --> MssqlModels
+    MssqlAuditRepo --> MssqlModels
+    MssqlStreamBufferRepo --> MssqlModels
 ```

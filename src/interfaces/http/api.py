@@ -1,9 +1,11 @@
 """Primary HTTP Adapter (FastAPI) for conversation management and SSE streaming."""
 
 from collections.abc import AsyncIterator
+from datetime import datetime
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, Header, HTTPException, status
 from fastapi.responses import StreamingResponse
 
 from src.application.conversations.commands.create_conversation import (
@@ -18,8 +20,21 @@ from src.application.conversations.queries.stream_conversation import (
     StreamConversationQuery,
     StreamConversationQueryHandler,
 )
+from src.application.conversations.services.stream_recovery_service import (
+    StreamRecoveryService,
+)
+from src.application.shared.idempotency.idempotent_command_executor import (
+    IdempotencyConflictError,
+    IdempotentCommandExecutor,
+)
 from src.domain.conversations.exceptions import ConversationNotFoundError
 from src.domain.shared.domain_error import DomainError
+from src.interfaces.http.dependencies.idempotency_dependency import (
+    get_optional_idempotency_key,
+)
+from src.interfaces.http.resumable_sse_endpoint import (
+    build_resumable_sse_response,
+)
 from src.interfaces.http.schemas import (
     ConversationResponse,
     CreateConversationRequest,
@@ -42,6 +57,7 @@ def _register_health_routes(app: FastAPI) -> None:
 def _register_conversation_routes(
     app: FastAPI,
     create_handler: CreateConversationHandler | None,
+    idempotent_executor: IdempotentCommandExecutor | None = None,
 ) -> None:
     @app.post(
         "/conversations",
@@ -51,23 +67,46 @@ def _register_conversation_routes(
         summary="Create a new conversation",
         description="Creates a new conversation aggregate with the provided title.",
     )
-    def create_conversation(request: CreateConversationRequest) -> ConversationResponse:
-        if create_handler is None:
+    async def create_conversation(
+        request: CreateConversationRequest,
+        idempotency_key: Annotated[str | None, Depends(get_optional_idempotency_key)] = None,
+    ) -> ConversationResponse:
+        handler = create_handler
+        if handler is None:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="CreateConversationHandler not configured.",
             )
-        try:
-            result = create_handler.handle(CreateConversationCommand(title=request.title))
-        except ValueError as exc:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
-        return ConversationResponse(id=result.conversation_id, title=result.title)
+        async def _execute() -> ConversationResponse:
+            try:
+                res = handler.handle(CreateConversationCommand(title=request.title))
+                return ConversationResponse(id=res.conversation_id, title=res.title)
+            except ValueError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+                ) from exc
+
+        if idempotent_executor is not None and idempotency_key is not None:
+            try:
+                return await idempotent_executor.execute(
+                    key=idempotency_key,
+                    operation=_execute,
+                    response_serializer=lambda r: {"id": str(r.id), "title": r.title},
+                    response_deserializer=lambda d: ConversationResponse(
+                        id=UUID(d["id"]), title=d["title"]
+                    ),
+                )
+            except IdempotencyConflictError as exc:
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+        return await _execute()
 
 
 def _register_message_routes(
     app: FastAPI,
     send_handler: SendMessageHandler | None,
+    idempotent_executor: IdempotentCommandExecutor | None = None,
 ) -> None:
     @app.post(
         "/conversations/{conversation_id}/messages",
@@ -77,35 +116,64 @@ def _register_message_routes(
         summary="Send a message to a conversation",
         description="Appends a new user message to the specified conversation aggregate.",
     )
-    def send_message(
+    async def send_message(
         conversation_id: UUID,
         request: SendMessageRequest,
+        idempotency_key: Annotated[str | None, Depends(get_optional_idempotency_key)] = None,
     ) -> MessageResponse:
-        if send_handler is None:
+        handler = send_handler
+        if handler is None:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="SendMessageHandler not configured.",
             )
-        try:
-            result = send_handler.handle(
-                SendMessageCommand(conversation_id=conversation_id, content=request.content)
-            )
-        except ConversationNotFoundError as exc:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
-        except (ValueError, DomainError) as exc:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
-        return MessageResponse(
-            conversation_id=result.conversation_id,
-            role=result.role,
-            content=result.content,
-            created_at=result.created_at,
-        )
+        async def _execute() -> MessageResponse:
+            try:
+                res = handler.handle(
+                    SendMessageCommand(conversation_id=conversation_id, content=request.content)
+                )
+                return MessageResponse(
+                    conversation_id=res.conversation_id,
+                    role=res.role,
+                    content=res.content,
+                    created_at=res.created_at,
+                )
+            except ConversationNotFoundError as exc:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+            except (ValueError, DomainError) as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+                ) from exc
+
+        if idempotent_executor is not None and idempotency_key is not None:
+            try:
+                return await idempotent_executor.execute(
+                    key=idempotency_key,
+                    operation=_execute,
+                    response_serializer=lambda r: {
+                        "conversation_id": str(r.conversation_id),
+                        "role": r.role,
+                        "content": r.content,
+                        "created_at": r.created_at.isoformat(),
+                    },
+                    response_deserializer=lambda d: MessageResponse(
+                        conversation_id=UUID(d["conversation_id"]),
+                        role=d["role"],
+                        content=d["content"],
+                        created_at=datetime.fromisoformat(d["created_at"]),
+                    ),
+                )
+            except IdempotencyConflictError as exc:
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+        return await _execute()
 
 
 def _register_streaming_routes(
     app: FastAPI,
     stream_handler: StreamConversationQueryHandler | None,
+    stream_recovery_service: StreamRecoveryService | None = None,
 ) -> None:
     @app.get(
         "/conversations/{conversation_id}/stream",
@@ -119,8 +187,22 @@ def _register_streaming_routes(
         conversation_id: UUID,
         temperature: float = 0.7,
         max_tokens: int = 1000,
+        last_event_id: Annotated[str | None, Header(alias="Last-Event-ID")] = None,
     ) -> StreamingResponse:
+        if last_event_id is not None and stream_recovery_service is not None:
+            return await build_resumable_sse_response(
+                stream_id=str(conversation_id),
+                recovery_service=stream_recovery_service,
+                last_event_id=last_event_id,
+            )
+
         if stream_handler is None:
+            if stream_recovery_service is not None:
+                return await build_resumable_sse_response(
+                    stream_id=str(conversation_id),
+                    recovery_service=stream_recovery_service,
+                    last_event_id=last_event_id,
+                )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="StreamConversationQueryHandler not configured.",
@@ -161,6 +243,8 @@ def build_api(
     create_conversation_handler: CreateConversationHandler | None = None,
     send_message_handler: SendMessageHandler | None = None,
     stream_conversation_handler: StreamConversationQueryHandler | None = None,
+    idempotent_executor: IdempotentCommandExecutor | None = None,
+    stream_recovery_service: StreamRecoveryService | None = None,
     *,
     handler: CreateConversationHandler | None = None,
 ) -> FastAPI:
@@ -180,8 +264,8 @@ def build_api(
     )
 
     _register_health_routes(app)
-    _register_conversation_routes(app, create_conversation_handler)
-    _register_message_routes(app, send_message_handler)
-    _register_streaming_routes(app, stream_conversation_handler)
+    _register_conversation_routes(app, create_conversation_handler, idempotent_executor)
+    _register_message_routes(app, send_message_handler, idempotent_executor)
+    _register_streaming_routes(app, stream_conversation_handler, stream_recovery_service)
 
     return app
