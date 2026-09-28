@@ -24,7 +24,7 @@ class ContextInspectingLlmClient(LlmClientPort):
 
     def __init__(self, tokens: list[str]) -> None:
         self.tokens = tokens
-        self.captured_tenant_id: TenantId | None = None
+        self.captured_tenant_id: str | None = None
 
     async def stream_chat(
         self,
@@ -98,8 +98,7 @@ async def test_worker_propagates_tenant_context_during_inference(
 
     await worker.handle(envelope)
 
-    assert llm.captured_tenant_id is not None
-    assert llm.captured_tenant_id.value == "tenant-enterprise-99"
+    assert llm.captured_tenant_id == "tenant-enterprise-99"
     # Ensure context is reset after worker execution
     assert get_current_tenant_id() is None
 
@@ -131,6 +130,7 @@ async def test_worker_settles_quota_after_inference(
         payload={
             "conversation_id": str(active_conversation.id),
             "tenant_id": "tenant-billable",
+            "reserved_cost": "10.00",
             "message": {"role": "user", "content": "Need billing report"},
         },
     )

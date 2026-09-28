@@ -203,6 +203,8 @@ graph TD
     WorkerHandlerNode --> StreamBufferRepoPort
     WorkerHandlerNode --> AuditRepoPort
     WorkerHandlerNode --> IdempotencyRepoPort
+    WorkerHandlerNode --> TenantContextNode
+    WorkerHandlerNode --> SettleQuotaHandler
     AppSettings --> RabbitMQConnManager
     InMemoryIdempotencyRepo -- Implementa --> IdempotencyRepoPort
     InMemoryAuditRepo -- Implementa --> AuditRepoPort

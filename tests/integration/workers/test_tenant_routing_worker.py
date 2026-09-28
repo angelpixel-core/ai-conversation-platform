@@ -63,7 +63,7 @@ async def test_worker_processes_routed_tenant_event_envelope() -> None:
         async def stream_chat(self, messages, temperature=0.7, max_tokens=1000):
             curr = get_current_tenant_id()
             if curr:
-                observed_tenants.append(curr.value)
+                observed_tenants.append(curr)
             yield "Dashboard rendered."
 
     worker = LlmMessageProcessingWorker(unit_of_work=uow, llm_client=MockLlm())

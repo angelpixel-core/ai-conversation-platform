@@ -88,7 +88,7 @@ def upgrade() -> None:
             sa.Column(
                 "tenant_id",
                 sqlmodel.sql.sqltypes.AutoString(length=64),
-                server_default="default_tenant",
+                server_default="default-tenant",
                 nullable=False,
             )
         )
@@ -109,7 +109,7 @@ def upgrade() -> None:
             sa.Column(
                 "tenant_id",
                 sqlmodel.sql.sqltypes.AutoString(length=64),
-                server_default="default_tenant",
+                server_default="default-tenant",
                 nullable=False,
             )
         )
@@ -130,7 +130,7 @@ def upgrade() -> None:
             sa.Column(
                 "tenant_id",
                 sqlmodel.sql.sqltypes.AutoString(length=64),
-                server_default="default_tenant",
+                server_default="default-tenant",
                 nullable=False,
             )
         )

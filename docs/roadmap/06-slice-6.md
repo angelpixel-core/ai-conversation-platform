@@ -127,14 +127,14 @@ Evolucionar la plataforma hacia una solución SaaS Enterprise multi-inquilino co
 
 *Segmentación de topics, enriquecimiento de eventos y fallback resiliente en workers.*
 
-- [ ] **Enriquecimiento de Eventos y Topología de RabbitMQ**
+- [x] **Enriquecimiento de Eventos y Topología de RabbitMQ**
   - Archivo: `src/infrastructure/messaging/rabbitmq/rabbitmq_topology_config.py` (Soporte de routing keys multi-tenant: `ai_platform.conversations`, binding `tenant.*.*.conversation.*` o `conversations.{tenant_id}.*`).
-- [ ] **Worker Asíncrono Multi-Tenant con Fallback AnyIO**
+- [x] **Worker Asíncrono Multi-Tenant con Fallback AnyIO**
   - Actualizar `src/application/conversations/workers/llm_message_processing_worker.py` para:
     - Extraer `tenant_id` y activar `TenantContext`.
     - Liquidar cuota real (`SettleQuotaCommand`) tras la inferencia.
     - Ejecutar fallback de proveedor LLM bajo `anyio.create_task_group()` en caso de degradación o fallo transitorio.
-- [ ] **Tests de Integración Worker + RabbitMQ**
+- [x] **Tests de Integración Worker + RabbitMQ**
   - Archivos:
     - `tests/unit/application/test_tenant_aware_worker.py`
     - `tests/integration/workers/test_tenant_routing_worker.py`

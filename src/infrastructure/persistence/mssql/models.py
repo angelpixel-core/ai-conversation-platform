@@ -69,7 +69,7 @@ class ConversationModel(SQLModel, table=True):
     __table_args__ = (Index("ix_conversations_tenant_id_id", "tenant_id", "id"),)
 
     id: UUID = Field(default_factory=uuid4, primary_key=True, index=True, nullable=False)
-    tenant_id: str = Field(default="default_tenant", index=True, max_length=64, nullable=False)
+    tenant_id: str = Field(default="default-tenant", index=True, max_length=64, nullable=False)
     title: str = Field(max_length=200, nullable=False)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
@@ -130,7 +130,7 @@ class AuditLogModel(SQLModel, table=True):
     __table_args__ = (Index("ix_audit_logs_tenant_id_id", "tenant_id", "id"),)
 
     id: UUID = Field(default_factory=uuid4, primary_key=True, index=True, nullable=False)
-    tenant_id: str = Field(default="default_tenant", index=True, max_length=64, nullable=False)
+    tenant_id: str = Field(default="default-tenant", index=True, max_length=64, nullable=False)
     event_name: str = Field(max_length=100, index=True, nullable=False)
     actor_id: str = Field(max_length=100, index=True, nullable=False)
     resource_type: str = Field(max_length=50, index=True, nullable=False)
@@ -148,7 +148,7 @@ class StreamBufferChunkModel(SQLModel, table=True):
     __table_args__ = (Index("ix_stream_buffer_chunks_tenant_id_id", "tenant_id", "id"),)
 
     id: str = Field(primary_key=True, max_length=64, nullable=False)
-    tenant_id: str = Field(default="default_tenant", index=True, max_length=64, nullable=False)
+    tenant_id: str = Field(default="default-tenant", index=True, max_length=64, nullable=False)
     stream_id: str = Field(max_length=100, index=True, nullable=False)
     sequence_number: int = Field(index=True, nullable=False)
     content: str = Field(nullable=False)
