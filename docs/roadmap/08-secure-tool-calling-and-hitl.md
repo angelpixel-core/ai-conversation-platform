@@ -165,11 +165,11 @@ Evolucionar la plataforma de un sistema conversacional puramente reactivo a un m
 
 ### Fase 6: Ensamble, Container y Documentación de Decisiones
 
-* [ ] **Actualización de `src/container.py` y `src/worker_container.py`**
+* [x] **Actualización de `src/container.py` y `src/worker_container.py`**
   * Registro de `SandboxedToolRunnerPort`, `ToolApprovalRepositoryPort` y `ToolPolicyEvaluatorService`.
-* [ ] **Documento de Decisión Arquitectónica (ADR)**
+* [x] **Documento de Decisión Arquitectónica (ADR)**
   * Archivo: [.agent/architecture/decisions/0007-secure-tool-calling-and-hitl.md](file:///.agent/architecture/decisions/0007-secure-tool-calling-and-hitl.md) (completado y aceptado).
-* [ ] **Actualización del Diagrama Vivo**
+* [x] **Actualización del Diagrama Vivo**
   * Archivo: [.agent/architecture/system-map.mermaid.md](file:///.agent/architecture/system-map.mermaid.md) (incorporación de Tool Registry, HITL Approvals y Sandboxed Runner).
 
 ---

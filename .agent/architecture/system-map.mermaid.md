@@ -326,11 +326,17 @@ graph TD
     AppContainerNode --> SettleQuotaHandler
     AppContainerNode --> HybridRetrieverServiceNode
     AppContainerNode --> EmbeddingClientPortNode
+    AppContainerNode --> ToolApprovalRepoPortNode
+    AppContainerNode --> SandboxedToolRunnerPortNode
+    AppContainerNode --> ToolPolicyEvaluatorServiceNode
     WorkerContainerNode --> ModelCatalogPortNode
     WorkerContainerNode --> ModelRouterServiceNode
     WorkerContainerNode --> SettleQuotaHandler
     WorkerContainerNode --> HybridRetrieverServiceNode
     WorkerContainerNode --> EmbeddingClientPortNode
+    WorkerContainerNode --> ToolApprovalRepoPortNode
+    WorkerContainerNode --> SandboxedToolRunnerPortNode
+    WorkerContainerNode --> ToolPolicyEvaluatorServiceNode
     InMemoryModelCatalogNode -- Implementa --> ModelCatalogPortNode
     UploadDocHandler --> UploadDocCmd
     UploadDocHandler --> UOWPort
