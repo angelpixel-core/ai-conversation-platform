@@ -2,6 +2,7 @@
 
 from collections.abc import Sequence
 from typing import Self
+
 import pytest
 
 from src.application.knowledge.commands.index_document_chunks import (
@@ -39,10 +40,7 @@ class FakeKnowledgeRepo(KnowledgeRepositoryPort):
         self.chunks.extend(chunks)
 
     def get_chunks_by_document(self, tenant_id: TenantId, document_id: str) -> list[DocumentChunk]:
-        return [
-            c for c in self.chunks
-            if c.tenant_id == tenant_id and c.document_id == document_id
-        ]
+        return [c for c in self.chunks if c.tenant_id == tenant_id and c.document_id == document_id]
 
     def search_hybrid(
         self,

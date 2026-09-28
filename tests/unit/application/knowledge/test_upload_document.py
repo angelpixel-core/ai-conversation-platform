@@ -1,6 +1,7 @@
-"""Unit tests for UploadDocumentCommand and UploadDocumentHandler."""
-
+from collections.abc import Sequence
+from decimal import Decimal
 from typing import Self
+
 import pytest
 
 from src.application.knowledge.commands.upload_document import (
@@ -9,6 +10,7 @@ from src.application.knowledge.commands.upload_document import (
 )
 from src.application.shared.ports.unit_of_work import UnitOfWork
 from src.domain.knowledge.entities.document import Document
+from src.domain.knowledge.entities.document_chunk import DocumentChunk
 from src.domain.knowledge.ports.knowledge_repository_port import KnowledgeRepositoryPort
 from src.domain.knowledge.value_objects.embedding_vector import EmbeddingVector
 from src.domain.tenants.entities.tenant import Tenant
@@ -44,10 +46,10 @@ class FakeKnowledgeRepo(KnowledgeRepositoryPort):
     def get_document(self, tenant_id: TenantId, document_id: str) -> Document | None:
         return self.documents.get((str(tenant_id), document_id))
 
-    def save_chunks(self, chunks: object) -> None:
+    def save_chunks(self, chunks: Sequence[DocumentChunk]) -> None:
         pass
 
-    def get_chunks_by_document(self, tenant_id: TenantId, document_id: str) -> list[object]:  # type: ignore[override]
+    def get_chunks_by_document(self, tenant_id: TenantId, document_id: str) -> list[DocumentChunk]:
         return []
 
     def search_hybrid(
@@ -58,7 +60,7 @@ class FakeKnowledgeRepo(KnowledgeRepositoryPort):
         top_k: int = 5,
         min_score: float = 0.5,
         alpha: float = 0.7,
-    ) -> list[tuple[object, float]]:  # type: ignore[override]
+    ) -> list[tuple[DocumentChunk, float]]:
         return []
 
 
@@ -85,7 +87,9 @@ class FakeUnitOfWork(UnitOfWork):
 def test_upload_document_success() -> None:
     uow = FakeUnitOfWork()
     tid = TenantId("corp-acme")
-    uow.tenants.add(Tenant(tenant_id=tid, name="Acme", budget=MonetaryBudget()))
+    uow.tenants.add(
+        Tenant(tenant_id=tid, name="Acme", budget=MonetaryBudget(balance=Decimal("100.00")))
+    )
 
     handler = UploadDocumentHandler(unit_of_work=uow)
     command = UploadDocumentCommand(
@@ -120,7 +124,9 @@ def test_upload_document_tenant_not_found_raises_error() -> None:
 def test_upload_document_empty_filename_raises_error() -> None:
     uow = FakeUnitOfWork()
     tid = TenantId("corp-acme")
-    uow.tenants.add(Tenant(tenant_id=tid, name="Acme", budget=MonetaryBudget()))
+    uow.tenants.add(
+        Tenant(tenant_id=tid, name="Acme", budget=MonetaryBudget(balance=Decimal("100.00")))
+    )
     handler = UploadDocumentHandler(unit_of_work=uow)
 
     with pytest.raises(ValueError, match="vacío"):

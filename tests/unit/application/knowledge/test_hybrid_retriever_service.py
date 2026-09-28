@@ -1,7 +1,9 @@
 """Unit tests for HybridRetrieverService."""
 
 from collections.abc import Sequence
+
 import pytest
+
 from src.application.knowledge.services.hybrid_retriever_service import HybridRetrieverService
 from src.domain.knowledge.entities.document import Document
 from src.domain.knowledge.entities.document_chunk import DocumentChunk

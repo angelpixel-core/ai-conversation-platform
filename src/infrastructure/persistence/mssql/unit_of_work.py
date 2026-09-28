@@ -8,6 +8,7 @@ from sqlmodel import Session
 
 from src.application.shared.ports.unit_of_work import UnitOfWork
 from src.domain.conversations.ports.conversation_repository import ConversationRepository
+from src.domain.knowledge.ports.knowledge_repository_port import KnowledgeRepositoryPort
 from src.domain.tenants.ports.tenant_repository_port import TenantRepositoryPort
 from src.infrastructure.persistence.mssql.audit_repository import MssqlAuditRepository
 from src.infrastructure.persistence.mssql.idempotency_repository import (
@@ -33,6 +34,7 @@ class MssqlUnitOfWork(UnitOfWork):
         self._audit: MssqlAuditRepository | None = None
         self._stream_buffer: MssqlStreamBufferRepository | None = None
         self._tenants: MssqlTenantRepository | None = None
+        self._knowledge: KnowledgeRepositoryPort | None = None
 
     @property
     def tenants(self) -> TenantRepositoryPort:  # pyright: ignore[reportIncompatibleVariableOverride]
@@ -47,6 +49,13 @@ class MssqlUnitOfWork(UnitOfWork):
         if self._conversations is None:
             raise RuntimeError("UnitOfWork has not been started. Use 'with uow:' context.")
         return self._conversations
+
+    @property
+    def knowledge(self) -> KnowledgeRepositoryPort:  # pyright: ignore[reportIncompatibleVariableOverride]
+        """Active repository for Knowledge documents within this transaction."""
+        if self._knowledge is None:
+            raise RuntimeError("UnitOfWork has not been started. Use 'with uow:' context.")
+        return self._knowledge
 
     @property
     def outbox(self) -> MssqlOutboxRepository:
@@ -107,6 +116,7 @@ class MssqlUnitOfWork(UnitOfWork):
                 self._audit = None
                 self._stream_buffer = None
                 self._tenants = None
+                self._knowledge = None
 
     def commit(self) -> None:
         """Atomically commit all changes made within the active transaction."""
