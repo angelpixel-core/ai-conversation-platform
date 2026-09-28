@@ -75,6 +75,15 @@ Production-grade Python reference platform for AI-powered conversational service
 - **Knowledge Ingestion REST API**: `POST /tenants/{tenant_id}/documents` (`HTTP 202 Accepted`) and `GET /tenants/{tenant_id}/documents/{document_id}/status` (`HTTP 200 OK`) with strict multi-tenant isolation.
 - **Streaming Citations & Conversational Grounding**: Server-Sent Events (SSE) emitting structured `event: citation` payloads containing document metadata, page numbers, snippets, and similarity scores; automatic context retrieval and prompt augmentation in `LlmMessageProcessingWorker`.
 
+### Slice 8: Secure Tool Calling, Sandboxed Execution & Human-in-the-Loop (HITL)
+
+- **Tool Definition & Catalog Gating**: `ToolDefinition`, `ToolCall`, and `ToolResult` Value Objects standardizing parameters schemas, deterministic properties, and strict authorization per tenant via `ToolRegistryPort`.
+- **Human-in-the-Loop (HITL) Approval Lifecycle**: `ToolApprovalRequest` Aggregate managing state transitions (`PENDING` ➔ `APPROVED` / `REJECTED` / `EXPIRED`), recording operator identity and audit justification, and preventing unauthorized execution of high-risk actions.
+- **Pessimistic Concurrency in SQL Server**: `MssqlToolApprovalRepository` using `WITH (ROWLOCK, UPDLOCK)` row locks to prevent dual-operator race conditions, alongside immutable `ToolExecutionAuditModel` logs.
+- **Isolated Sandboxed Execution with AnyIO**: `AnyioSandboxedToolRunner` enforcing strict timeouts via `anyio.fail_after()` and defensive error handling without worker termination or memory leaks.
+- **Decoupled RabbitMQ Tool Pipeline**: `ToolsTopologyConfig` (`ai_platform.tools` exchange and DLQ) and `AnyioToolExecutionWorker` processing authorized tool executions in parallel using `anyio.create_task_group()` and `anyio.Semaphore`.
+- **HITL Management REST API & Streaming Notifications**: Endpoints `GET /tenants/{tenant_id}/approvals/pending` and `POST /tenants/{tenant_id}/approvals/{approval_id}/decision`; real-time streaming notifications over SSE (`event: tool_approval_required` and `event: tool_call_started`).
+
 ---
 
 ## 🏛️ Architecture Overview
@@ -132,6 +141,20 @@ The system strictly follows the Dependency Rule of Clean Architecture:
 | `GET` | `/admin/tenants/{id}/budget` | Inspect tenant balance, reserved funds, and available budget | *(None)* | `200 OK` / `404 Not Found` |
 | `PATCH` | `/admin/tenants/{id}/policy` | Update governance policy (tier, max tokens, allowed models) | *(None)* | `200 OK` / `404 Not Found` |
 | `POST` | `/admin/tenants/{id}/reserve` | Transactionally reserve inference budget | `X-Tenant-ID` | `200 OK` / `402 Payment Required` / `404` |
+
+### Knowledge & RAG Ingestion Endpoints
+
+| Method | Path | Description | Required Headers | Status Code |
+| :--- | :--- | :--- | :--- | :--- |
+| `POST` | `/tenants/{tenant_id}/documents` | Ingest and chunk document for RAG vector embedding | *(None)* | `202 Accepted` |
+| `GET` | `/tenants/{tenant_id}/documents/{document_id}/status` | Retrieve document indexing lifecycle status and chunk count | *(None)* | `200 OK` / `404 Not Found` |
+
+### Human-in-the-Loop (HITL) & Tool Execution Endpoints
+
+| Method | Path | Description | Required Headers | Status Code |
+| :--- | :--- | :--- | :--- | :--- |
+| `GET` | `/tenants/{tenant_id}/approvals/pending` | List all tool executions pending human operator review | *(None)* | `200 OK` |
+| `POST` | `/tenants/{tenant_id}/approvals/{approval_id}/decision` | Approve or reject a pending tool execution | *(None)* | `200 OK` / `400` / `404` |
 
 ### Key Request Headers
 
@@ -366,12 +389,39 @@ curl -N -H "X-Tenant-ID: corp-acme" \
 
 ---
 
+### Step 8: Secure Tool Calling & Human-in-the-Loop Approval (Slice 8)
+
+Demonstrate sandboxed tool execution, human review gating, and streaming tool events:
+
+```bash
+# 8.1 List pending tool approvals awaiting supervisor sign-off
+curl -s http://localhost:8000/tenants/corp-acme/approvals/pending | jq
+
+# 8.2 Approve a pending tool execution (or pass "decision": "reject" to abort)
+curl -s -X POST http://localhost:8000/tenants/corp-acme/approvals/{approval_id}/decision \
+  -H "Content-Type: application/json" \
+  -d '{
+    "decision": "approve",
+    "resolved_by": "sec-officer@corp.com",
+    "reason": "Verified operational credentials"
+  }' | jq
+
+# 8.3 Stream conversation to observe real-time tool lifecycle events
+curl -N -H "X-Tenant-ID: corp-acme" \
+  "http://localhost:8000/conversations/${CONV_ID}/stream"
+# Output includes:
+# event: tool_approval_required
+# data: {"approval_id": "...", "tool_name": "...", "arguments": {...}}
+```
+
+---
+
 ## 🛠️ Developer Tooling & Verification
 
 A comprehensive `Makefile` provides one-command access to all quality barriers:
 
 ```bash
-make test          # Run all 408 unit & integration tests
+make test          # Run all 474 unit & integration tests
 make coverage      # Generate detailed test coverage report (>= 90%)
 make lint          # Run static code analysis with Ruff
 make format-check  # Verify code formatting conformance with Ruff
@@ -406,6 +456,6 @@ make check-all     # Run full quality barrier (format + lint + types + security 
   - 📄 Architecture Decision: [ADR 0005: Multi-Tenancy, Dynamic Model Routing & Budget Controls](.agent/architecture/decisions/0005-multi-tenancy-dynamic-routing-and-budget-controls.md)
 - [x] [**Slice 7:** Semantic Vector Search, Hybrid RAG & Knowledge Grounding](docs/roadmap/07-semantic-vector-search-and-hybrid-rag.md)
   - 📄 Architecture Decision: [ADR 0006: Semantic Vector Search, Hybrid RAG & Knowledge Grounding](.agent/architecture/decisions/0006-hybrid-rag-and-mssql-vector-search.md)
-- [ ] [**Slice 8:** Secure Tool Calling, Sandboxed Execution & Human-in-the-Loop (HITL)](docs/roadmap/08-secure-tool-calling-and-hitl.md)
+- [x] [**Slice 8:** Secure Tool Calling, Sandboxed Execution & Human-in-the-Loop (HITL)](docs/roadmap/08-secure-tool-calling-and-hitl.md)
   - 📄 Architecture Decision: [ADR 0007: Secure Tool Calling, Sandboxed Execution & Human-in-the-Loop](.agent/architecture/decisions/0007-secure-tool-calling-and-hitl.md)
 - [ ] **Slice 9:** Autonomous Multi-Agent Orchestration, Observability & Production Deployment

@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.0] - 2026-09-28 — Slice 8: Secure Tool Calling, Sandboxed Execution & Human-in-the-Loop (HITL)
+
+### Added
+
+- **Domain Layer (Tool Value Objects, HITL Aggregate & Domain Events):**
+  - Implemented `ToolDefinition`, `ToolCall`, and `ToolResult` value objects (`src/domain/tools/value_objects/`) standardizing parameter schemas, determinism flags, and result outputs.
+  - Implemented `ToolApprovalRequest` aggregate root (`src/domain/tools/entities/tool_approval_request.py`) managing the full HITL approval lifecycle (`PENDING` ➔ `APPROVED` / `REJECTED` / `EXPIRED`).
+  - Defined domain events: `ToolCallRequestedDomainEvent`, `ToolApprovalRequiredDomainEvent`, `ToolApprovalResolvedDomainEvent`, and `ToolExecutionCompletedDomainEvent`.
+  - Defined driven ports: `ToolRegistryPort`, `ToolApprovalRepositoryPort`, and `SandboxedToolRunnerPort`.
+  - Added domain exceptions: `ToolNotFoundError`, `ToolExecutionError`, and `InvalidApprovalStateError`.
+- **Application Layer (Policy Evaluator & CQRS Handlers):**
+  - Implemented `ToolPolicyEvaluatorService` (`src/application/tools/services/tool_policy_evaluator_service.py`) inspecting tool definitions and tenant policies to determine whether HITL review is required.
+  - Implemented CQRS commands and handlers: `ApproveToolExecutionCommand` / `ApproveToolExecutionHandler`, `RejectToolExecutionCommand` / `RejectToolExecutionHandler`, and `ExecuteSandboxedToolCommand` / `ExecuteSandboxedToolHandler`.
+- **Infrastructure Layer (MSSQL 2022, Pessimistic Locking & Sandboxed Runner):**
+  - Implemented SQLModel relational tables `ToolApprovalModel` (`tool_approvals`) and `ToolExecutionAuditModel` (`tool_execution_audits`) with multi-tenant compound indexes.
+  - Implemented `MssqlToolApprovalRepository` (`src/infrastructure/persistence/mssql/mssql_tool_approval_repository.py`) using `WITH (ROWLOCK, UPDLOCK)` row-level locks preventing race conditions between operators.
+  - Implemented `InMemoryToolApprovalRepositoryAdapter` (`src/infrastructure/persistence/in_memory/in_memory_tool_approval_repository.py`) for deterministic fast unit testing.
+  - Implemented `AnyioSandboxedToolRunner` (`src/infrastructure/tools/anyio_sandboxed_tool_runner.py`) executing tools within `anyio.fail_after()` timeout guards and capturing exceptions gracefully.
+  - Added Alembic migration `0005_tools_and_hitl_approvals.py`.
+- **RabbitMQ Tool Execution Pipeline:**
+  - Implemented `ToolsTopologyConfig` (`src/infrastructure/messaging/rabbitmq/tools_topology_config.py`) declaring `ai_platform.tools` topic exchange, `tools.execution.queue`, and DLQ.
+  - Implemented `AnyioToolExecutionWorker` (`src/infrastructure/messaging/rabbitmq/anyio_tool_execution_worker.py`) for isolated asynchronous tool execution with bounded concurrency (`anyio.Semaphore`).
+- **HTTP Interfaces, REST Endpoints & Real-Time SSE Notifications:**
+  - Implemented `approvals_router.py` with endpoints:
+    - `GET /tenants/{tenant_id}/approvals/pending` (`HTTP 200 OK`).
+    - `POST /tenants/{tenant_id}/approvals/{approval_id}/decision` (`HTTP 200 OK`).
+  - Added Server-Sent Events (SSE) streaming for `event: tool_approval_required` and `event: tool_call_started` in `src/interfaces/http/api.py`.
+  - Defined Pydantic v2 schemas in `src/interfaces/http/tools_schemas.py`.
+  - Exported updated OpenAPI 3.1 schema and interactive ReDoc documentation in `public/`.
+- **Composition Roots, ADR & System Map:**
+  - Wired `SandboxedToolRunnerPort`, `ToolApprovalRepositoryPort`, and `ToolPolicyEvaluatorService` in `src/container.py` and `src/worker_container.py`.
+  - Documented architectural decisions in `ADR 0007` (`.agent/architecture/decisions/0007-secure-tool-calling-and-hitl.md`).
+  - Synchronized Living Architecture Map in `.agent/architecture/system-map.mermaid.md`.
+  - Completed roadmap checklist in `docs/roadmap/08-secure-tool-calling-and-hitl.md`.
+
+---
+
 ## [0.7.0] - 2026-09-28 — Slice 7: Semantic Vector Search, Hybrid RAG & Knowledge Grounding
 
 ### Added
