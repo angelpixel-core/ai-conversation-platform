@@ -129,15 +129,15 @@ Evolucionar la plataforma de un sistema conversacional puramente reactivo a un m
 
 *Desacoplamiento de llamadas lentas a terceros (webhooks, APIs externas, bases de datos).*
 
-* [ ] **Topología de Exchanges y Queues en RabbitMQ para Herramientas**
+* [x] **Topología de Exchanges y Queues en RabbitMQ para Herramientas**
   * Archivo: `src/infrastructure/messaging/rabbitmq/tools_topology_config.py`
   * Exchange: `ai_platform.tools` (Topic).
   * Queue principal: `tools.execution.queue`.
   * Dead Letter Queue: `tools.execution.dlq`.
-* [ ] **Worker de Ejecución de Herramientas con AnyIO TaskGroups**
+* [x] **Worker de Ejecución de Herramientas con AnyIO TaskGroups**
   * Archivo: `src/infrastructure/messaging/rabbitmq/anyio_tool_execution_worker.py`
   * Consume solicitudes de ejecución autorizadas, invoca el sandbox y emite el evento de resultado de vuelta a la conversación.
-* [ ] **Tests de Integración del Worker de Herramientas**
+* [x] **Tests de Integración del Worker de Herramientas**
   * Archivo: `tests/unit/infrastructure/workers/test_anyio_tool_execution_worker.py`
   * Archivo: `tests/unit/infrastructure/messaging/test_tools_topology_config.py`
 

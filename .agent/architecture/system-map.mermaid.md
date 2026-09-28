@@ -154,6 +154,8 @@ graph TD
         MssqlToolApprovalRepoNode["MssqlToolApprovalRepository"]
         InMemoryToolApprovalRepoNode["InMemoryToolApprovalRepositoryAdapter"]
         AnyioSandboxedToolRunnerNode["AnyioSandboxedToolRunner"]
+        ToolsTopologyNode["ToolsTopologyConfig"]
+        AnyioToolExecutionWorkerNode["AnyioToolExecutionWorker"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 
@@ -373,4 +375,9 @@ graph TD
     MssqlUOW --> MssqlToolApprovalRepoNode
     InMemoryUOW --> InMemoryToolApprovalRepoNode
     UOWPort --> ToolApprovalRepoPortNode
+    ToolsTopologyNode -- Extiende --> RabbitMQTopology
+    AnyioToolExecutionWorkerNode --> SandboxedToolRunnerPortNode
+    AnyioToolExecutionWorkerNode --> ToolRegistryPortNode
+    AnyioToolExecutionWorkerNode --> EventPubPort
+    AnyioToolExecutionWorkerNode --> ToolsTopologyNode
 ```
