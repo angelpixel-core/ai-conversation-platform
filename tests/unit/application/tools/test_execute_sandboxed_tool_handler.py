@@ -1,12 +1,12 @@
 """Unit tests for ExecuteSandboxedToolCommandHandler."""
 
 import pytest
+
+from src.application.shared.ports.event_publisher import EventPublisher
 from src.application.tools.commands.execute_sandboxed_tool import (
     ExecuteSandboxedToolCommand,
     ExecuteSandboxedToolHandler,
 )
-
-from src.application.shared.ports.event_publisher import EventPublisher
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.domain.tools.events.tool_events import ToolExecutionCompletedDomainEvent
 from src.domain.tools.exceptions import ToolNotFoundError

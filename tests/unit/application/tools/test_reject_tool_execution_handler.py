@@ -1,12 +1,12 @@
 """Unit tests for RejectToolExecutionCommandHandler."""
 
 import pytest
+
+from src.application.shared.ports.event_publisher import EventPublisher
 from src.application.tools.commands.reject_tool_execution import (
     RejectToolExecutionCommand,
     RejectToolExecutionHandler,
 )
-
-from src.application.shared.ports.event_publisher import EventPublisher
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.domain.tools.entities.tool_approval_request import (
     ApprovalStatus,

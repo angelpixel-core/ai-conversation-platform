@@ -5,8 +5,7 @@ from decimal import Decimal
 from src.application.tools.services.tool_policy_evaluator_service import (
     ToolPolicyEvaluatorService,
 )
-
-from src.domain.tenants.entities.tenant import Tenant
+from src.domain.tenants.entities.tenant import Tenant, TenantStatus
 from src.domain.tenants.value_objects.monetary_budget import MonetaryBudget
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.domain.tools.value_objects.tool_call import ToolCall
@@ -17,8 +16,8 @@ def _create_tenant(is_active: bool = True) -> Tenant:
     return Tenant(
         tenant_id=TenantId("corp-acme"),
         name="Acme Corp",
-        budget=MonetaryBudget(allocated_usd=Decimal("100.00")),
-        is_active=is_active,
+        budget=MonetaryBudget(balance=Decimal("100.00")),
+        status=TenantStatus.ACTIVE if is_active else TenantStatus.SUSPENDED,
     )
 
 
