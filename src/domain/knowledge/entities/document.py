@@ -1,4 +1,4 @@
-"""Canonical template: Document Aggregate Root."""
+"""Document aggregate root managing document ingestion and lifecycle."""
 
 from datetime import UTC, datetime
 from enum import StrEnum

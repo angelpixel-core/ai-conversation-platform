@@ -1,6 +1,7 @@
 """Unit tests for DocumentChunk Entity."""
 
 import pytest
+
 from src.domain.knowledge.entities.document_chunk import DocumentChunk
 from src.domain.knowledge.value_objects.embedding_vector import EmbeddingVector
 from src.domain.tenants.value_objects.tenant_id import TenantId

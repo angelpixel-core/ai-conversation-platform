@@ -1,6 +1,7 @@
 """Unit tests for Document Aggregate Root."""
 
 import pytest
+
 from src.domain.knowledge.entities.document import Document, DocumentStatus
 from src.domain.knowledge.events.knowledge_events import (
     DocumentIndexedDomainEvent,

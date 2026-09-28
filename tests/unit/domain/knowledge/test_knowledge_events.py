@@ -3,6 +3,7 @@
 from datetime import UTC, datetime
 
 import pytest
+
 from src.domain.knowledge.events.knowledge_events import (
     DocumentIndexedDomainEvent,
     DocumentIndexingFailedDomainEvent,
