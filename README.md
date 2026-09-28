@@ -50,6 +50,19 @@ Production-grade Python reference platform for AI-powered conversational service
 - **Structured Concurrency & Graceful Shutdown**: Native `anyio` task groups and POSIX signal management (`SIGINT`/`SIGTERM`) for safe termination.
 - **Multi-Container Orchestration**: Full `docker-compose.yml` configuration (API, Worker, SQL Server 2022, RabbitMQ) and dedicated `Makefile` developer targets.
 
+### Slice 5: Enterprise Auditing, Distributed Idempotency & Resilient Stream Recovery
+- **Distributed Idempotency (Deduplication)**: `IdempotencyKey` Value Object, `IdempotencyRepositoryPort`, and `IdempotentCommandExecutor` ensuring exactly-once processing on mutating endpoints (`POST /conversations`, `POST /conversations/{id}/messages`) with automated conflict detection (`HTTP 409 Conflict`).
+- **Immutable Enterprise Auditing**: `AuditLogRecord` domain entity and `AuditRepositoryPort` persisting structured audit trails and token consumption metrics in MSSQL.
+- **Resilient SSE Stream Recovery**: `StreamChunk` Value Object, `StreamBufferRepositoryPort`, and `StreamRecoveryService` supporting network drop reconnections via `Last-Event-ID` without re-triggering LLM inference.
+- **Structured Concurrency with AnyIO**: Native `anyio.create_task_group()` and `contextvars` management ensuring clean context propagation and non-leaking asynchronous workflows.
+
+### Slice 6: Multi-Tenant Policy Engine, Dynamic Model Routing & Cost Budgets
+- **Strict Multi-Tenant Isolation**: Scoped logical data segregation across database tables, repositories, and messaging queues using `TenantId` slugs and `TenantContext`.
+- **Atomic Pessimistic Budgeting (MSSQL)**: Two-phase quota governance (`ReserveQuotaCommand` and `SettleQuotaCommand`) acquiring `WITH (ROWLOCK, UPDLOCK)` row-level locks on SQL Server to eliminate double-spending race conditions.
+- **Quota Rejection (`HTTP 402 Payment Required`)**: Automated rejection with financial details when a tenant's available balance is insufficient.
+- **Dynamic Model Routing & Fallback Gateway**: `ModelRoute` Value Object, `ModelCatalogPort`, and `ModelRouterService` resolving optimal providers based on contractual tier, token limits, and transparent fallback routing.
+- **Tenant Administration & Governance**: Dedicated management router (`/admin/tenants/{id}/budget`, `/admin/tenants/{id}/policy`, `/admin/tenants/{id}/reserve`) and `TenantContextMiddleware` enforcing tenant header checks on protected routes.
+
 ---
 
 ## 🏛️ Architecture Overview
@@ -89,14 +102,32 @@ The system strictly follows the Dependency Rule of Clean Architecture:
 
 ## 🔌 API Endpoints
 
-| Method | Path | Description | Status Code |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/health` | Service health status check | `200 OK` |
-| `POST` | `/conversations` | Create a new conversation aggregate | `201 Created` |
-| `POST` | `/conversations/{id}/messages` | Append a user message (triggers Outbox event) | `200 OK` |
-| `GET` | `/conversations/{id}/stream` | Stream AI response tokens via Server-Sent Events | `200 OK` (`text/event-stream`) |
-| `GET` | `/docs` | Interactive Swagger UI API documentation | `200 OK` |
-| `GET` | `/redoc` | Interactive ReDoc documentation | `200 OK` |
+### Core & Conversation Endpoints
+
+| Method | Path | Description | Required Headers | Status Code |
+| :--- | :--- | :--- | :--- | :--- |
+| `GET` | `/health` | Service health status check | *(None)* | `200 OK` |
+| `POST` | `/conversations` | Create a new conversation aggregate | `X-Tenant-ID` *(optional `Idempotency-Key`)* | `201 Created` / `400` / `409` |
+| `POST` | `/conversations/{id}/messages` | Append a user message (triggers Outbox event) | `X-Tenant-ID` *(optional `Idempotency-Key`)* | `200 OK` / `400` / `404` / `409` |
+| `GET` | `/conversations/{id}/stream` | Stream AI response tokens via Server-Sent Events | *(optional `Last-Event-ID`)* | `200 OK` (`text/event-stream`) / `404` |
+| `GET` | `/docs` | Interactive Swagger UI API documentation | *(None)* | `200 OK` |
+| `GET` | `/redoc` | Interactive ReDoc documentation | *(None)* | `200 OK` |
+
+### Multi-Tenant Administration & Governance Endpoints
+
+| Method | Path | Description | Required Headers | Status Code |
+| :--- | :--- | :--- | :--- | :--- |
+| `GET` | `/admin/tenants/{id}/budget` | Inspect tenant balance, reserved funds, and available budget | *(None)* | `200 OK` / `404 Not Found` |
+| `PATCH` | `/admin/tenants/{id}/policy` | Update governance policy (tier, max tokens, allowed models) | *(None)* | `200 OK` / `404 Not Found` |
+| `POST` | `/admin/tenants/{id}/reserve` | Transactionally reserve inference budget | `X-Tenant-ID` | `200 OK` / `402 Payment Required` / `404` |
+
+### Key Request Headers
+
+| Header | Example | Description |
+| :--- | :--- | :--- |
+| `X-Tenant-ID` | `corp-acme` | Scopes operations to the target tenant slug. Enforced on protected endpoints when tenant middleware is enabled. |
+| `Idempotency-Key` | `a1b2c3d4-e5f6-7890-abcd-ef1234567890` | UUID guaranteeing idempotent execution; duplicate requests replay the cached response without double charges. |
+| `Last-Event-ID` | `chunk-2` | Resumes an interrupted Server-Sent Events stream from the given sequence ID without re-executing LLM inference. |
 
 ---
 
@@ -147,36 +178,149 @@ make stack/down
 
 ---
 
-## 🧪 Usage Examples (cURL)
+## 🧪 Feature Walkthrough & Live Demonstration Guide
 
-### 1. Check Health
+This step-by-step guide allows developers and evaluators to start the platform and manually verify every capability across Slices 1 to 6.
+
+### Preparation: Start the Services
+
+Choose between running locally with in-memory adapters or using the complete Docker stack:
 
 ```bash
-curl -s http://localhost:8000/health | jq
+# Option A: In-Memory / Local Mode (Fastest, zero external dependencies)
+make run-api
+# In another terminal:
+make run-worker
+
+# Option B: Enterprise Multi-Container Stack (SQL Server 2022 + RabbitMQ)
+make stack/up-build
+make db/upgrade
 ```
 
-### 2. Create a Conversation
+---
+
+### Step 1: Health & Interactive Documentation
+
+Verify service availability and inspect the auto-generated schemas:
 
 ```bash
+# 1. Health check
+curl -s http://localhost:8000/health | jq
+
+# 2. Interactive Swagger UI: Open in browser
+open http://localhost:8000/docs
+```
+
+---
+
+### Step 2: Multi-Tenancy & Data Isolation (Slice 6)
+
+Demonstrate logical tenant scoping and security boundaries:
+
+```bash
+# 2.1 Attempt accessing protected resource WITHOUT X-Tenant-ID (rejected with 400 Bad Request)
+curl -s -w "\nHTTP Status: %{http_code}\n" -X POST http://localhost:8000/conversations \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Unidentified Tenant"}'
+
+# 2.2 Create conversation with explicit tenant context ('corp-acme')
 CONV_ID=$(curl -s -X POST http://localhost:8000/conversations \
   -H "Content-Type: application/json" \
-  -d '{"title": "Demo AI Architecture"}' | jq -r '.id')
+  -H "X-Tenant-ID: corp-acme" \
+  -d '{"title": "Enterprise Cloud Migration"}' | jq -r '.id')
 
 echo "Created Conversation ID: $CONV_ID"
 ```
 
-### 3. Send a Message
+---
+
+### Step 3: Distributed Idempotency (Slice 5)
+
+Demonstrate deduplication and safe request retries without double processing:
 
 ```bash
+IDEMPOTENCY_KEY=$(uuidgen | tr '[:upper:]' '[:lower:]')
+
+# 3.1 Initial request with Idempotency-Key
+echo "Executing initial request with key: $IDEMPOTENCY_KEY"
 curl -s -X POST "http://localhost:8000/conversations/${CONV_ID}/messages" \
   -H "Content-Type: application/json" \
-  -d '{"content": "Explain the Outbox Pattern in 3 bullet points."}' | jq
+  -H "X-Tenant-ID: corp-acme" \
+  -H "Idempotency-Key: ${IDEMPOTENCY_KEY}" \
+  -d '{"content": "Calculate infrastructure budget."}' | jq
+
+# 3.2 Immediate retry with the EXACT SAME Idempotency-Key (returns identical cached result instantly)
+echo "Replaying identical request with key: $IDEMPOTENCY_KEY"
+curl -s -X POST "http://localhost:8000/conversations/${CONV_ID}/messages" \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: corp-acme" \
+  -H "Idempotency-Key: ${IDEMPOTENCY_KEY}" \
+  -d '{"content": "Calculate infrastructure budget."}' | jq
 ```
 
-### 4. Stream AI Response via Server-Sent Events (SSE)
+---
+
+### Step 4: Real-Time SSE Streaming & Resilient Recovery (Slices 2 & 5)
+
+Demonstrate live token streaming and reconnecting interrupted streams:
 
 ```bash
-curl -N "http://localhost:8000/conversations/${CONV_ID}/stream"
+# 4.1 Stream live AI response tokens via Server-Sent Events
+curl -N -H "X-Tenant-ID: corp-acme" \
+  "http://localhost:8000/conversations/${CONV_ID}/stream?temperature=0.7&max_tokens=100"
+
+# 4.2 Stream Recovery: If a client connection drops, resume from the last received chunk
+curl -N -H "X-Tenant-ID: corp-acme" \
+  -H "Last-Event-ID: chunk-2" \
+  "http://localhost:8000/conversations/${CONV_ID}/stream"
+```
+
+---
+
+### Step 5: Tenant Governance, Policies & Cost Control (Slice 6)
+
+Demonstrate administrative control, dynamic policy updating, and budget exhaustion rejection:
+
+```bash
+# 5.1 Check current tenant balance, reserved quota, and available funds
+curl -s http://localhost:8000/admin/tenants/corp-acme/budget | jq
+
+# 5.2 Update tenant operational policy (upgrade to ENTERPRISE tier & authorize advanced models)
+curl -s -X PATCH http://localhost:8000/admin/tenants/corp-acme/policy \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tier": "ENTERPRISE",
+    "max_tokens_per_request": 8192,
+    "monthly_budget_usd": "2500.00",
+    "allowed_models": ["gpt-4o", "gpt-4o-mini", "claude-3-5-sonnet"]
+  }' | jq
+
+# 5.3 Trigger Quota Rejection (HTTP 402 Payment Required) when reservation exceeds balance
+curl -s -w "\nHTTP Status: %{http_code}\n" \
+  -X POST http://localhost:8000/admin/tenants/corp-acme/reserve \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: corp-acme" \
+  -d '{"estimated_cost": "99999.00", "model_id": "gpt-4o"}' | jq
+```
+
+---
+
+### Step 6: Decoupled Worker, RabbitMQ & Transactional Outbox (Slice 4)
+
+Demonstrate asynchronous processing decoupling:
+
+```bash
+# Send message to trigger Transactional Outbox insertion
+curl -s -X POST "http://localhost:8000/conversations/${CONV_ID}/messages" \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: corp-acme" \
+  -d '{"content": "Asynchronous background processing test."}' | jq
+
+# In the worker terminal, observe:
+# 1. Event consumption from RabbitMQ queue 'conversation.llm_processing.queue'
+# 2. Dynamic Model Router selecting appropriate LLM provider
+# 3. Stream buffer chunks saved to MSSQL
+# 4. Final SettleQuotaCommand adjusting actual token cost
 ```
 
 ---
@@ -186,7 +330,7 @@ curl -N "http://localhost:8000/conversations/${CONV_ID}/stream"
 A comprehensive `Makefile` provides one-command access to all quality barriers:
 
 ```bash
-make test          # Run all 192 unit & integration tests
+make test          # Run all 347 unit & integration tests
 make coverage      # Generate detailed test coverage report (>= 90%)
 make lint          # Run static code analysis with Ruff
 make format-check  # Verify code formatting conformance with Ruff
@@ -214,9 +358,9 @@ make check-all     # Run full quality barrier (format + lint + types + security 
 - [x] **Slice 2:** User Messaging, Transactional Outbox Pattern & SSE Token Streaming
 - [x] **Slice 3:** Persistent Storage with Microsoft SQL Server & SQLModel (Transactional Outbox DB)
 - [x] **Slice 4:** Decoupled Event Broker Worker (RabbitMQ Pub/Sub & Autonomous Background Worker)
-- [ ] **Slice 5:** Conversation History Retrieval & Redis Cache
-- [ ] **Slice 6:** Knowledge Ingestion Pipeline & Document Chunking
-- [ ] **Slice 7:** Vector Embeddings & pgvector Integration
-- [ ] **Slice 8:** Retrieval-Augmented Generation (RAG) Engine
-- [ ] **Slice 9:** Autonomous Agent Tool Execution & Function Calling
-- [ ] **Slice 10:** Production Containerization & Cloud Infrastructure (IaC)
+- [x] **Slice 5:** Enterprise Auditing, Distributed Idempotency & Resilient Stream Recovery
+- [x] **Slice 6:** Multi-Tenant Policy Engine, Dynamic Model Routing & Cost Budgets
+- [ ] **Slice 7:** Knowledge Ingestion Pipeline & Document Chunking
+- [ ] **Slice 8:** Vector Embeddings & Hybrid Search (pgvector / SQL Server Full-Text)
+- [ ] **Slice 9:** Retrieval-Augmented Generation (RAG) & Context Synthesis
+- [ ] **Slice 10:** Autonomous Multi-Agent Tool Execution & Production Deployment
