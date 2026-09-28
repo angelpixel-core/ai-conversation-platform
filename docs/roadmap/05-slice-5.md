@@ -154,17 +154,17 @@ Dotar al sistema de resiliencia y trazabilidad de grado financiero/enterprise:
 
 *Validación de idempotencia y reconexión SSE en FastAPI.*
 
-- [ ] **Middleware / Dependencia de Idempotencia**
+- [x] **Middleware / Dependencia de Idempotencia**
   - Archivo: `src/interfaces/http/dependencies/idempotency_dependency.py` (inspecciona y valida header `Idempotency-Key`).
   - Template canónico: `.agent/templates/interfaces/http/idempotency_dependency.tt.py`
   - Test template: `.agent/templates/interfaces/http/test_idempotency_dependency.tt.py`
 
-- [ ] **Router de Streaming con Soporte `Last-Event-ID`**
+- [x] **Router de Streaming con Soporte `Last-Event-ID`**
   - Archivo: `src/interfaces/http/messages_router.py` (inspecciona header estándar SSE `Last-Event-ID` para reanudar el flujo sin regenerar la respuesta).
   - Template canónico: `.agent/templates/interfaces/http/resumable_sse_endpoint.tt.py`
   - Test template: `.agent/templates/interfaces/http/test_resumable_sse_endpoint.tt.py`
 
-- [ ] **Tests de Integración HTTP / E2E**
+- [x] **Tests de Integración HTTP / E2E**
   - Archivo: `tests/integration/api/test_idempotent_requests.py`
   - Archivo: `tests/integration/api/test_stream_reconnection.py`
 
