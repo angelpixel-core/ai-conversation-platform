@@ -35,6 +35,12 @@ graph TD
         StreamRecoveryServiceNode["StreamRecoveryService"]
         ResumeStreamQueryNode["ResumeStreamQuery"]
         ResumeStreamHandlerNode["ResumeStreamQueryHandler"]
+        TenantContextNode["TenantContext (src/application/shared/tenancy)"]
+        ModelRouterServiceNode["ModelRouterService"]
+        ReserveQuotaCmd["ReserveQuotaCommand"]
+        ReserveQuotaHandler["ReserveQuotaCommandHandler"]
+        SettleQuotaCmd["SettleQuotaCommand"]
+        SettleQuotaHandler["SettleQuotaCommandHandler"]
     end
 
     subgraph Domain ["Domain Layer (Core Business)"]
@@ -206,4 +212,12 @@ graph TD
     MssqlIdempotencyRepo --> MssqlModels
     MssqlAuditRepo --> MssqlModels
     MssqlStreamBufferRepo --> MssqlModels
+    ReserveQuotaHandler --> UOWPort
+    ReserveQuotaHandler --> TenantAggregate
+    ReserveQuotaHandler --> TenantRepoPort
+    SettleQuotaHandler --> UOWPort
+    SettleQuotaHandler --> TenantAggregate
+    SettleQuotaHandler --> TenantRepoPort
+    ModelRouterServiceNode --> ModelCatalogPortNode
+    ModelRouterServiceNode --> TenantAggregate
 ```

@@ -3,8 +3,8 @@
 from decimal import Decimal
 
 import pytest
-from src.application.routing.services.model_router_service import ModelRouterService
 
+from src.application.routing.services.model_router_service import ModelRouterService
 from src.domain.routing.ports.model_catalog_port import ModelCatalogPort
 from src.domain.routing.value_objects.model_route import ModelRoute
 from src.domain.tenants.entities.tenant import Tenant

@@ -78,16 +78,16 @@ Evolucionar la plataforma hacia una solución SaaS Enterprise multi-inquilino co
 
 *Orquestación con AnyIO para validaciones concurrentes, comandos CQRS y propagación de contexto.*
 
-- [ ] **Servicio de Contexto de Inquilino (`TenantContext`)**
+- [x] **Servicio de Contexto de Inquilino (`TenantContext`)**
   - Archivo: `src/application/shared/tenancy/tenant_context.py` (basado en `contextvars.ContextVar[TenantId | None]`, compatible con tareas AnyIO).
-- [ ] **Servicio de Aplicación: Dynamic Model Router**
+- [x] **Servicio de Aplicación: Dynamic Model Router**
   - Archivo: `src/application/routing/services/model_router_service.py` (Evalúa políticas de tenant, coste vs. latencia, tamaño de contexto y selección de fallback).
-- [ ] **Comandos CQRS de Gestión de Cuotas**
+- [x] **Comandos CQRS de Gestión de Cuotas**
   - Archivo: `src/application/tenants/commands/reserve_quota_command.py` (`ReserveQuotaCommand`, `ReserveQuotaResult`, `ReserveQuotaCommandHandler`).
   - Archivo: `src/application/tenants/commands/settle_quota_command.py` (`SettleQuotaCommand`, `SettleQuotaResult`, `SettleQuotaCommandHandler`).
-- [ ] **Ampliación del Puerto `UnitOfWork`**
+- [x] **Ampliación del Puerto `UnitOfWork`**
   - Archivo: `src/application/shared/ports/unit_of_work.py` (Incorpora propiedad `tenants: TenantRepositoryPort`).
-- [ ] **Tests Unitarios de Aplicación**
+- [x] **Tests Unitarios de Aplicación**
   - Archivos:
     - `tests/unit/application/test_tenant_context.py`
     - `tests/unit/application/test_model_router_service.py`

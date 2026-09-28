@@ -4,12 +4,12 @@ from decimal import Decimal
 from typing import Self
 
 import pytest
+
+from src.application.shared.ports.unit_of_work import UnitOfWork
 from src.application.tenants.commands.settle_quota_command import (
     SettleQuotaCommand,
     SettleQuotaCommandHandler,
 )
-
-from src.application.shared.ports.unit_of_work import UnitOfWork
 from src.domain.tenants.entities.tenant import Tenant
 from src.domain.tenants.ports.tenant_repository_port import TenantRepositoryPort
 from src.domain.tenants.value_objects.monetary_budget import MonetaryBudget
