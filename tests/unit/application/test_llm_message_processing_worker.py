@@ -416,4 +416,3 @@ async def test_worker_marks_idempotency_failed_when_llm_raises_error(
     rec = await idempotency_repo.get(key)
     assert rec is not None
     assert rec.status == IdempotencyStatus.FAILED
-

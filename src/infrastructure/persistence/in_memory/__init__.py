@@ -23,4 +23,3 @@ __all__ = [
     "InMemoryStreamBufferRepositoryAdapter",
     "InMemoryUnitOfWork",
 ]
-
