@@ -118,7 +118,7 @@ Dotar al sistema de resiliencia y trazabilidad de grado financiero/enterprise:
 - [x] **Modelos Físicos de SQL Server (Tablas Empresariales)**
   - Archivo: `src/infrastructure/persistence/mssql/models.py` (extender con `IdempotencyRecordModel`, `AuditLogModel`, `StreamBufferChunkModel`).
 
-- [ ] **Adaptadores de Repositorio MSSQL**
+- [x] **Adaptadores de Repositorio MSSQL**
   - Repositorio Idempotencia: `src/infrastructure/persistence/mssql/idempotency_repository.py`
   - Repositorio Auditoría: `src/infrastructure/persistence/mssql/audit_repository.py`
   - Repositorio Buffer Chunks: `src/infrastructure/persistence/mssql/stream_buffer_repository.py`

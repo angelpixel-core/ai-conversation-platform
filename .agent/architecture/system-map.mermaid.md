@@ -72,6 +72,9 @@ graph TD
         OutboxRelay["OutboxRelayService"]
         InMemoryIdempotencyRepo["InMemoryIdempotencyRepositoryAdapter"]
         InMemoryAuditRepo["InMemoryAuditRepositoryAdapter"]
+        MssqlIdempotencyRepo["MssqlIdempotencyRepository"]
+        MssqlAuditRepo["MssqlAuditRepository"]
+        MssqlStreamBufferRepo["MssqlStreamBufferRepository"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 
@@ -161,4 +164,13 @@ graph TD
     AppSettings --> RabbitMQConnManager
     InMemoryIdempotencyRepo -- Implementa --> IdempotencyRepoPort
     InMemoryAuditRepo -- Implementa --> AuditRepoPort
+    MssqlIdempotencyRepo -- Implementa --> IdempotencyRepoPort
+    MssqlAuditRepo -- Implementa --> AuditRepoPort
+    MssqlStreamBufferRepo -- Implementa --> StreamBufferRepoPort
+    MssqlUOW --> MssqlIdempotencyRepo
+    MssqlUOW --> MssqlAuditRepo
+    MssqlUOW --> MssqlStreamBufferRepo
+    MssqlIdempotencyRepo --> MssqlModels
+    MssqlAuditRepo --> MssqlModels
+    MssqlStreamBufferRepo --> MssqlModels
 ```
