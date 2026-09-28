@@ -86,16 +86,16 @@ Evolucionar la plataforma de un sistema conversacional puramente reactivo a un m
 
 *Orquestación con AnyIO de la suspensión y reanudación del diálogo.*
 
-* [ ] **Servicio de Evaluación de Políticas de Herramientas**
+* [x] **Servicio de Evaluación de Políticas de Herramientas**
   * Archivo: `src/application/tools/services/tool_policy_evaluator_service.py`
   * Determina si una llamada se ejecuta automáticamente o se retiene para HITL según las reglas del tenant.
-* [ ] **Comando y Handler: Approve Tool Execution (HITL)**
+* [x] **Comando y Handler: Approve Tool Execution (HITL)**
   * Archivo: `src/application/tools/commands/approve_tool_execution.py` (`ApproveToolExecutionCommand`, `ApproveToolExecutionHandler`).
-* [ ] **Comando y Handler: Reject Tool Execution (HITL)**
+* [x] **Comando y Handler: Reject Tool Execution (HITL)**
   * Archivo: `src/application/tools/commands/reject_tool_execution.py` (`RejectToolExecutionCommand`, `RejectToolExecutionHandler`).
-* [ ] **Worker Command y Handler: Execute Tool in Sandbox**
+* [x] **Worker Command y Handler: Execute Tool in Sandbox**
   * Archivo: `src/application/tools/commands/execute_sandboxed_tool.py` (`ExecuteSandboxedToolCommand`, `ExecuteSandboxedToolHandler`).
-* [ ] **Tests Unitarios de Aplicación**
+* [x] **Tests Unitarios de Aplicación**
   * Archivo: `tests/unit/application/tools/test_tool_policy_evaluator.py`
   * Archivo: `tests/unit/application/tools/test_approve_tool_execution_handler.py`
   * Archivo: `tests/unit/application/tools/test_reject_tool_execution_handler.py`

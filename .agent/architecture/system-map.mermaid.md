@@ -52,6 +52,13 @@ graph TD
         IndexChunksCmd["IndexDocumentChunksCommand"]
         IndexChunksHandler["IndexDocumentChunksHandler"]
         HybridRetrieverServiceNode["HybridRetrieverService"]
+        ToolPolicyEvaluatorServiceNode["ToolPolicyEvaluatorService"]
+        ApproveToolExecutionCmd["ApproveToolExecutionCommand"]
+        ApproveToolExecutionHandlerNode["ApproveToolExecutionHandler"]
+        RejectToolExecutionCmd["RejectToolExecutionCommand"]
+        RejectToolExecutionHandlerNode["RejectToolExecutionHandler"]
+        ExecuteSandboxedToolCmd["ExecuteSandboxedToolCommand"]
+        ExecuteSandboxedToolHandlerNode["ExecuteSandboxedToolHandler"]
     end
 
     subgraph Domain ["Domain Layer (Core Business)"]
@@ -195,6 +202,17 @@ graph TD
     StreamRecoveryServiceNode --> StreamChunkVO
     ResumeStreamHandlerNode --> ResumeStreamQueryNode
     ResumeStreamHandlerNode --> StreamRecoveryServiceNode
+    ApproveToolExecutionHandlerNode --> ApproveToolExecutionCmd
+    ApproveToolExecutionHandlerNode --> ToolApprovalRequestAggregate
+    ApproveToolExecutionHandlerNode --> ToolApprovalRepoPortNode
+    RejectToolExecutionHandlerNode --> RejectToolExecutionCmd
+    RejectToolExecutionHandlerNode --> ToolApprovalRequestAggregate
+    RejectToolExecutionHandlerNode --> ToolApprovalRepoPortNode
+    ExecuteSandboxedToolHandlerNode --> ExecuteSandboxedToolCmd
+    ExecuteSandboxedToolHandlerNode --> SandboxedToolRunnerPortNode
+    ExecuteSandboxedToolHandlerNode --> ToolRegistryPortNode
+    ToolPolicyEvaluatorServiceNode --> ToolDefinitionVO
+    ToolPolicyEvaluatorServiceNode --> TenantAggregate
 
     %% Domain Relationships
     ConvAggregate --> MessageVO
