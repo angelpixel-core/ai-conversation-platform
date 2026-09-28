@@ -9,6 +9,9 @@ from src.infrastructure.persistence.in_memory.in_memory_idempotency_repository i
 from src.infrastructure.persistence.in_memory.in_memory_stream_buffer_repository import (
     InMemoryStreamBufferRepositoryAdapter,
 )
+from src.infrastructure.persistence.in_memory.in_memory_tool_approval_repository import (
+    InMemoryToolApprovalRepositoryAdapter,
+)
 from src.infrastructure.persistence.in_memory.repository import (
     InMemoryConversationRepository,
 )
@@ -25,5 +28,6 @@ __all__ = [
     "InMemoryIdempotencyRepositoryAdapter",
     "InMemoryStreamBufferRepositoryAdapter",
     "InMemoryTenantRepositoryAdapter",
+    "InMemoryToolApprovalRepositoryAdapter",
     "InMemoryUnitOfWork",
 ]
