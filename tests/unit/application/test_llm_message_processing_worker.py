@@ -12,12 +12,18 @@ from src.application.conversations.commands.append_assistant_message import (
 from src.application.conversations.workers.llm_message_processing_worker import (
     LlmMessageProcessingWorker,
 )
+from src.application.shared.ports.idempotency_repository_port import IdempotencyStatus
 from src.application.shared.ports.llm_client import LlmClientPort
 from src.domain.conversations.entities.conversation import Conversation
 from src.domain.conversations.exceptions import ConversationNotFoundError
 from src.domain.conversations.value_objects.message import MessageRole
 from src.domain.shared.events.event_envelope import EventEnvelope
-from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWork
+from src.infrastructure.persistence.in_memory import (
+    InMemoryAuditRepositoryAdapter,
+    InMemoryIdempotencyRepositoryAdapter,
+    InMemoryStreamBufferRepositoryAdapter,
+    InMemoryUnitOfWork,
+)
 
 
 class StubLlmClient(LlmClientPort):
@@ -248,3 +254,166 @@ async def test_worker_allows_custom_append_assistant_message_handler(
     call_arg = custom_handler.handle.call_args[0][0]
     assert call_arg.conversation_id == active_conversation.id
     assert call_arg.content == "Custom handler output"
+
+
+@pytest.mark.anyio
+async def test_worker_buffers_chunks_incrementally_to_stream_buffer_repo(
+    uow: InMemoryUnitOfWork, active_conversation: Conversation
+) -> None:
+    # Arrange
+    llm = StubLlmClient(["Chunk 1", ", ", "Chunk 2"])
+    buffer_repo = InMemoryStreamBufferRepositoryAdapter()
+    worker = LlmMessageProcessingWorker(
+        unit_of_work=uow,
+        llm_client=llm,
+        stream_buffer_repo=buffer_repo,
+    )
+
+    envelope = EventEnvelope.create(
+        event_type="MessageAppendedDomainEvent",
+        payload={
+            "conversation_id": str(active_conversation.id),
+            "message": {"role": "user", "content": "Buffer test"},
+        },
+    )
+
+    # Act
+    await worker.handle(envelope)
+
+    # Assert: Chunks buffered with sequential numbering and final chunk marker
+    chunks = await buffer_repo.get_chunks_since(
+        stream_id=str(active_conversation.id), since_sequence=0
+    )
+    assert len(chunks) == 4  # 3 tokens + 1 final chunk
+    assert chunks[0].sequence_number == 1
+    assert chunks[0].content == "Chunk 1"
+    assert chunks[0].is_final is False
+
+    assert chunks[1].sequence_number == 2
+    assert chunks[1].content == ", "
+    assert chunks[1].is_final is False
+
+    assert chunks[2].sequence_number == 3
+    assert chunks[2].content == "Chunk 2"
+    assert chunks[2].is_final is False
+
+    assert chunks[3].sequence_number == 4
+    assert chunks[3].is_final is True
+    assert await buffer_repo.is_stream_completed(str(active_conversation.id)) is True
+
+
+@pytest.mark.anyio
+async def test_worker_records_audit_log_upon_completion(
+    uow: InMemoryUnitOfWork, active_conversation: Conversation
+) -> None:
+    # Arrange
+    llm = StubLlmClient(["Audit", " token", " response"])
+    audit_repo = InMemoryAuditRepositoryAdapter()
+    worker = LlmMessageProcessingWorker(
+        unit_of_work=uow,
+        llm_client=llm,
+        audit_repo=audit_repo,
+    )
+
+    envelope = EventEnvelope.create(
+        event_type="MessageAppendedDomainEvent",
+        payload={
+            "conversation_id": str(active_conversation.id),
+            "message": {"role": "user", "content": "Audit this"},
+        },
+    )
+
+    # Act
+    await worker.handle(envelope)
+
+    # Assert
+    records = await audit_repo.list_by_resource("conversation", str(active_conversation.id))
+    assert len(records) == 1
+    record = records[0]
+    assert record.event_name == "llm_inference_completed"
+    assert record.actor_id == "worker:llm_message_processing_worker"
+    assert record.resource_type == "conversation"
+    assert record.resource_id == str(active_conversation.id)
+    assert record.action == "chat_completion"
+    assert record.tokens_consumed == 3
+    assert record.payload["total_chunks"] == 3
+    assert record.payload["character_count"] == len("Audit token response")
+
+
+@pytest.mark.anyio
+async def test_worker_respects_amqp_idempotency_and_skips_duplicates(
+    uow: InMemoryUnitOfWork, active_conversation: Conversation
+) -> None:
+    # Arrange
+    llm = StubLlmClient(["Once only"])
+    idempotency_repo = InMemoryIdempotencyRepositoryAdapter()
+    worker = LlmMessageProcessingWorker(
+        unit_of_work=uow,
+        llm_client=llm,
+        idempotency_repo=idempotency_repo,
+    )
+
+    envelope = EventEnvelope.create(
+        event_type="MessageAppendedDomainEvent",
+        payload={
+            "conversation_id": str(active_conversation.id),
+            "message": {"role": "user", "content": "Idempotent msg"},
+        },
+    )
+
+    # Act 1: Initial handling
+    await worker.handle(envelope)
+
+    # Assert 1: Completed and recorded
+    key = f"worker:event:{envelope.id}"
+    rec = await idempotency_repo.get(key)
+    assert rec is not None
+    assert rec.status == IdempotencyStatus.COMPLETED
+    assert len(llm.recorded_messages) == 1
+
+    with uow:
+        conv = uow.conversations.get(active_conversation.id)
+        assert conv is not None
+        assert len(conv.messages) == 2
+
+    # Act 2: Duplicate delivery of identical AMQP message
+    await worker.handle(envelope)
+
+    # Assert 2: LLM not called again, no duplicate message in conversation
+    assert len(llm.recorded_messages) == 1
+    with uow:
+        conv = uow.conversations.get(active_conversation.id)
+        assert conv is not None
+        assert len(conv.messages) == 2
+
+
+@pytest.mark.anyio
+async def test_worker_marks_idempotency_failed_when_llm_raises_error(
+    uow: InMemoryUnitOfWork, active_conversation: Conversation
+) -> None:
+    # Arrange
+    llm = ErrorLlmClient()
+    idempotency_repo = InMemoryIdempotencyRepositoryAdapter()
+    worker = LlmMessageProcessingWorker(
+        unit_of_work=uow,
+        llm_client=llm,
+        idempotency_repo=idempotency_repo,
+    )
+
+    envelope = EventEnvelope.create(
+        event_type="MessageAppendedDomainEvent",
+        payload={
+            "conversation_id": str(active_conversation.id),
+            "message": {"role": "user", "content": "Trigger failure"},
+        },
+    )
+
+    # Act & Assert
+    with pytest.raises(RuntimeError, match="LLM provider unavailable"):
+        await worker.handle(envelope)
+
+    key = f"worker:event:{envelope.id}"
+    rec = await idempotency_repo.get(key)
+    assert rec is not None
+    assert rec.status == IdempotencyStatus.FAILED
+
