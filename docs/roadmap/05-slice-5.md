@@ -124,7 +124,7 @@ Dotar al sistema de resiliencia y trazabilidad de grado financiero/enterprise:
   - Repositorio Buffer Chunks: `src/infrastructure/persistence/mssql/stream_buffer_repository.py`
   - Unit of Work MSSQL: extender `src/infrastructure/persistence/mssql/unit_of_work.py` para incluir repositorios de auditoría, idempotencia y buffer dentro del contexto transaccional.
 
-- [ ] **Migraciones de Esquema T-SQL (Alembic / MSSQL)**
+- [x] **Migraciones de Esquema T-SQL (Alembic / MSSQL)**
   - Archivo: `src/infrastructure/persistence/mssql/migrations/versions/0002_enterprise_auditing_and_idempotency.py`
 
 - [ ] **Tests de Integración con SQL Server Real**
