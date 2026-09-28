@@ -10,12 +10,18 @@ from src.application.shared.ports.unit_of_work import UnitOfWork
 from src.domain.conversations.ports.conversation_repository import ConversationRepository
 from src.domain.knowledge.ports.knowledge_repository_port import KnowledgeRepositoryPort
 from src.domain.tenants.ports.tenant_repository_port import TenantRepositoryPort
+from src.domain.tools.ports.tool_approval_repository_port import (
+    ToolApprovalRepositoryPort,
+)
 from src.infrastructure.persistence.mssql.audit_repository import MssqlAuditRepository
 from src.infrastructure.persistence.mssql.idempotency_repository import (
     MssqlIdempotencyRepository,
 )
 from src.infrastructure.persistence.mssql.mssql_knowledge_repository import (
     MssqlKnowledgeRepository,
+)
+from src.infrastructure.persistence.mssql.mssql_tool_approval_repository import (
+    MssqlToolApprovalRepository,
 )
 from src.infrastructure.persistence.mssql.outbox_repository import MssqlOutboxRepository
 from src.infrastructure.persistence.mssql.repository import MssqlConversationRepository
@@ -38,6 +44,7 @@ class MssqlUnitOfWork(UnitOfWork):
         self._stream_buffer: MssqlStreamBufferRepository | None = None
         self._tenants: MssqlTenantRepository | None = None
         self._knowledge: KnowledgeRepositoryPort | None = None
+        self._tool_approvals: MssqlToolApprovalRepository | None = None
 
     @property
     def tenants(self) -> TenantRepositoryPort:  # pyright: ignore[reportIncompatibleVariableOverride]
@@ -59,6 +66,13 @@ class MssqlUnitOfWork(UnitOfWork):
         if self._knowledge is None:
             raise RuntimeError("UnitOfWork has not been started. Use 'with uow:' context.")
         return self._knowledge
+
+    @property
+    def tool_approvals(self) -> ToolApprovalRepositoryPort:  # pyright: ignore[reportIncompatibleVariableOverride]
+        """Active repository for Tool approvals within this transaction."""
+        if self._tool_approvals is None:
+            raise RuntimeError("UnitOfWork has not been started. Use 'with uow:' context.")
+        return self._tool_approvals
 
     @property
     def outbox(self) -> MssqlOutboxRepository:
@@ -98,6 +112,7 @@ class MssqlUnitOfWork(UnitOfWork):
         self._stream_buffer = MssqlStreamBufferRepository(session=self._session)
         self._tenants = MssqlTenantRepository(session=self._session)
         self._knowledge = MssqlKnowledgeRepository(session=self._session)
+        self._tool_approvals = MssqlToolApprovalRepository(session=self._session)
         return self
 
     def __exit__(
@@ -121,6 +136,7 @@ class MssqlUnitOfWork(UnitOfWork):
                 self._stream_buffer = None
                 self._tenants = None
                 self._knowledge = None
+                self._tool_approvals = None
 
     def commit(self) -> None:
         """Atomically commit all changes made within the active transaction."""

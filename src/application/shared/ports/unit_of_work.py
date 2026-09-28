@@ -5,6 +5,9 @@ from typing import Self
 from src.domain.conversations.ports.conversation_repository import ConversationRepository
 from src.domain.knowledge.ports.knowledge_repository_port import KnowledgeRepositoryPort
 from src.domain.tenants.ports.tenant_repository_port import TenantRepositoryPort
+from src.domain.tools.ports.tool_approval_repository_port import (
+    ToolApprovalRepositoryPort,
+)
 
 
 class UnitOfWork(ABC):
@@ -17,6 +20,7 @@ class UnitOfWork(ABC):
     conversations: ConversationRepository
     tenants: TenantRepositoryPort
     knowledge: KnowledgeRepositoryPort
+    tool_approvals: ToolApprovalRepositoryPort
 
     @abstractmethod
     def __enter__(self) -> Self:
