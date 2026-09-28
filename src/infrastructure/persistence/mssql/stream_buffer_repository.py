@@ -39,7 +39,7 @@ class MssqlStreamBufferRepository(StreamBufferRepositoryPort):
         results = self._session.exec(stmt).all()
         return [
             StreamChunk(
-                chunk_id=m.id,
+                chunk_id=str(m.id),
                 sequence_number=m.sequence_number,
                 content=m.content,
                 is_final=m.is_final,
