@@ -4,12 +4,12 @@ from collections.abc import Iterator
 
 import pytest
 from sqlmodel import Session, SQLModel, create_engine
-from src.infrastructure.persistence.mssql.audit_repository import (
-    MssqlAuditRepository,
-)
 
 from src.domain.audit.audit_log_entity import AuditLogRecord
 from src.domain.audit.ports.audit_repository_port import AuditRepositoryPort
+from src.infrastructure.persistence.mssql.audit_repository import (
+    MssqlAuditRepository,
+)
 
 
 @pytest.fixture(name="session")
@@ -32,7 +32,7 @@ async def test_mssql_audit_repository_records_and_queries(session: Session) -> N
         resource_id="chat-100",
         action="infer",
         tokens_consumed=100,
-        metadata={"model": "gpt-4"},
+        payload={"model": "gpt-4"},
     )
     entry2 = AuditLogRecord.create(
         event_name="token_usage",
@@ -49,4 +49,4 @@ async def test_mssql_audit_repository_records_and_queries(session: Session) -> N
     chat100_logs = await repo.list_by_resource("chat", "chat-100")
     assert len(chat100_logs) == 1
     assert chat100_logs[0].tokens_consumed == 100
-    assert chat100_logs[0].metadata == {"model": "gpt-4"}
+    assert chat100_logs[0].payload == {"model": "gpt-4"}

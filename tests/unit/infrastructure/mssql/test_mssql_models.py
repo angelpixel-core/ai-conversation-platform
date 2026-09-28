@@ -93,7 +93,7 @@ def test_audit_log_model_creation_and_defaults(sqlite_session: Session) -> None:
         resource_id="chat-99",
         action="inference",
         tokens_consumed=150,
-        metadata_json='{"model": "gpt-4"}',
+        payload_json='{"model": "gpt-4"}',
     )
     sqlite_session.add(audit)
     sqlite_session.commit()
@@ -103,12 +103,12 @@ def test_audit_log_model_creation_and_defaults(sqlite_session: Session) -> None:
     assert saved.event_name == "llm_inference"
     assert saved.actor_id == "user-42"
     assert saved.tokens_consumed == 150
-    assert saved.metadata_json == '{"model": "gpt-4"}'
-    assert isinstance(saved.created_at, datetime)
+    assert saved.payload_json == '{"model": "gpt-4"}'
+    assert isinstance(saved.occurred_at, datetime)
 
 
 def test_stream_buffer_chunk_model_creation_and_defaults(sqlite_session: Session) -> None:
-    chunk_id = uuid4()
+    chunk_id = str(uuid4())
     chunk = StreamBufferChunkModel(
         id=chunk_id,
         stream_id="stream-xyz",

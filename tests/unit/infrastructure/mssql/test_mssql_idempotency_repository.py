@@ -4,13 +4,13 @@ from collections.abc import Iterator
 
 import pytest
 from sqlmodel import Session, SQLModel, create_engine
-from src.infrastructure.persistence.mssql.idempotency_repository import (
-    MssqlIdempotencyRepository,
-)
 
 from src.application.shared.ports.idempotency_repository_port import (
     IdempotencyRepositoryPort,
     IdempotencyStatus,
+)
+from src.infrastructure.persistence.mssql.idempotency_repository import (
+    MssqlIdempotencyRepository,
 )
 
 

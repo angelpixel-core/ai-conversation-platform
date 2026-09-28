@@ -19,6 +19,15 @@ def test_unit_of_work_unstarted_access_raises_runtime_error() -> None:
     with pytest.raises(RuntimeError, match="UnitOfWork has not been started"):
         _ = uow.outbox
 
+    with pytest.raises(RuntimeError, match="UnitOfWork has not been started"):
+        _ = uow.idempotency
+
+    with pytest.raises(RuntimeError, match="UnitOfWork has not been started"):
+        _ = uow.audit
+
+    with pytest.raises(RuntimeError, match="UnitOfWork has not been started"):
+        _ = uow.stream_buffer
+
 
 def test_unit_of_work_atomic_commit_persists_conversation_and_outbox() -> None:
     engine = create_engine("sqlite:///:memory:")

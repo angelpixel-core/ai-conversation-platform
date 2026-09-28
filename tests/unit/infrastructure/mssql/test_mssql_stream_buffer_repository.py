@@ -4,14 +4,14 @@ from collections.abc import Iterator
 
 import pytest
 from sqlmodel import Session, SQLModel, create_engine
-from src.infrastructure.persistence.mssql.stream_buffer_repository import (
-    MssqlStreamBufferRepository,
-)
 
 from src.application.shared.ports.stream_buffer_repository_port import (
     StreamBufferRepositoryPort,
 )
 from src.domain.conversations.value_objects.stream_chunk import StreamChunk
+from src.infrastructure.persistence.mssql.stream_buffer_repository import (
+    MssqlStreamBufferRepository,
+)
 
 
 @pytest.fixture(name="session")
