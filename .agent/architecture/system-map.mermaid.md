@@ -158,9 +158,15 @@ graph TD
     WorkerContainerNode --> RabbitMQConsumer
     WorkerContainerNode --> RabbitMQTopology
     WorkerContainerNode --> MssqlUOW
+    WorkerContainerNode --> MssqlStreamBufferRepo
+    WorkerContainerNode --> MssqlAuditRepo
+    WorkerContainerNode --> MssqlIdempotencyRepo
     WorkerHandlerNode --> AppendAssistantHandler
     WorkerHandlerNode --> LLMClientPort
     WorkerHandlerNode --> UOWPort
+    WorkerHandlerNode --> StreamBufferRepoPort
+    WorkerHandlerNode --> AuditRepoPort
+    WorkerHandlerNode --> IdempotencyRepoPort
     AppSettings --> RabbitMQConnManager
     InMemoryIdempotencyRepo -- Implementa --> IdempotencyRepoPort
     InMemoryAuditRepo -- Implementa --> AuditRepoPort

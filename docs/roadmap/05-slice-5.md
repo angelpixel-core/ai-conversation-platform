@@ -138,14 +138,14 @@ Dotar al sistema de resiliencia y trazabilidad de grado financiero/enterprise:
 
 *Integración de streaming resiliente e idempotencia en el Worker autónomo.*
 
-- [ ] **Worker con Buffer de Streaming Incremental**
+- [x] **Worker con Buffer de Streaming Incremental**
   - Archivo: `src/application/conversations/workers/llm_message_processing_worker.py` (actualizar para emitir chunks con `sequence_number` a `StreamBufferRepositoryPort` mientras se recibe el stream del LLM).
   - Registro de auditoría con tokens reales consumidos al completar la inferencia.
 
-- [ ] **Idempotencia en Consumo de Mensajes AMQP**
+- [x] **Idempotencia en Consumo de Mensajes AMQP**
   - Garantizar deduplicación a nivel de mensaje en el worker si RabbitMQ reenvía un evento previamente procesado (`ack` diferido o redelivery).
 
-- [ ] **Tests de Integración Worker + Buffer de Streaming**
+- [x] **Tests de Integración Worker + Buffer de Streaming**
   - Archivo: `tests/integration/workers/test_worker_streaming_buffer.py`
 
 ---
