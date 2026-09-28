@@ -172,14 +172,14 @@ Dotar al sistema de resiliencia y trazabilidad de grado financiero/enterprise:
 
 ### Fase 6: Ensamble, Container y Documentación de Decisiones
 
-- [ ] **Actualización de Inyección de Dependencias**
+- [x] **Actualización de Inyección de Dependencias**
   - Archivo: `src/container.py` (registro de `IdempotencyRepository`, `AuditRepository`, `StreamBufferRepository` y `StreamRecoveryService`).
   - Archivo: `src/worker_container.py` (inyección de repositorios de buffer y auditoría).
 
-- [ ] **Documento de Decisión Arquitectónica (ADR)**
+- [x] **Documento de Decisión Arquitectónica (ADR)**
   - Archivo: `.agent/architecture/decisions/0004-distributed-idempotency-and-stream-recovery.md`
 
-- [ ] **Actualización del Diagrama Vivo**
+- [x] **Actualización del Diagrama Vivo**
   - Archivo: `.agent/architecture/system-map.mermaid.md`
 
 ---

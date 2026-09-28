@@ -65,7 +65,9 @@ async def test_build_resumable_sse_response() -> None:
     assert response.headers["Cache-Control"] == "no-cache"
 
     body_chunks = [chunk async for chunk in response.body_iterator]
-    full_body = "".join(body_chunks)
+    full_body = "".join(
+        chunk.decode("utf-8") if isinstance(chunk, bytes) else str(chunk) for chunk in body_chunks
+    )
     assert "id: 1\n" in full_body
     assert "id: 2\n" in full_body
     assert "id: 0\n" not in full_body

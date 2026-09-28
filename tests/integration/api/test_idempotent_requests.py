@@ -1,7 +1,7 @@
 """Integration tests for HTTP Idempotency handling on API endpoints."""
 
-from fastapi.testclient import TestClient
 import pytest
+from fastapi.testclient import TestClient
 
 from src.application.conversations.commands.create_conversation import (
     CreateConversationHandler,
@@ -41,14 +41,18 @@ def test_create_conversation_with_idempotency_key(app_with_idempotency: TestClie
     headers = {"Idempotency-Key": key}
 
     # 1. First request
-    resp1 = app_with_idempotency.post("/conversations", json={"title": "Idempotent Chat"}, headers=headers)
+    resp1 = app_with_idempotency.post(
+        "/conversations", json={"title": "Idempotent Chat"}, headers=headers
+    )
     assert resp1.status_code == 201
     body1 = resp1.json()
     assert body1["title"] == "Idempotent Chat"
     conv_id = body1["id"]
 
     # 2. Second request with same key
-    resp2 = app_with_idempotency.post("/conversations", json={"title": "Idempotent Chat"}, headers=headers)
+    resp2 = app_with_idempotency.post(
+        "/conversations", json={"title": "Idempotent Chat"}, headers=headers
+    )
     assert resp2.status_code in (200, 201)
     body2 = resp2.json()
     assert body2["id"] == conv_id
@@ -57,7 +61,9 @@ def test_create_conversation_with_idempotency_key(app_with_idempotency: TestClie
 
 def test_send_message_with_idempotency_key(app_with_idempotency: TestClient) -> None:
     # Create conversation
-    create_resp = app_with_idempotency.post("/conversations", json={"title": "Message Idempotency Chat"})
+    create_resp = app_with_idempotency.post(
+        "/conversations", json={"title": "Message Idempotency Chat"}
+    )
     conv_id = create_resp.json()["id"]
 
     key = "send-msg-idempotency-key-002"

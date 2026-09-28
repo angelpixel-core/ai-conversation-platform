@@ -1,8 +1,9 @@
 """Integration tests for SSE stream reconnection using Last-Event-ID."""
 
 from uuid import uuid4
-from fastapi.testclient import TestClient
+
 import pytest
+from fastapi.testclient import TestClient
 
 from src.application.conversations.services.stream_recovery_service import (
     StreamRecoveryService,

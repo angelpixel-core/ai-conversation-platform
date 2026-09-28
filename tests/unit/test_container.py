@@ -1,7 +1,6 @@
 """Unit tests for Application Container composition root."""
 
 from fastapi import FastAPI
-import pytest
 
 from src.application.conversations.commands.create_conversation import (
     CreateConversationHandler,

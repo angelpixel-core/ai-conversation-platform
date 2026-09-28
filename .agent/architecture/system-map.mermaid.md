@@ -4,6 +4,7 @@
 graph TD
 
     subgraph Interfaces ["Interfaces (Driver Adapters)"]
+        AppContainerNode["AppContainer (src/container.py)"]
         RouterFastAPI["FastAPI App (build_api)"]
         IdempotencyDep["Idempotency Header Dependency"]
         ResumableSSE["Resumable SSE Endpoint (messages_router)"]
@@ -82,6 +83,13 @@ graph TD
 
     %% Interfaces to Application
     CLIExport --> RouterFastAPI
+    AppContainerNode --> RouterFastAPI
+    AppContainerNode --> UOWPort
+    AppContainerNode --> IdempotencyRepoPort
+    AppContainerNode --> AuditRepoPort
+    AppContainerNode --> StreamBufferRepoPort
+    AppContainerNode --> StreamRecoveryServiceNode
+    AppContainerNode --> IdempotentExecutor
     RouterFastAPI --> CreateConvHandler
     RouterFastAPI --> SendMessageHandler
     RouterFastAPI --> StreamConvHandler

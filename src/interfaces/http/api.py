@@ -71,7 +71,8 @@ def _register_conversation_routes(
         request: CreateConversationRequest,
         idempotency_key: Annotated[str | None, Depends(get_optional_idempotency_key)] = None,
     ) -> ConversationResponse:
-        if create_handler is None:
+        handler = create_handler
+        if handler is None:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="CreateConversationHandler not configured.",
@@ -79,7 +80,7 @@ def _register_conversation_routes(
 
         async def _execute() -> ConversationResponse:
             try:
-                res = create_handler.handle(CreateConversationCommand(title=request.title))
+                res = handler.handle(CreateConversationCommand(title=request.title))
                 return ConversationResponse(id=res.conversation_id, title=res.title)
             except ValueError as exc:
                 raise HTTPException(
@@ -97,9 +98,7 @@ def _register_conversation_routes(
                     ),
                 )
             except IdempotencyConflictError as exc:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT, detail=str(exc)
-                ) from exc
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
 
         return await _execute()
 
@@ -122,7 +121,8 @@ def _register_message_routes(
         request: SendMessageRequest,
         idempotency_key: Annotated[str | None, Depends(get_optional_idempotency_key)] = None,
     ) -> MessageResponse:
-        if send_handler is None:
+        handler = send_handler
+        if handler is None:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="SendMessageHandler not configured.",
@@ -130,7 +130,7 @@ def _register_message_routes(
 
         async def _execute() -> MessageResponse:
             try:
-                res = send_handler.handle(
+                res = handler.handle(
                     SendMessageCommand(conversation_id=conversation_id, content=request.content)
                 )
                 return MessageResponse(
@@ -140,9 +140,7 @@ def _register_message_routes(
                     created_at=res.created_at,
                 )
             except ConversationNotFoundError as exc:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
-                ) from exc
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
             except (ValueError, DomainError) as exc:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
@@ -167,9 +165,7 @@ def _register_message_routes(
                     ),
                 )
             except IdempotencyConflictError as exc:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT, detail=str(exc)
-                ) from exc
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
 
         return await _execute()
 

@@ -1,7 +1,7 @@
 """Application dependency injection container (Composition Root) for the API service."""
 
-from dataclasses import dataclass
 import logging
+from dataclasses import dataclass
 
 from fastapi import FastAPI
 
