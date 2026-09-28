@@ -124,6 +124,8 @@ graph TD
         MssqlKnowledgeRepoNode["MssqlKnowledgeRepository"]
         FakeEmbeddingClientNode["FakeEmbeddingClientAdapter"]
         HttpxEmbeddingClientNode["HttpxEmbeddingClientAdapter"]
+        KnowledgeTopologyNode["KnowledgeTopologyConfig"]
+        AnyioDocumentIndexerWorkerNode["AnyioDocumentIndexerWorker"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 
@@ -300,4 +302,10 @@ graph TD
     KnowledgeDataMapperNode --> MssqlModels
     FakeEmbeddingClientNode -- Implementa --> EmbeddingClientPortNode
     HttpxEmbeddingClientNode -- Implementa --> EmbeddingClientPortNode
+    AnyioDocumentIndexerWorkerNode --> UOWPort
+    AnyioDocumentIndexerWorkerNode --> EmbeddingClientPortNode
+    AnyioDocumentIndexerWorkerNode --> DocumentAggregate
+    AnyioDocumentIndexerWorkerNode --> DocumentChunkEntity
+    AnyioDocumentIndexerWorkerNode --> KnowledgeTopologyNode
+    KnowledgeTopologyNode -- Extiende --> RabbitMQTopology
 ```

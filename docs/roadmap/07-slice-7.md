@@ -157,16 +157,16 @@ Debido a que el entorno de despliegue utiliza Microsoft SQL Server 2022 (`mcr.mi
 
 *Consumo desacoplado de documentos e indexación por lotes sin degradar la API principal.*
 
-* [ ] **Configuración de Topología RabbitMQ**
+* [x] **Configuración de Topología RabbitMQ**
   * Archivo: `src/infrastructure/messaging/rabbitmq/knowledge_topology_config.py`
   * Exchange: `ai_platform.knowledge_events` (Topic).
   * Queue: `knowledge.indexing.queue`.
   * Routing key: `knowledge.document.uploaded`.
-* [ ] **Worker Asíncrono de Indexación con AnyIO**
+* [x] **Worker Asíncrono de Indexación con AnyIO**
   * Archivo: `src/infrastructure/messaging/rabbitmq/anyio_document_indexer_worker.py`
   * Procesamiento en batches con `anyio.create_task_group()`, semáforo de concurrencia (`anyio.Semaphore`) y manejo resiliente de errores transitorios.
-* [ ] **Tests de Integración del Worker de Ingesta**
-  * Archivo: `tests/integration/workers/test_anyio_document_indexer_worker.py`
+* [x] **Tests de Integración del Worker de Ingesta**
+  * Archivos: `tests/unit/infrastructure/messaging/test_knowledge_topology.py`, `tests/unit/infrastructure/workers/test_anyio_document_indexer_worker.py`.
 
 ---
 
