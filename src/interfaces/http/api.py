@@ -3,7 +3,7 @@
 import json
 from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, Header, HTTPException, status
@@ -47,6 +47,9 @@ from src.interfaces.http.middlewares.tenant_context_middleware import (
 )
 from src.interfaces.http.resumable_sse_endpoint import (
     build_resumable_sse_response,
+)
+from src.interfaces.http.routers.approvals_router import (
+    create_approvals_router,
 )
 from src.interfaces.http.routers.knowledge_router import (
     create_knowledge_router,
@@ -211,13 +214,44 @@ async def _fetch_streaming_citations(
         )
 
 
+def _fetch_streaming_tool_events(
+    unit_of_work: UnitOfWork | None,
+    conversation_id: UUID,
+    tenant_id_str: str | None,
+) -> list[tuple[str, dict[str, Any]]]:
+    if unit_of_work is None or tenant_id_str is None:
+        return []
+    events: list[tuple[str, dict[str, Any]]] = []
+    tid = TenantId(tenant_id_str)
+    with unit_of_work:
+        pending_list = unit_of_work.tool_approvals.get_pending(tid)
+        for appr in pending_list:
+            if appr.conversation_id == str(conversation_id):
+                events.append(
+                    (
+                        "tool_approval_required",
+                        {
+                            "approval_id": appr.id,
+                            "tool_name": appr.tool_call.tool_name,
+                            "call_id": appr.tool_call.call_id,
+                            "arguments": appr.tool_call.arguments,
+                        },
+                    )
+                )
+    return events
+
+
 async def _sse_event_stream(
     token_iterator: AsyncIterator[str],
     citations: list[Citation],
+    tool_events: list[tuple[str, dict[str, Any]]] | None = None,
 ) -> AsyncIterator[str]:
     try:
         for citation in citations:
             yield f"event: citation\ndata: {json.dumps(citation.to_dict())}\n\n"
+        if tool_events:
+            for event_name, event_data in tool_events:
+                yield f"event: {event_name}\ndata: {json.dumps(event_data)}\n\n"
         async for token in token_iterator:
             yield f"data: {token}\n\n"
         yield "data: [DONE]\n\n"
@@ -265,6 +299,7 @@ def _register_streaming_routes(
         citations = await _fetch_streaming_citations(
             retriever_service, unit_of_work, conversation_id, x_tenant_id
         )
+        tool_events = _fetch_streaming_tool_events(unit_of_work, conversation_id, x_tenant_id)
 
         try:
             query = StreamConversationQuery(
@@ -279,7 +314,7 @@ def _register_streaming_routes(
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
         return StreamingResponse(
-            _sse_event_stream(token_iterator, citations),
+            _sse_event_stream(token_iterator, citations, tool_events),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache",
@@ -334,5 +369,6 @@ def build_api(
     if unit_of_work is not None:
         app.include_router(create_tenant_admin_router(unit_of_work))
         app.include_router(create_knowledge_router(unit_of_work, indexer_worker=indexer_worker))
+        app.include_router(create_approvals_router(unit_of_work))
 
     return app
