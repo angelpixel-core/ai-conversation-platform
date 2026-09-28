@@ -54,10 +54,10 @@ Evolucionar la plataforma hacia una solución SaaS Enterprise multi-inquilino co
   - Archivo: `src/domain/tenants/value_objects/tenant_id.py` (Slug/alfanumérico inmutable, 3..64 caracteres, sin dependencias externas).
   - Archivo: `src/domain/tenants/value_objects/monetary_budget.py` (`Decimal`, saldo disponible, moneda USD, operaciones de reserva/deducción/reembolso).
   - Archivo: `src/domain/routing/value_objects/model_route.py` (Proveedor, `model_id`, coste por 1.000 tokens, `fallback_model_id`, tier mínimo).
-- [ ] **Entidades de Dominio: Tenant & TenantPolicy**
+- [x] **Entidades de Dominio: Tenant & TenantPolicy**
   - Archivo: `src/domain/tenants/entities/tenant.py` (`AggregateRoot` con balance, estado, políticas y métodos `reserve_tokens()`, `settle_actual_cost()`, `suspend()`).
   - Archivo: `src/domain/tenants/entities/tenant_policy.py` (Tier `FREE`/`STANDARD`/`ENTERPRISE`, max tokens por petición, modelos autorizados).
-- [ ] **Eventos de Dominio de Presupuesto y Enrutamiento**
+- [x] **Eventos de Dominio de Presupuesto y Enrutamiento**
   - Archivo: `src/domain/tenants/events/tenant_events.py` (`TenantQuotaExceededDomainEvent`, `TenantBudgetReservedDomainEvent`, `TenantBudgetSettledDomainEvent`, `ModelRouteFallbackActivatedDomainEvent`).
 - [ ] **Puertos de Persistencia y Catálogo (Driven Ports)**
   - Archivo: `src/domain/tenants/ports/tenant_repository_port.py` (Contrato abstracto: `get_by_id`, `save`, `reserve_budget_atomic`).

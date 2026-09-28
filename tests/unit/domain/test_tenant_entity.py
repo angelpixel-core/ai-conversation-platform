@@ -3,6 +3,7 @@
 from decimal import Decimal
 
 import pytest
+
 from src.domain.tenants.entities.tenant import Tenant, TenantStatus
 from src.domain.tenants.entities.tenant_policy import TenantPolicy, TenantTier
 from src.domain.tenants.events.tenant_events import (
@@ -11,7 +12,6 @@ from src.domain.tenants.events.tenant_events import (
     TenantQuotaExceededDomainEvent,
     TenantSuspendedDomainEvent,
 )
-
 from src.domain.tenants.value_objects.monetary_budget import MonetaryBudget
 from src.domain.tenants.value_objects.tenant_id import TenantId
 

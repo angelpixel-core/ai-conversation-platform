@@ -54,6 +54,13 @@ graph TD
         TenantIdVO["TenantId (ValueObject)"]
         MonetaryBudgetVO["MonetaryBudget (ValueObject)"]
         ModelRouteVO["ModelRoute (ValueObject)"]
+        TenantAggregate["Tenant (AggregateRoot)"]
+        TenantPolicyEntity["TenantPolicy (Entity)"]
+        TenantBudgetReservedEvent["TenantBudgetReservedDomainEvent"]
+        TenantBudgetSettledEvent["TenantBudgetSettledDomainEvent"]
+        TenantQuotaExceededEvent["TenantQuotaExceededDomainEvent"]
+        TenantSuspendedEvent["TenantSuspendedDomainEvent"]
+        FallbackActivatedEvent["ModelRouteFallbackActivatedDomainEvent"]
     end
 
     subgraph Infrastructure ["Infrastructure (Driven Adapters)"]
