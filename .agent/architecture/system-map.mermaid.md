@@ -14,6 +14,9 @@ graph TD
         TenantContextMiddlewareNode["TenantContextMiddleware"]
         TenantDependencyNode["TenantDependency (get_current_tenant_id_dep)"]
         TenantAdminRouterNode["TenantAdminRouter (/admin/tenants)"]
+        KnowledgeRouterNode["KnowledgeRouter (/tenants/{tenant_id}/documents)"]
+        KnowledgeSchemasNode["KnowledgeSchemas (DTOs)"]
+        CitationsSSENode["Streaming Citations (SSE: citation)"]
     end
 
     subgraph Application ["Application Layer (CQRS & Ports)"]
@@ -44,6 +47,11 @@ graph TD
         ReserveQuotaHandler["ReserveQuotaCommandHandler"]
         SettleQuotaCmd["SettleQuotaCommand"]
         SettleQuotaHandler["SettleQuotaCommandHandler"]
+        UploadDocCmd["UploadDocumentCommand"]
+        UploadDocHandler["UploadDocumentHandler"]
+        IndexChunksCmd["IndexDocumentChunksCommand"]
+        IndexChunksHandler["IndexDocumentChunksHandler"]
+        HybridRetrieverServiceNode["HybridRetrieverService"]
     end
 
     subgraph Domain ["Domain Layer (Core Business)"]
@@ -72,11 +80,23 @@ graph TD
         FallbackActivatedEvent["ModelRouteFallbackActivatedDomainEvent"]
         TenantRepoPort["TenantRepositoryPort (Port)"]
         ModelCatalogPortNode["ModelCatalogPort (Port)"]
+        EmbeddingVectorVO["EmbeddingVector (ValueObject)"]
+        CitationVO["Citation (ValueObject)"]
+        DocumentAggregate["Document (AggregateRoot)"]
+        DocumentChunkEntity["DocumentChunk (Entity)"]
+        DocumentUploadedEvent["DocumentUploadedDomainEvent"]
+        DocumentIndexedEvent["DocumentIndexedDomainEvent"]
+        DocumentFailedEvent["DocumentIndexingFailedDomainEvent"]
+        KnowledgeRetrievedEvent["KnowledgeContextRetrievedDomainEvent"]
+        KnowledgeRepoPortNode["KnowledgeRepositoryPort (Port)"]
+        EmbeddingClientPortNode["EmbeddingClientPort (Port)"]
+        DocumentNotFoundErr["DocumentNotFoundError"]
     end
 
     subgraph Infrastructure ["Infrastructure (Driven Adapters)"]
         InMemoryUOW["InMemoryUnitOfWork"]
         InMemoryRepo["InMemoryConversationRepository"]
+        InMemoryKnowledgeRepoNode["InMemoryKnowledgeRepositoryAdapter"]
         HttpxClient["HttpxClientAdapter"]
         InMemoryOutbox["InMemoryOutboxRepository"]
         OutboxDispatcher["OutboxDispatcher"]
@@ -103,6 +123,12 @@ graph TD
         MssqlTenantRepoNode["MssqlTenantRepository"]
         InMemoryTenantRepoNode["InMemoryTenantRepositoryAdapter"]
         InMemoryModelCatalogNode["InMemoryModelCatalogAdapter"]
+        KnowledgeDataMapperNode["KnowledgeDataMapper"]
+        MssqlKnowledgeRepoNode["MssqlKnowledgeRepository"]
+        FakeEmbeddingClientNode["FakeEmbeddingClientAdapter"]
+        HttpxEmbeddingClientNode["HttpxEmbeddingClientAdapter"]
+        KnowledgeTopologyNode["KnowledgeTopologyConfig"]
+        AnyioDocumentIndexerWorkerNode["AnyioDocumentIndexerWorker"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 
@@ -162,6 +188,10 @@ graph TD
     ConvAggregate -.-> MsgAppendedEvent
     ConvAggregate -.-> AssistantCompletedEvent
     ConvNotFoundErr -- Deriva de --> DomainError
+    DocumentAggregate --> DocumentChunkEntity
+    DocumentAggregate -.-> DocumentUploadedEvent
+    DocumentAggregate -.-> DocumentIndexedEvent
+    DocumentChunkEntity --> EmbeddingVectorVO
 
     %% Application to Domain Ports
     UOWPort --> ConvRepoPort
@@ -247,8 +277,48 @@ graph TD
     AppContainerNode --> ModelRouterServiceNode
     AppContainerNode --> ReserveQuotaHandler
     AppContainerNode --> SettleQuotaHandler
+    AppContainerNode --> HybridRetrieverServiceNode
+    AppContainerNode --> EmbeddingClientPortNode
     WorkerContainerNode --> ModelCatalogPortNode
     WorkerContainerNode --> ModelRouterServiceNode
     WorkerContainerNode --> SettleQuotaHandler
+    WorkerContainerNode --> HybridRetrieverServiceNode
+    WorkerContainerNode --> EmbeddingClientPortNode
     InMemoryModelCatalogNode -- Implementa --> ModelCatalogPortNode
+    UploadDocHandler --> UploadDocCmd
+    UploadDocHandler --> UOWPort
+    UploadDocHandler --> DocumentAggregate
+    IndexChunksHandler --> IndexChunksCmd
+    IndexChunksHandler --> UOWPort
+    IndexChunksHandler --> EmbeddingClientPortNode
+    IndexChunksHandler --> DocumentAggregate
+    IndexChunksHandler --> DocumentChunkEntity
+    HybridRetrieverServiceNode --> EmbeddingClientPortNode
+    HybridRetrieverServiceNode --> KnowledgeRepoPortNode
+    HybridRetrieverServiceNode --> CitationVO
+    DocumentNotFoundErr -- Deriva de --> DomainError
+    UOWPort --> KnowledgeRepoPortNode
+    InMemoryKnowledgeRepoNode -- Implementa --> KnowledgeRepoPortNode
+    InMemoryUOW --> InMemoryKnowledgeRepoNode
+    MssqlKnowledgeRepoNode -- Implementa --> KnowledgeRepoPortNode
+    MssqlUOW --> MssqlKnowledgeRepoNode
+    MssqlKnowledgeRepoNode --> KnowledgeDataMapperNode
+    MssqlKnowledgeRepoNode --> MssqlModels
+    KnowledgeDataMapperNode --> DocumentAggregate
+    KnowledgeDataMapperNode --> DocumentChunkEntity
+    KnowledgeDataMapperNode --> MssqlModels
+    FakeEmbeddingClientNode -- Implementa --> EmbeddingClientPortNode
+    HttpxEmbeddingClientNode -- Implementa --> EmbeddingClientPortNode
+    AnyioDocumentIndexerWorkerNode --> UOWPort
+    AnyioDocumentIndexerWorkerNode --> EmbeddingClientPortNode
+    AnyioDocumentIndexerWorkerNode --> DocumentAggregate
+    AnyioDocumentIndexerWorkerNode --> DocumentChunkEntity
+    AnyioDocumentIndexerWorkerNode --> KnowledgeTopologyNode
+    KnowledgeTopologyNode -- Extiende --> RabbitMQTopology
+    RouterFastAPI --> KnowledgeRouterNode
+    KnowledgeRouterNode --> KnowledgeSchemasNode
+    KnowledgeRouterNode --> UOWPort
+    RouterFastAPI --> CitationsSSENode
+    CitationsSSENode --> HybridRetrieverServiceNode
+    WorkerHandlerNode --> HybridRetrieverServiceNode
 ```

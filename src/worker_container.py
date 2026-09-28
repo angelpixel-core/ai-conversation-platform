@@ -10,6 +10,9 @@ from dataclasses import dataclass
 from src.application.conversations.workers.llm_message_processing_worker import (
     LlmMessageProcessingWorker,
 )
+from src.application.knowledge.services.hybrid_retriever_service import (
+    HybridRetrieverService,
+)
 from src.application.routing.services.model_router_service import (
     ModelRouterService,
 )
@@ -19,7 +22,14 @@ from src.application.shared.ports.unit_of_work import UnitOfWork
 from src.application.tenants.commands.settle_quota_command import (
     SettleQuotaCommandHandler,
 )
+from src.domain.knowledge.ports.embedding_client_port import EmbeddingClientPort
+from src.domain.knowledge.ports.knowledge_repository_port import (
+    KnowledgeRepositoryPort,
+)
 from src.domain.routing.ports.model_catalog_port import ModelCatalogPort
+from src.infrastructure.embeddings.fake_embedding_client import (
+    FakeEmbeddingClientAdapter,
+)
 from src.infrastructure.llm.fake_llm_client import FakeLlmClientAdapter
 from src.infrastructure.messaging.in_memory.in_memory_message_broker import (
     InMemoryMessageBroker,
@@ -42,6 +52,7 @@ from src.infrastructure.persistence.in_memory import (
 from src.infrastructure.persistence.mssql import (
     MssqlAuditRepository,
     MssqlIdempotencyRepository,
+    MssqlKnowledgeRepository,
     MssqlStreamBufferRepository,
     MssqlUnitOfWork,
     create_mssql_engine,
@@ -73,6 +84,8 @@ class WorkerContainer:
     model_catalog: ModelCatalogPort | None = None
     connection_manager: RabbitMQConnectionManager | None = None
     topology_config: RabbitMQTopologyConfig | None = None
+    retriever_service: HybridRetrieverService | None = None
+    embedding_client: EmbeddingClientPort | None = None
 
     async def start(self) -> None:
         """Initialize messaging topology (if applicable) and begin consuming."""
@@ -102,6 +115,7 @@ def create_worker_container(
     topology_config: RabbitMQTopologyConfig | None = None,
     fallback_llm_client: LlmClientPort | None = None,
     model_catalog: ModelCatalogPort | None = None,
+    embedding_client: EmbeddingClientPort | None = None,
 ) -> WorkerContainer:
     """Build and wire the autonomous background worker container."""
     current_settings = settings or get_settings()
@@ -110,9 +124,16 @@ def create_worker_container(
     stream_buffer_repo = None
     audit_repo = None
     idempotency_repo = None
+    read_knowledge_repo: KnowledgeRepositoryPort | None = None
 
     if unit_of_work is not None:
         uow = unit_of_work
+        try:
+            read_knowledge_repo = uow.knowledge
+        except RuntimeError:
+            session_factory = getattr(uow, "_session_factory", None)
+            if session_factory is not None:
+                read_knowledge_repo = MssqlKnowledgeRepository(session=session_factory())
     elif current_settings.PERSISTENCE_DRIVER == PersistenceDriver.MSSQL:
         engine = create_mssql_engine(current_settings.get_database_url())
         session_factory = create_session_factory(engine)
@@ -120,11 +141,13 @@ def create_worker_container(
         stream_buffer_repo = MssqlStreamBufferRepository(session=session_factory)
         audit_repo = MssqlAuditRepository(session=session_factory)
         idempotency_repo = MssqlIdempotencyRepository(session=session_factory)
+        read_knowledge_repo = MssqlKnowledgeRepository(session=session_factory())
     else:
         uow = InMemoryUnitOfWork()
         stream_buffer_repo = InMemoryStreamBufferRepositoryAdapter()
         audit_repo = InMemoryAuditRepositoryAdapter()
         idempotency_repo = InMemoryIdempotencyRepositoryAdapter()
+        read_knowledge_repo = uow.knowledge
 
     # 2. Wire LLM Client
     client = llm_client if llm_client is not None else FakeLlmClientAdapter()
@@ -132,6 +155,14 @@ def create_worker_container(
     catalog = model_catalog if model_catalog is not None else InMemoryModelCatalogAdapter()
     model_router = ModelRouterService(catalog=catalog)
     settle_handler = SettleQuotaCommandHandler(unit_of_work=uow)
+
+    emb_client = embedding_client or FakeEmbeddingClientAdapter(dimension=1536)
+    retriever_service = HybridRetrieverService(
+        embedding_client=emb_client,
+        knowledge_repository=read_knowledge_repo
+        if read_knowledge_repo is not None
+        else uow.knowledge,
+    )
 
     # 3. Wire Worker Handler
     worker_handler = LlmMessageProcessingWorker(
@@ -142,6 +173,7 @@ def create_worker_container(
         idempotency_repo=idempotency_repo,
         fallback_llm_client=fallback_llm_client,
         settle_handler=settle_handler,
+        retriever=retriever_service,
     )
 
     # 4. Wire Messaging / Consumer
@@ -187,4 +219,6 @@ def create_worker_container(
         model_catalog=catalog,
         connection_manager=conn_mgr,
         topology_config=topo,
+        retriever_service=retriever_service,
+        embedding_client=emb_client,
     )

@@ -7,12 +7,16 @@ import pytest
 from src.application.conversations.workers.llm_message_processing_worker import (
     LlmMessageProcessingWorker,
 )
+from src.application.knowledge.services.hybrid_retriever_service import (
+    HybridRetrieverService,
+)
 from src.application.routing.services.model_router_service import (
     ModelRouterService,
 )
 from src.application.tenants.commands.settle_quota_command import (
     SettleQuotaCommandHandler,
 )
+from src.domain.knowledge.ports.embedding_client_port import EmbeddingClientPort
 from src.domain.routing.ports.model_catalog_port import ModelCatalogPort
 from src.infrastructure.messaging.in_memory.in_memory_message_broker import (
     InMemoryMessageBroker,
@@ -50,6 +54,8 @@ def test_create_worker_container_default_wires_in_memory() -> None:
     assert isinstance(container.settle_quota_handler, SettleQuotaCommandHandler)
     assert isinstance(container.model_router_service, ModelRouterService)
     assert isinstance(container.model_catalog, ModelCatalogPort)
+    assert isinstance(container.retriever_service, HybridRetrieverService)
+    assert isinstance(container.embedding_client, EmbeddingClientPort)
 
 
 def test_create_worker_container_with_mssql_driver() -> None:
@@ -62,6 +68,8 @@ def test_create_worker_container_with_mssql_driver() -> None:
 
     assert isinstance(container, WorkerContainer)
     assert isinstance(container.unit_of_work, MssqlUnitOfWork)
+    assert isinstance(container.retriever_service, HybridRetrieverService)
+    assert isinstance(container.embedding_client, EmbeddingClientPort)
 
 
 def test_create_worker_container_with_rabbitmq_driver() -> None:
