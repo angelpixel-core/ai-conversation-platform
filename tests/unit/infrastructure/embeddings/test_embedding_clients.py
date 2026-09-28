@@ -1,7 +1,8 @@
 """Unit tests for embedding client adapters."""
 
-import pytest
 import httpx
+import pytest
+
 from src.infrastructure.embeddings.fake_embedding_client import (
     FakeEmbeddingClientAdapter,
 )
@@ -37,7 +38,9 @@ async def test_httpx_embedding_client_adapter_success() -> None:
         )
 
     transport = httpx.MockTransport(handler)
-    async with httpx.AsyncClient(transport=transport, base_url="https://api.openai.com") as http_client:
+    async with httpx.AsyncClient(
+        transport=transport, base_url="https://api.openai.com"
+    ) as http_client:
         client = HttpxEmbeddingClientAdapter(
             http_client=http_client,
             model_name="text-embedding-3-small",

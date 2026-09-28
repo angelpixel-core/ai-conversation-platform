@@ -24,6 +24,8 @@ def test_alembic_migrations_upgrade_and_downgrade() -> None:
         assert "stream_buffer_chunks" in tables
         assert "tenants" in tables
         assert "tenant_policies" in tables
+        assert "knowledge_documents" in tables
+        assert "knowledge_document_chunks" in tables
 
         # Downgrade to initial revision
         command.downgrade(config, "d60987c4b536")
@@ -34,3 +36,5 @@ def test_alembic_migrations_upgrade_and_downgrade() -> None:
         assert "stream_buffer_chunks" not in tables_after
         assert "tenants" not in tables_after
         assert "tenant_policies" not in tables_after
+        assert "knowledge_documents" not in tables_after
+        assert "knowledge_document_chunks" not in tables_after

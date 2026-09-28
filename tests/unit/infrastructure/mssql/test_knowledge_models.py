@@ -1,7 +1,7 @@
 """Unit tests for MSSQL DocumentModel and DocumentChunkModel."""
 
 from collections.abc import Iterator
-from datetime import UTC, datetime
+from datetime import datetime
 
 import pytest
 from sqlmodel import Session, SQLModel, create_engine, select

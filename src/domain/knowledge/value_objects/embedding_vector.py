@@ -1,5 +1,6 @@
 """Immutable representation of a dense vector embedding with L2 normalization."""
 
+import json
 import math
 from dataclasses import dataclass
 
@@ -53,3 +54,13 @@ class EmbeddingVector:
         if norm_a == 0.0 or norm_b == 0.0:
             return 0.0
         return max(-1.0, min(1.0, dot / (norm_a * norm_b)))
+
+    def to_json(self) -> str:
+        """Serializes vector values to a JSON string representation."""
+        return json.dumps(list(self.values))
+
+    @classmethod
+    def from_json(cls, json_str: str) -> "EmbeddingVector":
+        """Deserializes a vector from a JSON string without re-normalizing."""
+        data = json.loads(json_str)
+        return cls.from_list(data, normalize=False)

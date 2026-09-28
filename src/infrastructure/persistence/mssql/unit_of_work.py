@@ -14,6 +14,9 @@ from src.infrastructure.persistence.mssql.audit_repository import MssqlAuditRepo
 from src.infrastructure.persistence.mssql.idempotency_repository import (
     MssqlIdempotencyRepository,
 )
+from src.infrastructure.persistence.mssql.mssql_knowledge_repository import (
+    MssqlKnowledgeRepository,
+)
 from src.infrastructure.persistence.mssql.outbox_repository import MssqlOutboxRepository
 from src.infrastructure.persistence.mssql.repository import MssqlConversationRepository
 from src.infrastructure.persistence.mssql.stream_buffer_repository import (
@@ -94,6 +97,7 @@ class MssqlUnitOfWork(UnitOfWork):
         self._audit = MssqlAuditRepository(session=self._session)
         self._stream_buffer = MssqlStreamBufferRepository(session=self._session)
         self._tenants = MssqlTenantRepository(session=self._session)
+        self._knowledge = MssqlKnowledgeRepository(session=self._session)
         return self
 
     def __exit__(

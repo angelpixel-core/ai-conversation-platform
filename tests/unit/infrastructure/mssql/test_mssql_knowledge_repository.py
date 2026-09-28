@@ -52,8 +52,12 @@ def test_mssql_knowledge_repo_chunks_and_hybrid_search(sqlite_session: Session) 
     v2 = EmbeddingVector.from_list([0.0, 1.0])
 
     chunks = [
-        DocumentChunk("chk-1", "doc-10", tid, 0, "Python Clean Architecture DDD", v1, page_number=1),
-        DocumentChunk("chk-2", "doc-10", tid, 1, "MSSQL relational vector tables", v2, page_number=2),
+        DocumentChunk(
+            "chk-1", "doc-10", tid, 0, "Python Clean Architecture DDD", v1, page_number=1
+        ),
+        DocumentChunk(
+            "chk-2", "doc-10", tid, 1, "MSSQL relational vector tables", v2, page_number=2
+        ),
     ]
     repo.save_chunks(chunks)
     sqlite_session.commit()
