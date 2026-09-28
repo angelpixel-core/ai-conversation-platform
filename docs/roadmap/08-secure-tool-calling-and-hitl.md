@@ -107,21 +107,21 @@ Evolucionar la plataforma de un sistema conversacional puramente reactivo a un m
 
 *Persistencia relacional de llamadas, parámetros y firmas de aprobación en SQL Server.*
 
-* [ ] **Modelos ORM Físicos en MSSQL**
+* [x] **Modelos ORM Físicos en MSSQL**
   * Archivo: `src/infrastructure/persistence/mssql/models.py` (`ToolApprovalModel` y `ToolExecutionAuditModel`).
-* [ ] **Mappers y Adaptadores de Repositorio MSSQL**
+* [x] **Mappers y Adaptadores de Repositorio MSSQL**
   * Archivo: `src/infrastructure/persistence/mssql/tool_approval_mapper.py`
   * Archivo: `src/infrastructure/persistence/mssql/mssql_tool_approval_repository.py`
   * Consultas transaccionales con `WITH (ROWLOCK, UPDLOCK)` para evitar que dos operadores aprueben la misma acción simultáneamente.
-* [ ] **Adaptador en Memoria para Testing Rápido**
+* [x] **Adaptador en Memoria para Testing Rápido**
   * Archivo: `src/infrastructure/persistence/in_memory/in_memory_tool_approval_repository.py`
-* [ ] **Adaptador de Ejecución Aislada (Sandboxed Runner Adapter)**
+* [x] **Adaptador de Ejecución Aislada (Sandboxed Runner Adapter)**
   * Archivo: `src/infrastructure/tools/anyio_sandboxed_tool_runner.py`
   * Ejecución con timeout estricto usando `anyio.fail_after()`, límite de memoria y captura de excepciones defensivas.
-* [ ] **Migraciones de Esquema T-SQL (Alembic / MSSQL)**
+* [x] **Migraciones de Esquema T-SQL (Alembic / MSSQL)**
   * Archivo: `src/infrastructure/persistence/mssql/migrations/versions/0005_tools_and_hitl_approvals.py`
-* [ ] **Tests de Integración con SQL Server / SQLite**
-  * Archivos: `tests/unit/infrastructure/mssql/test_tool_approval_models.py`, `tests/unit/infrastructure/mssql/test_mssql_tool_approval_repository.py`, `tests/unit/infrastructure/tools/test_anyio_sandboxed_tool_runner.py`.
+* [x] **Tests de Integración con SQL Server / SQLite**
+  * Archivos: `tests/unit/infrastructure/mssql/test_tool_approval_models.py`, `tests/unit/infrastructure/mssql/test_mssql_tool_approval_repository.py`, `tests/unit/infrastructure/persistence/test_in_memory_tool_approval_repository.py`, `tests/unit/infrastructure/tools/test_anyio_sandboxed_tool_runner.py`.
 
 ---
 

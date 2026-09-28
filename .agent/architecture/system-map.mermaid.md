@@ -150,6 +150,10 @@ graph TD
         HttpxEmbeddingClientNode["HttpxEmbeddingClientAdapter"]
         KnowledgeTopologyNode["KnowledgeTopologyConfig"]
         AnyioDocumentIndexerWorkerNode["AnyioDocumentIndexerWorker"]
+        ToolApprovalDataMapperNode["ToolApprovalMapper"]
+        MssqlToolApprovalRepoNode["MssqlToolApprovalRepository"]
+        InMemoryToolApprovalRepoNode["InMemoryToolApprovalRepositoryAdapter"]
+        AnyioSandboxedToolRunnerNode["AnyioSandboxedToolRunner"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 
@@ -359,4 +363,14 @@ graph TD
     RouterFastAPI --> CitationsSSENode
     CitationsSSENode --> HybridRetrieverServiceNode
     WorkerHandlerNode --> HybridRetrieverServiceNode
+    MssqlToolApprovalRepoNode -- Implementa --> ToolApprovalRepoPortNode
+    InMemoryToolApprovalRepoNode -- Implementa --> ToolApprovalRepoPortNode
+    AnyioSandboxedToolRunnerNode -- Implementa --> SandboxedToolRunnerPortNode
+    MssqlToolApprovalRepoNode --> ToolApprovalDataMapperNode
+    MssqlToolApprovalRepoNode --> MssqlModels
+    ToolApprovalDataMapperNode --> ToolApprovalRequestAggregate
+    ToolApprovalDataMapperNode --> MssqlModels
+    MssqlUOW --> MssqlToolApprovalRepoNode
+    InMemoryUOW --> InMemoryToolApprovalRepoNode
+    UOWPort --> ToolApprovalRepoPortNode
 ```
