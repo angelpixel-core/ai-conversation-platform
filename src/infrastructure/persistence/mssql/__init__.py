@@ -21,6 +21,9 @@ from src.infrastructure.persistence.mssql.models import (
     TenantModel,
     TenantPolicyModel,
 )
+from src.infrastructure.persistence.mssql.mssql_knowledge_repository import (
+    MssqlKnowledgeRepository,
+)
 from src.infrastructure.persistence.mssql.outbox_repository import MssqlOutboxRepository
 from src.infrastructure.persistence.mssql.repository import MssqlConversationRepository
 from src.infrastructure.persistence.mssql.stream_buffer_repository import (
@@ -39,6 +42,7 @@ __all__ = [
     "MssqlAuditRepository",
     "MssqlConversationRepository",
     "MssqlIdempotencyRepository",
+    "MssqlKnowledgeRepository",
     "MssqlOutboxRepository",
     "MssqlStreamBufferRepository",
     "MssqlTenantRepository",
