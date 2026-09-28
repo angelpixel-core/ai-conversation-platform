@@ -97,10 +97,10 @@ Debido a que el entorno de despliegue utiliza Microsoft SQL Server 2022 (`mcr.mi
 * [x] **Eventos de Dominio de Ingesta y Recuperación**
   * Archivo: `src/domain/knowledge/events/knowledge_events.py`
   * Eventos: `DocumentUploadedDomainEvent`, `DocumentIndexedDomainEvent`, `DocumentIndexingFailedDomainEvent`, `KnowledgeContextRetrievedDomainEvent`.
-* [ ] **Puertos de Persistencia y Modelos de Embedding (Driven Ports)**
+* [x] **Puertos de Persistencia y Modelos de Embedding (Driven Ports)**
   * Archivo: `src/domain/knowledge/ports/knowledge_repository_port.py` (`save_document`, `get_document`, `save_chunks`, `get_chunks_by_document`, `search_hybrid`).
   * Archivo: `src/domain/knowledge/ports/embedding_client_port.py` (`generate_embeddings(texts: Sequence[str]) -> list[EmbeddingVector]`).
-* [ ] **Tests Unitarios de Dominio**
+* [x] **Tests Unitarios de Dominio**
   * Archivo: `tests/unit/domain/knowledge/test_embedding_vector.py`
   * Archivo: `tests/unit/domain/knowledge/test_citation.py`
   * Archivo: `tests/unit/domain/knowledge/test_document.py`

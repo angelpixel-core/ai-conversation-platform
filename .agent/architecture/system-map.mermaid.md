@@ -80,6 +80,8 @@ graph TD
         DocumentIndexedEvent["DocumentIndexedDomainEvent"]
         DocumentFailedEvent["DocumentIndexingFailedDomainEvent"]
         KnowledgeRetrievedEvent["KnowledgeContextRetrievedDomainEvent"]
+        KnowledgeRepoPortNode["KnowledgeRepositoryPort (Port)"]
+        EmbeddingClientPortNode["EmbeddingClientPort (Port)"]
     end
 
     subgraph Infrastructure ["Infrastructure (Driven Adapters)"]
