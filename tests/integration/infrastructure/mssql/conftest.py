@@ -43,6 +43,9 @@ def clean_db(mssql_engine: Engine) -> Generator[None, None, None]:
             session.execute(text("DELETE FROM messages"))
             session.execute(text("DELETE FROM outbox_messages"))
             session.execute(text("DELETE FROM conversations"))
+            session.execute(text("DELETE FROM stream_buffer_chunks"))
+            session.execute(text("DELETE FROM audit_logs"))
+            session.execute(text("DELETE FROM idempotency_keys"))
             session.commit()
 
     _truncate_tables()

@@ -8,8 +8,15 @@ from sqlmodel import Session
 
 from src.application.shared.ports.unit_of_work import UnitOfWork
 from src.domain.conversations.ports.conversation_repository import ConversationRepository
+from src.infrastructure.persistence.mssql.audit_repository import MssqlAuditRepository
+from src.infrastructure.persistence.mssql.idempotency_repository import (
+    MssqlIdempotencyRepository,
+)
 from src.infrastructure.persistence.mssql.outbox_repository import MssqlOutboxRepository
 from src.infrastructure.persistence.mssql.repository import MssqlConversationRepository
+from src.infrastructure.persistence.mssql.stream_buffer_repository import (
+    MssqlStreamBufferRepository,
+)
 
 
 class MssqlUnitOfWork(UnitOfWork):
@@ -20,6 +27,9 @@ class MssqlUnitOfWork(UnitOfWork):
         self._session: Session | None = None
         self._conversations: MssqlConversationRepository | None = None
         self._outbox: MssqlOutboxRepository | None = None
+        self._idempotency: MssqlIdempotencyRepository | None = None
+        self._audit: MssqlAuditRepository | None = None
+        self._stream_buffer: MssqlStreamBufferRepository | None = None
 
     @property
     def conversations(self) -> ConversationRepository:  # pyright: ignore[reportIncompatibleVariableOverride]
@@ -35,11 +45,35 @@ class MssqlUnitOfWork(UnitOfWork):
             raise RuntimeError("UnitOfWork has not been started. Use 'with uow:' context.")
         return self._outbox
 
+    @property
+    def idempotency(self) -> MssqlIdempotencyRepository:
+        """Active repository for Idempotency records within this transaction."""
+        if self._idempotency is None:
+            raise RuntimeError("UnitOfWork has not been started. Use 'with uow:' context.")
+        return self._idempotency
+
+    @property
+    def audit(self) -> MssqlAuditRepository:
+        """Active repository for Audit logs within this transaction."""
+        if self._audit is None:
+            raise RuntimeError("UnitOfWork has not been started. Use 'with uow:' context.")
+        return self._audit
+
+    @property
+    def stream_buffer(self) -> MssqlStreamBufferRepository:
+        """Active repository for Stream buffer chunks within this transaction."""
+        if self._stream_buffer is None:
+            raise RuntimeError("UnitOfWork has not been started. Use 'with uow:' context.")
+        return self._stream_buffer
+
     def __enter__(self) -> Self:
         """Start a new database session and transaction."""
         self._session = self._session_factory()
         self._conversations = MssqlConversationRepository(session=self._session)
         self._outbox = MssqlOutboxRepository(session=self._session)
+        self._idempotency = MssqlIdempotencyRepository(session=self._session)
+        self._audit = MssqlAuditRepository(session=self._session)
+        self._stream_buffer = MssqlStreamBufferRepository(session=self._session)
         return self
 
     def __exit__(
@@ -58,6 +92,9 @@ class MssqlUnitOfWork(UnitOfWork):
                 self._session = None
                 self._conversations = None
                 self._outbox = None
+                self._idempotency = None
+                self._audit = None
+                self._stream_buffer = None
 
     def commit(self) -> None:
         """Atomically commit all changes made within the active transaction."""
