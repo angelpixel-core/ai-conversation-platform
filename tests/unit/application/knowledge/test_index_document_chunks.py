@@ -153,3 +153,35 @@ async def test_index_document_chunks_empty_chunks_raises_error() -> None:
 
     with pytest.raises(ValueError, match="vacía"):
         await handler.handle(command)
+
+
+class FailingEmbeddingClient(EmbeddingClientPort):
+    async def generate_embeddings(self, texts: Sequence[str]) -> list[EmbeddingVector]:
+        raise RuntimeError("Embedding service unavailable")
+
+
+@pytest.mark.anyio
+async def test_index_document_chunks_embedding_failure_marks_document_failed() -> None:
+    uow = FakeUnitOfWork()
+    tid = TenantId("tenant-1")
+    doc = Document.create("doc-1", tid, "handbook.pdf")
+    uow.knowledge.save_document(doc)
+
+    handler = IndexDocumentChunksHandler(
+        unit_of_work=uow,
+        embedding_client=FailingEmbeddingClient(),
+    )
+
+    command = IndexDocumentChunksCommand(
+        tenant_id="tenant-1",
+        document_id="doc-1",
+        chunks=[ChunkInput(content="Section 1", page_number=1)],
+    )
+
+    with pytest.raises(RuntimeError, match="Embedding service unavailable"):
+        await handler.handle(command)
+
+    updated_doc = uow.knowledge.get_document(tid, "doc-1")
+    assert updated_doc is not None
+    assert updated_doc.status == DocumentStatus.FAILED
+

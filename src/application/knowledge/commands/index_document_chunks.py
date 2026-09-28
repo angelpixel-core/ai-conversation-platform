@@ -64,34 +64,43 @@ class IndexDocumentChunksHandler:
             uow.knowledge.save_document(doc)
             uow.commit()
 
-        texts = [c.content for c in command.chunks]
-        embeddings = await self._embedding_client.generate_embeddings(texts)
+        try:
+            texts = [c.content for c in command.chunks]
+            embeddings = await self._embedding_client.generate_embeddings(texts)
 
-        doc_chunks = [
-            DocumentChunk(
-                chunk_id=c.chunk_id or f"chk_{uuid4().hex[:12]}",
-                document_id=command.document_id,
-                tenant_id=tenant_id,
-                sequence_number=idx,
-                content=c.content,
-                embedding=embeddings[idx],
-                page_number=c.page_number,
-            )
-            for idx, c in enumerate(command.chunks)
-        ]
+            doc_chunks = [
+                DocumentChunk(
+                    chunk_id=c.chunk_id or f"chk_{uuid4().hex[:12]}",
+                    document_id=command.document_id,
+                    tenant_id=tenant_id,
+                    sequence_number=idx,
+                    content=c.content,
+                    embedding=embeddings[idx],
+                    page_number=c.page_number,
+                )
+                for idx, c in enumerate(command.chunks)
+            ]
 
-        with self._unit_of_work as uow:
-            doc = uow.knowledge.get_document(tenant_id, command.document_id)
-            if doc is None:
-                raise DocumentNotFoundError(f"Documento '{command.document_id}' no encontrado.")
+            with self._unit_of_work as uow:
+                doc = uow.knowledge.get_document(tenant_id, command.document_id)
+                if doc is None:
+                    raise DocumentNotFoundError(f"Documento '{command.document_id}' no encontrado.")
 
-            uow.knowledge.save_chunks(doc_chunks)
-            doc.mark_indexed(total_chunks=len(doc_chunks))
-            uow.knowledge.save_document(doc)
-            uow.commit()
+                uow.knowledge.save_chunks(doc_chunks)
+                doc.mark_indexed(total_chunks=len(doc_chunks))
+                uow.knowledge.save_document(doc)
+                uow.commit()
 
-            return IndexDocumentChunksResult(
-                document_id=doc.id,
-                total_chunks=doc.total_chunks,
-                status=doc.status.value,
-            )
+                return IndexDocumentChunksResult(
+                    document_id=doc.id,
+                    total_chunks=doc.total_chunks,
+                    status=doc.status.value,
+                )
+        except Exception:
+            with self._unit_of_work as uow:
+                doc = uow.knowledge.get_document(tenant_id, command.document_id)
+                if doc is not None:
+                    doc.mark_failed()
+                    uow.knowledge.save_document(doc)
+                    uow.commit()
+            raise
