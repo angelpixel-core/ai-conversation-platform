@@ -1,6 +1,8 @@
 """Unit tests verifying contracts of Tool driven ports."""
 
 import pytest
+
+from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.domain.tools.entities.tool_approval_request import ToolApprovalRequest
 from src.domain.tools.ports.sandboxed_tool_runner_port import SandboxedToolRunnerPort
 from src.domain.tools.ports.tool_approval_repository_port import ToolApprovalRepositoryPort
@@ -8,8 +10,6 @@ from src.domain.tools.ports.tool_registry_port import ToolRegistryPort
 from src.domain.tools.value_objects.tool_call import ToolCall
 from src.domain.tools.value_objects.tool_definition import ToolDefinition
 from src.domain.tools.value_objects.tool_result import ToolResult
-
-from src.domain.tenants.value_objects.tenant_id import TenantId
 
 
 class FakeToolApprovalRepository(ToolApprovalRepositoryPort):

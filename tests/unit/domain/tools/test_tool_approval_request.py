@@ -3,6 +3,8 @@
 from datetime import datetime
 
 import pytest
+
+from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.domain.tools.entities.tool_approval_request import (
     ApprovalStatus,
     ToolApprovalRequest,
@@ -12,8 +14,6 @@ from src.domain.tools.events.tool_events import (
     ToolApprovalResolvedDomainEvent,
 )
 from src.domain.tools.value_objects.tool_call import ToolCall
-
-from src.domain.tenants.value_objects.tenant_id import TenantId
 
 
 def _sample_tool_call() -> ToolCall:

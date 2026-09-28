@@ -3,6 +3,7 @@
 from datetime import UTC, datetime
 
 import pytest
+
 from src.domain.tools.events.tool_events import (
     ToolApprovalRequiredDomainEvent,
     ToolApprovalResolvedDomainEvent,
