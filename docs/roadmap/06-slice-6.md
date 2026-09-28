@@ -59,10 +59,10 @@ Evolucionar la plataforma hacia una solución SaaS Enterprise multi-inquilino co
   - Archivo: `src/domain/tenants/entities/tenant_policy.py` (Tier `FREE`/`STANDARD`/`ENTERPRISE`, max tokens por petición, modelos autorizados).
 - [x] **Eventos de Dominio de Presupuesto y Enrutamiento**
   - Archivo: `src/domain/tenants/events/tenant_events.py` (`TenantQuotaExceededDomainEvent`, `TenantBudgetReservedDomainEvent`, `TenantBudgetSettledDomainEvent`, `ModelRouteFallbackActivatedDomainEvent`).
-- [ ] **Puertos de Persistencia y Catálogo (Driven Ports)**
+- [x] **Puertos de Persistencia y Catálogo (Driven Ports)**
   - Archivo: `src/domain/tenants/ports/tenant_repository_port.py` (Contrato abstracto: `get_by_id`, `save`, `reserve_budget_atomic`).
   - Archivo: `src/domain/routing/ports/model_catalog_port.py` (Contrato abstracto para catálogo de modelos y capacidades).
-- [ ] **Tests Unitarios de Dominio**
+- [x] **Tests Unitarios de Dominio**
   - Archivos:
     - `tests/unit/domain/test_tenant_id.py`
     - `tests/unit/domain/test_monetary_budget.py`

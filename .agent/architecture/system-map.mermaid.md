@@ -61,6 +61,8 @@ graph TD
         TenantQuotaExceededEvent["TenantQuotaExceededDomainEvent"]
         TenantSuspendedEvent["TenantSuspendedDomainEvent"]
         FallbackActivatedEvent["ModelRouteFallbackActivatedDomainEvent"]
+        TenantRepoPort["TenantRepositoryPort (Port)"]
+        ModelCatalogPortNode["ModelCatalogPort (Port)"]
     end
 
     subgraph Infrastructure ["Infrastructure (Driven Adapters)"]

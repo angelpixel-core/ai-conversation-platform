@@ -3,7 +3,6 @@
 from decimal import Decimal
 
 from src.domain.routing.ports.model_catalog_port import ModelCatalogPort
-
 from src.domain.routing.value_objects.model_route import ModelRoute
 
 
