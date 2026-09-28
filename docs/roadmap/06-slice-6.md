@@ -166,11 +166,11 @@ Evolucionar la plataforma hacia una solución SaaS Enterprise multi-inquilino co
 
 ### Fase 6: Ensamble, Container y Documentación de Decisiones
 
-- [ ] **Actualización del Composition Root (`src/container.py` y `src/worker_container.py`)**
+- [x] **Actualización del Composition Root (`src/container.py` y `src/worker_container.py`)**
   - Cableado de `TenantRepositoryPort`, `ModelCatalogPort`, `ModelRouterService`, `TenantContextMiddleware` y comandos de cuota.
-- [ ] **Documento de Decisión Arquitectónica (ADR 0005)**
+- [x] **Documento de Decisión Arquitectónica (ADR 0005)**
   - Archivo: `.agent/architecture/decisions/0005-multi-tenancy-dynamic-routing-and-budget-controls.md` (Aceptado).
-- [ ] **Actualización del Diagrama Vivo del Sistema**
+- [x] **Actualización del Diagrama Vivo del Sistema**
   - Archivo: `.agent/architecture/system-map.mermaid.md` (Reflejar capa de Tenants, Model Router, bloqueos MSSQL y middleware).
 
 ---

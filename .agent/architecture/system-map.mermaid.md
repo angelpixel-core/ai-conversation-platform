@@ -102,6 +102,7 @@ graph TD
         TenantDataMapperNode["TenantDataMapper"]
         MssqlTenantRepoNode["MssqlTenantRepository"]
         InMemoryTenantRepoNode["InMemoryTenantRepositoryAdapter"]
+        InMemoryModelCatalogNode["InMemoryModelCatalogAdapter"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 
@@ -242,4 +243,12 @@ graph TD
     TenantDataMapperNode --> MssqlModels
     MssqlUOW --> MssqlTenantRepoNode
     InMemoryUOW --> InMemoryTenantRepoNode
+    AppContainerNode --> ModelCatalogPortNode
+    AppContainerNode --> ModelRouterServiceNode
+    AppContainerNode --> ReserveQuotaHandler
+    AppContainerNode --> SettleQuotaHandler
+    WorkerContainerNode --> ModelCatalogPortNode
+    WorkerContainerNode --> ModelRouterServiceNode
+    WorkerContainerNode --> SettleQuotaHandler
+    InMemoryModelCatalogNode -- Implementa --> ModelCatalogPortNode
 ```

@@ -81,7 +81,20 @@ class MessagingSettings(BaseSettings):
         return f"amqp://{self.RABBITMQ_USER}:{safe_pass}@{self.RABBITMQ_HOST}:{self.RABBITMQ_PORT}/"
 
 
-class Settings(DatabaseSettings, MessagingSettings):
+class TenancySettings(BaseSettings):
+    """Multi-tenancy and policy engine configuration."""
+
+    ENABLE_TENANT_MIDDLEWARE: bool = False
+    DEFAULT_TENANT_ID: str = "default-tenant"
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+
+class Settings(DatabaseSettings, MessagingSettings, TenancySettings):
     """Unified application settings."""
 
 
