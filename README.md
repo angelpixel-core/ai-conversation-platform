@@ -63,6 +63,13 @@ Production-grade Python reference platform for AI-powered conversational service
 - **Dynamic Model Routing & Fallback Gateway**: `ModelRoute` Value Object, `ModelCatalogPort`, and `ModelRouterService` resolving optimal providers based on contractual tier, token limits, and transparent fallback routing.
 - **Tenant Administration & Governance**: Dedicated management router (`/admin/tenants/{id}/budget`, `/admin/tenants/{id}/policy`, `/admin/tenants/{id}/reserve`) and `TenantContextMiddleware` enforcing tenant header checks on protected routes.
 
+### Slice 7: Semantic Vector Search, Hybrid RAG & Knowledge Grounding
+- **Normalized Vector Embeddings**: `EmbeddingVector` Value Object enforcing L2-normalization, cosine similarity, and dimensional consistency validation for high-dimensional vector representations.
+- **Portable Hybrid Relational Storage (MSSQL 2022 & SQLite)**: `DocumentModel` and `DocumentChunkModel` with serialized vector arrays, providing fast cosine similarity combined with token lexical overlap without requiring proprietary vector database extensions.
+- **Asynchronous Ingestion Pipeline with AnyIO**: `AnyioDocumentIndexerWorker` consuming document upload events from RabbitMQ (`ai_platform.knowledge_events` topic exchange / `knowledge.indexing.queue`), chunking text, and generating batch embeddings concurrently using `anyio.create_task_group()` and `anyio.Semaphore`.
+- **Knowledge Ingestion REST API**: `POST /tenants/{tenant_id}/documents` (`HTTP 202 Accepted`) and `GET /tenants/{tenant_id}/documents/{document_id}/status` (`HTTP 200 OK`) with strict multi-tenant isolation.
+- **Streaming Citations & Conversational Grounding**: Server-Sent Events (SSE) emitting structured `event: citation` payloads containing document metadata, page numbers, snippets, and similarity scores; automatic context retrieval and prompt augmentation in `LlmMessageProcessingWorker`.
+
 ---
 
 ## 🏛️ Architecture Overview
@@ -325,12 +332,41 @@ curl -s -X POST "http://localhost:8000/conversations/${CONV_ID}/messages" \
 
 ---
 
+### Step 7: Knowledge Ingestion, Semantic Vector Search & Hybrid RAG (Slice 7)
+
+Demonstrate asynchronous document ingestion, chunk indexing, and SSE citation streaming:
+
+```bash
+# 7.1 Ingest knowledge document for tenant (returns HTTP 202 Accepted)
+UPLOAD_RESP=$(curl -s -X POST "http://localhost:8000/tenants/corp-acme/documents" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "filename": "security-guidelines.pdf",
+    "content_type": "application/pdf",
+    "content": "Antigravity enforces strict multi-tenant data isolation and L2-normalized vector similarity search."
+  }')
+echo $UPLOAD_RESP | jq
+DOC_ID=$(echo $UPLOAD_RESP | jq -r .document_id)
+
+# 7.2 Check document ingestion and chunk indexing status
+curl -s "http://localhost:8000/tenants/corp-acme/documents/${DOC_ID}/status" | jq
+
+# 7.3 Stream conversation response with contextual grounded citations
+curl -N -H "X-Tenant-ID: corp-acme" \
+  "http://localhost:8000/conversations/${CONV_ID}/stream"
+# Stream output will include:
+# event: citation
+# data: {"source_document_id": "...", "document_name": "security-guidelines.pdf", "chunk_id": "...", "similarity_score": 0.89, "snippet": "..."}
+```
+
+---
+
 ## 🛠️ Developer Tooling & Verification
 
 A comprehensive `Makefile` provides one-command access to all quality barriers:
 
 ```bash
-make test          # Run all 347 unit & integration tests
+make test          # Run all 408 unit & integration tests
 make coverage      # Generate detailed test coverage report (>= 90%)
 make lint          # Run static code analysis with Ruff
 make format-check  # Verify code formatting conformance with Ruff
@@ -360,7 +396,6 @@ make check-all     # Run full quality barrier (format + lint + types + security 
 - [x] **Slice 4:** Decoupled Event Broker Worker (RabbitMQ Pub/Sub & Autonomous Background Worker)
 - [x] **Slice 5:** Enterprise Auditing, Distributed Idempotency & Resilient Stream Recovery
 - [x] **Slice 6:** Multi-Tenant Policy Engine, Dynamic Model Routing & Cost Budgets
-- [ ] **Slice 7:** Knowledge Ingestion Pipeline & Document Chunking
-- [ ] **Slice 8:** Vector Embeddings & Hybrid Search (pgvector / SQL Server Full-Text)
-- [ ] **Slice 9:** Retrieval-Augmented Generation (RAG) & Context Synthesis
-- [ ] **Slice 10:** Autonomous Multi-Agent Tool Execution & Production Deployment
+- [x] **Slice 7:** Semantic Vector Search, Hybrid RAG & Knowledge Grounding
+- [ ] **Slice 8:** Autonomous Multi-Agent Tool Execution & Production Deployment
+

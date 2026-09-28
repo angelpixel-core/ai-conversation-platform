@@ -7,6 +7,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.0] - 2026-09-28 — Slice 7: Semantic Vector Search, Hybrid RAG & Knowledge Grounding
+
+### Added
+
+- **Domain Layer (Knowledge Aggregates, Value Objects & Events):**
+  - Implemented `EmbeddingVector` value object (`src/domain/knowledge/value_objects/embedding_vector.py`) enforcing $L_2$-normalization, cosine similarity, dimension validation (1536-d), and zero-vector rejection.
+  - Implemented `Citation` value object (`src/domain/knowledge/value_objects/citation.py`) capturing verified document metadata (`source_document_id`, `document_name`, `chunk_id`, `page_number`, `similarity_score`, `snippet`).
+  - Implemented `Document` aggregate root (`src/domain/knowledge/entities/document.py`) managing document lifecycle states (`UPLOADED`, `PROCESSING`, `INDEXED`, `FAILED`) and factory creation.
+  - Implemented `DocumentChunk` entity (`src/domain/knowledge/entities/document_chunk.py`) associating text fragments with parent document, tenant, sequence order, page number, and vector embedding.
+  - Defined domain events: `DocumentUploadedDomainEvent`, `DocumentIndexedDomainEvent`, `DocumentIndexingFailedDomainEvent`, and `KnowledgeContextRetrievedDomainEvent`.
+  - Defined driven ports `KnowledgeRepositoryPort` (`save_document`, `get_document`, `save_chunks`, `get_chunks_by_document`, `search_hybrid`) and `EmbeddingClientPort`.
+  - Added domain exception `DocumentNotFoundError`.
+  - Added unit test suites covering value objects, entities, events, and port contracts with 100% green coverage.
+- **Application Layer (Use Cases & Hybrid Retrieval Service):**
+  - Implemented `UploadDocumentCommand` and `UploadDocumentHandler` (`src/application/knowledge/commands/upload_document.py`) registering tenant-scoped knowledge documents.
+  - Implemented `IndexDocumentChunksCommand` and `IndexDocumentChunksHandler` (`src/application/knowledge/commands/index_document_chunks.py`) with atomic chunk persistence and resilient failure handling.
+  - Implemented `HybridRetrieverService` (`src/application/knowledge/services/hybrid_retriever_service.py`) orchestrating hybrid vector similarity ($S_{\text{vector}}$) and lexical token overlap ($S_{\text{lexical}}$) with configurable balance $\alpha$.
+  - Integrated hybrid retriever into `LlmMessageProcessingWorker` for grounding conversations with cited knowledge context.
+- **MSSQL Infrastructure & Embeddings:**
+  - Implemented ORM models `DocumentModel` (`knowledge_documents`) and `DocumentChunkModel` (`knowledge_document_chunks`) in `src/infrastructure/persistence/mssql/models.py` with multi-tenant compound indexes.
+  - Implemented `KnowledgeDataMapper` (`src/infrastructure/persistence/mssql/knowledge_mapper.py`) for bidirectional mapping between SQLModel and domain models.
+  - Implemented `MssqlKnowledgeRepository` (`src/infrastructure/persistence/mssql/mssql_knowledge_repository.py`) supporting hybrid retrieval directly on Microsoft SQL Server 2022 and SQLite.
+  - Implemented `InMemoryKnowledgeRepositoryAdapter` (`src/infrastructure/persistence/in_memory/knowledge_repository.py`) for ultra-fast local testing.
+  - Implemented `FakeEmbeddingClientAdapter` and `HttpxEmbeddingClientAdapter` (`src/infrastructure/embeddings/`).
+  - Added Alembic migration `0004_knowledge_documents_and_vectors.py`.
+- **RabbitMQ Ingestion Pipeline with AnyIO:**
+  - Implemented `KnowledgeTopologyConfig` (`src/infrastructure/messaging/rabbitmq/knowledge_topology_config.py`) declaring `ai_platform.knowledge_events` topic exchange and `knowledge.indexing.queue`.
+  - Implemented `AnyioDocumentIndexerWorker` (`src/infrastructure/messaging/rabbitmq/anyio_document_indexer_worker.py`) for concurrent batch chunking and embedding generation with `anyio.create_task_group()` and `anyio.Semaphore`.
+- **HTTP Interfaces & Streaming Citations:**
+  - Implemented `knowledge_router.py` with endpoints:
+    - `POST /tenants/{tenant_id}/documents` (`HTTP 202 Accepted`).
+    - `GET /tenants/{tenant_id}/documents/{document_id}/status` (`HTTP 200 OK`).
+  - Added Server-Sent Events (SSE) `event: citation` streaming in `src/interfaces/http/api.py`.
+  - Defined Pydantic v2 schemas in `src/interfaces/http/knowledge_schemas.py`.
+- **Container Wiring & Architectural Living Documentation:**
+  - Wired `HybridRetrieverService`, `EmbeddingClientPort`, and `KnowledgeRepositoryPort` in `src/container.py` and `src/worker_container.py`.
+  - Documented architectural decisions in `ADR 0006` (`.agent/architecture/decisions/0006-hybrid-rag-and-mssql-vector-search.md`).
+  - Synchronized Living System Map in `.agent/architecture/system-map.mermaid.md`.
+  - Completed roadmap checklist in `docs/roadmap/07-slice-7.md`.
+
+---
+
+## [0.6.0] - 2026-09-28 — Slice 6: Multi-Tenant Policy Engine, Dynamic Model Routing & Cost Budgets
+
+### Added
+
+- **Strict Multi-Tenant Isolation:**
+  - Implemented `TenantId` Value Object and `TenantContext` for logical tenant segregation across HTTP endpoints, background workers, and database tables.
+  - Added `TenantContextMiddleware` enforcing tenant header checks on protected routes.
+- **Pessimistic Quota & Budget Control:**
+  - Implemented two-phase quota governance (`ReserveQuotaCommand` and `SettleQuotaCommand`) with pessimistic locking (`WITH (ROWLOCK, UPDLOCK)`) in Microsoft SQL Server to prevent double-spending race conditions.
+  - Automated rejection returning `HTTP 402 Payment Required` on exhausted balances.
+- **Dynamic Model Routing & Fallback Gateway:**
+  - Implemented `ModelRoute` Value Object, `ModelCatalogPort`, and `ModelRouterService` selecting optimal LLM providers by contract tier and max tokens with transparent fallback activation.
+- **Tenant Administration & Relational Persistence:**
+  - Added tenant admin router (`/admin/tenants/{id}/budget`, `/admin/tenants/{id}/policy`, `/admin/tenants/{id}/reserve`).
+  - Implemented `TenantModel`, `TenantPolicyModel`, `TenantDataMapper`, and `MssqlTenantRepository`.
+  - Added Alembic migration `0003_multi_tenant_and_budgets.py`.
+
+---
+
+## [0.5.0] - 2026-09-27 — Slice 5: Enterprise Auditing, Distributed Idempotency & Resilient Stream Recovery
+
+### Added
+
+- **Distributed Idempotency (Deduplication):**
+  - Implemented `IdempotencyKey` Value Object, `IdempotencyRepositoryPort`, and `IdempotentCommandExecutor` ensuring exactly-once processing with `HTTP 409 Conflict` detection.
+  - Implemented `MssqlIdempotencyRepository` and `InMemoryIdempotencyRepositoryAdapter`.
+- **Immutable Enterprise Auditing:**
+  - Implemented `AuditLogRecord` domain entity and `AuditRepositoryPort` persisting structured audit trails in MSSQL.
+- **Resilient SSE Stream Recovery:**
+  - Implemented `StreamChunk` Value Object, `StreamBufferRepositoryPort`, and `StreamRecoveryService` supporting network drop reconnections via `Last-Event-ID` without re-triggering LLM inference.
+  - Implemented `MssqlStreamBufferRepository` and `InMemoryStreamBufferRepositoryAdapter`.
+- **Database Migrations:**
+  - Added Alembic migration `0002_idempotency_audit_and_stream_buffer.py`.
+
+---
+
 ## [0.4.0] - 2026-09-27 — Slice 4: Decoupled Event Broker Worker
 
 ### Added

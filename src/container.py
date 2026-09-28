@@ -17,6 +17,9 @@ from src.application.conversations.queries.stream_conversation import (
 from src.application.conversations.services.stream_recovery_service import (
     StreamRecoveryService,
 )
+from src.application.knowledge.services.hybrid_retriever_service import (
+    HybridRetrieverService,
+)
 from src.application.routing.services.model_router_service import (
     ModelRouterService,
 )
@@ -41,7 +44,14 @@ from src.domain.audit.ports.audit_repository_port import AuditRepositoryPort
 from src.domain.conversations.ports.conversation_repository import (
     ConversationRepository,
 )
+from src.domain.knowledge.ports.embedding_client_port import EmbeddingClientPort
+from src.domain.knowledge.ports.knowledge_repository_port import (
+    KnowledgeRepositoryPort,
+)
 from src.domain.routing.ports.model_catalog_port import ModelCatalogPort
+from src.infrastructure.embeddings.fake_embedding_client import (
+    FakeEmbeddingClientAdapter,
+)
 from src.infrastructure.llm.fake_llm_client import FakeLlmClientAdapter
 from src.infrastructure.persistence.in_memory import (
     InMemoryAuditRepositoryAdapter,
@@ -53,6 +63,7 @@ from src.infrastructure.persistence.mssql import (
     MssqlAuditRepository,
     MssqlConversationRepository,
     MssqlIdempotencyRepository,
+    MssqlKnowledgeRepository,
     MssqlStreamBufferRepository,
     MssqlUnitOfWork,
     create_mssql_engine,
@@ -90,6 +101,8 @@ class AppContainer:
     model_router_service: ModelRouterService
     reserve_quota_handler: ReserveQuotaCommandHandler
     settle_quota_handler: SettleQuotaCommandHandler
+    retriever_service: HybridRetrieverService | None = None
+    embedding_client: EmbeddingClientPort | None = None
 
 
 def create_app_container(
@@ -97,12 +110,14 @@ def create_app_container(
     unit_of_work: UnitOfWork | None = None,
     llm_client: LlmClientPort | None = None,
     model_catalog: ModelCatalogPort | None = None,
+    embedding_client: EmbeddingClientPort | None = None,
     *,
     enable_tenant_middleware: bool | None = None,
 ) -> AppContainer:
     """Build and wire application dependencies into a cohesive container."""
     current_settings = settings or get_settings()
     read_repo: ConversationRepository | None = None
+    read_knowledge_repo: KnowledgeRepositoryPort | None = None
 
     if unit_of_work is not None:
         uow = unit_of_work
@@ -121,6 +136,12 @@ def create_app_container(
             session_factory = getattr(uow, "_session_factory", None)
             if session_factory is not None:
                 read_repo = MssqlConversationRepository(session=session_factory())
+        try:
+            read_knowledge_repo = uow.knowledge
+        except RuntimeError:
+            session_factory = getattr(uow, "_session_factory", None)
+            if session_factory is not None:
+                read_knowledge_repo = MssqlKnowledgeRepository(session=session_factory())
     elif current_settings.PERSISTENCE_DRIVER == PersistenceDriver.MSSQL:
         engine = create_mssql_engine(current_settings.get_database_url())
         session_factory = create_session_factory(engine)
@@ -129,12 +150,14 @@ def create_app_container(
         idempotency_repo = MssqlIdempotencyRepository(session=session_factory)
         audit_repo = MssqlAuditRepository(session=session_factory)
         stream_buffer_repo = MssqlStreamBufferRepository(session=session_factory)
+        read_knowledge_repo = MssqlKnowledgeRepository(session=session_factory())
     else:
         uow = InMemoryUnitOfWork()
         read_repo = uow.conversations
         idempotency_repo = InMemoryIdempotencyRepositoryAdapter()
         audit_repo = InMemoryAuditRepositoryAdapter()
         stream_buffer_repo = InMemoryStreamBufferRepositoryAdapter()
+        read_knowledge_repo = uow.knowledge
 
     client = llm_client if llm_client is not None else FakeLlmClientAdapter()
 
@@ -153,6 +176,14 @@ def create_app_container(
     reserve_handler = ReserveQuotaCommandHandler(unit_of_work=uow)
     settle_handler = SettleQuotaCommandHandler(unit_of_work=uow)
 
+    emb_client = embedding_client or FakeEmbeddingClientAdapter(dimension=1536)
+    retriever_service = HybridRetrieverService(
+        embedding_client=emb_client,
+        knowledge_repository=read_knowledge_repo
+        if read_knowledge_repo is not None
+        else uow.knowledge,
+    )
+
     use_tenant_middleware = (
         enable_tenant_middleware
         if enable_tenant_middleware is not None
@@ -167,6 +198,7 @@ def create_app_container(
         stream_recovery_service=stream_recovery_service,
         unit_of_work=uow,
         enable_tenant_middleware=use_tenant_middleware,
+        retriever_service=retriever_service,
     )
 
     return AppContainer(
@@ -185,6 +217,8 @@ def create_app_container(
         model_router_service=model_router,
         reserve_quota_handler=reserve_handler,
         settle_quota_handler=settle_handler,
+        retriever_service=retriever_service,
+        embedding_client=emb_client,
     )
 
 

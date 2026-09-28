@@ -154,3 +154,60 @@ class StreamBufferChunkModel(SQLModel, table=True):
     content: str = Field(nullable=False)
     is_final: bool = Field(default=False, nullable=False)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
+
+
+class DocumentModel(SQLModel, table=True):
+    """Physical relational model for the 'knowledge_documents' table."""
+
+    __tablename__ = "knowledge_documents"  # pyright: ignore[reportAssignmentType]
+    __table_args__ = (
+        Index("ix_knowledge_documents_tenant_id", "tenant_id"),
+        Index("ix_knowledge_documents_tenant_status", "tenant_id", "status"),
+    )
+
+    id: str = Field(primary_key=True, max_length=64, nullable=False)
+    tenant_id: str = Field(
+        foreign_key="tenants.id", max_length=64, nullable=False, ondelete="CASCADE"
+    )
+    filename: str = Field(max_length=255, nullable=False)
+    content_type: str = Field(default="text/plain", max_length=100, nullable=False)
+    status: str = Field(default="PENDING", max_length=20, nullable=False)
+    total_chunks: int = Field(default=0, nullable=False)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
+
+    chunks: list["DocumentChunkModel"] = Relationship(
+        back_populates="document",
+        sa_relationship_kwargs={
+            "cascade": "all, delete-orphan",
+            "lazy": "select",
+        },
+    )
+
+
+class DocumentChunkModel(SQLModel, table=True):
+    """Physical relational model for the 'knowledge_document_chunks' table."""
+
+    __tablename__ = "knowledge_document_chunks"  # pyright: ignore[reportAssignmentType]
+    __table_args__ = (
+        Index("ix_knowledge_chunks_tenant_id", "tenant_id"),
+        Index("ix_knowledge_chunks_tenant_doc", "tenant_id", "document_id"),
+    )
+
+    id: str = Field(primary_key=True, max_length=64, nullable=False)
+    tenant_id: str = Field(
+        foreign_key="tenants.id", max_length=64, nullable=False, ondelete="CASCADE"
+    )
+    document_id: str = Field(
+        foreign_key="knowledge_documents.id",
+        max_length=64,
+        nullable=False,
+        ondelete="CASCADE",
+    )
+    sequence_number: int = Field(nullable=False)
+    content: str = Field(nullable=False)
+    embedding_json: str = Field(nullable=False)
+    page_number: int | None = Field(default=None, nullable=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
+
+    document: DocumentModel | None = Relationship(back_populates="chunks")
