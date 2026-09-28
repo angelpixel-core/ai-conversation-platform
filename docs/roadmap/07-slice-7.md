@@ -196,11 +196,11 @@ Debido a que el entorno de despliegue utiliza Microsoft SQL Server 2022 (`mcr.mi
 
 ### Fase 6: Ensamble, Inyección de Dependencias y Arquitectura Viva
 
-* [ ] **Registro en Contenedores de Dependencias**
+* [x] **Registro en Contenedores de Dependencias**
   * `src/container.py` y `src/worker_container.py` registrando `KnowledgeRepositoryPort`, `EmbeddingClientPort`, `HybridRetrieverService` y handlers.
-* [ ] **Documento de Decisión Arquitectónica (ADR)**
+* [x] **Documento de Decisión Arquitectónica (ADR)**
   * Archivo: [.agent/architecture/decisions/0006-hybrid-rag-and-mssql-vector-search.md](file:///.agent/architecture/decisions/0006-hybrid-rag-and-mssql-vector-search.md) (completado y aceptado).
-* [ ] **Actualización del Diagrama Vivo del Sistema**
+* [x] **Actualización del Diagrama Vivo del Sistema**
   * Archivo: [.agent/architecture/system-map.mermaid.md](file:///.agent/architecture/system-map.mermaid.md) incorporando los subgrafos de Knowledge, RAG Retriever, Worker de Ingesta y tablas de chunks vectoriales.
 
 ---

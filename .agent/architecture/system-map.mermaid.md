@@ -277,9 +277,13 @@ graph TD
     AppContainerNode --> ModelRouterServiceNode
     AppContainerNode --> ReserveQuotaHandler
     AppContainerNode --> SettleQuotaHandler
+    AppContainerNode --> HybridRetrieverServiceNode
+    AppContainerNode --> EmbeddingClientPortNode
     WorkerContainerNode --> ModelCatalogPortNode
     WorkerContainerNode --> ModelRouterServiceNode
     WorkerContainerNode --> SettleQuotaHandler
+    WorkerContainerNode --> HybridRetrieverServiceNode
+    WorkerContainerNode --> EmbeddingClientPortNode
     InMemoryModelCatalogNode -- Implementa --> ModelCatalogPortNode
     UploadDocHandler --> UploadDocCmd
     UploadDocHandler --> UOWPort
