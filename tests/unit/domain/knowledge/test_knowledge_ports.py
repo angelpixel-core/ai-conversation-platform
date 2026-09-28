@@ -1,8 +1,9 @@
 """Unit tests verifying contracts of Knowledge driven ports."""
 
-from typing import Sequence
+from collections.abc import Sequence
 
 import pytest
+
 from src.domain.knowledge.entities.document import Document
 from src.domain.knowledge.entities.document_chunk import DocumentChunk
 from src.domain.knowledge.ports.embedding_client_port import EmbeddingClientPort
@@ -28,10 +29,7 @@ class FakeKnowledgeRepository(KnowledgeRepositoryPort):
         self.chunks.extend(chunks)
 
     def get_chunks_by_document(self, tenant_id: TenantId, document_id: str) -> list[DocumentChunk]:
-        return [
-            c for c in self.chunks
-            if c.tenant_id == tenant_id and c.document_id == document_id
-        ]
+        return [c for c in self.chunks if c.tenant_id == tenant_id and c.document_id == document_id]
 
     def search_hybrid(
         self,
