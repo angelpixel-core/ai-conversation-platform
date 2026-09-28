@@ -29,9 +29,18 @@ from src.application.tenants.commands.reserve_quota_command import (
 from src.application.tenants.commands.settle_quota_command import (
     SettleQuotaCommandHandler,
 )
+from src.application.tools.services.tool_policy_evaluator_service import (
+    ToolPolicyEvaluatorService,
+)
 from src.container import AppContainer, create_app_container
 from src.domain.knowledge.ports.embedding_client_port import EmbeddingClientPort
 from src.domain.routing.ports.model_catalog_port import ModelCatalogPort
+from src.domain.tools.ports.sandboxed_tool_runner_port import (
+    SandboxedToolRunnerPort,
+)
+from src.domain.tools.ports.tool_approval_repository_port import (
+    ToolApprovalRepositoryPort,
+)
 from src.infrastructure.persistence.in_memory import (
     InMemoryAuditRepositoryAdapter,
     InMemoryIdempotencyRepositoryAdapter,
@@ -74,6 +83,9 @@ def test_create_app_container_default_wires_in_memory() -> None:
     assert isinstance(container.settle_quota_handler, SettleQuotaCommandHandler)
     assert isinstance(container.retriever_service, HybridRetrieverService)
     assert isinstance(container.embedding_client, EmbeddingClientPort)
+    assert isinstance(container.tool_approval_repo, ToolApprovalRepositoryPort)
+    assert isinstance(container.tool_runner, SandboxedToolRunnerPort)
+    assert isinstance(container.tool_policy_evaluator, ToolPolicyEvaluatorService)
 
 
 def test_create_app_container_with_mssql_driver() -> None:
