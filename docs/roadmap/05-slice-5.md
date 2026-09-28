@@ -127,7 +127,7 @@ Dotar al sistema de resiliencia y trazabilidad de grado financiero/enterprise:
 - [x] **Migraciones de Esquema T-SQL (Alembic / MSSQL)**
   - Archivo: `src/infrastructure/persistence/mssql/migrations/versions/0002_enterprise_auditing_and_idempotency.py`
 
-- [ ] **Tests de Integración con SQL Server Real**
+- [x] **Tests de Integración con SQL Server Real**
   - Archivo: `tests/integration/infrastructure/mssql/test_mssql_idempotency_repository.py`
   - Archivo: `tests/integration/infrastructure/mssql/test_mssql_audit_repository.py`
   - Archivo: `tests/integration/infrastructure/mssql/test_mssql_stream_buffer_repository.py`
