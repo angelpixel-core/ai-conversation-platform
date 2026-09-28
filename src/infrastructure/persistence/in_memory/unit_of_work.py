@@ -2,6 +2,9 @@ from types import TracebackType
 from typing import Self
 
 from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.infrastructure.persistence.in_memory.in_memory_tool_approval_repository import (
+    InMemoryToolApprovalRepository,
+)
 from src.infrastructure.persistence.in_memory.knowledge_repository import (
     InMemoryKnowledgeRepositoryAdapter,
 )
@@ -22,6 +25,7 @@ class InMemoryUnitOfWork(UnitOfWork):
         self.conversations = InMemoryConversationRepository()
         self.tenants = InMemoryTenantRepositoryAdapter()
         self.knowledge = InMemoryKnowledgeRepositoryAdapter()
+        self.tool_approvals = InMemoryToolApprovalRepository()
         self._committed = False
 
     def __enter__(self) -> Self:

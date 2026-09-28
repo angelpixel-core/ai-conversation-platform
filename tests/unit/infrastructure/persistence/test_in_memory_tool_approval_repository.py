@@ -1,15 +1,14 @@
 """Unit tests for InMemoryToolApprovalRepository adapter."""
 
-from src.infrastructure.persistence.in_memory.in_memory_tool_approval_repository import (
-    InMemoryToolApprovalRepository,
-)
-
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.domain.tools.entities.tool_approval_request import (
     ApprovalStatus,
     ToolApprovalRequest,
 )
 from src.domain.tools.value_objects.tool_call import ToolCall
+from src.infrastructure.persistence.in_memory.in_memory_tool_approval_repository import (
+    InMemoryToolApprovalRepository,
+)
 
 
 def test_in_memory_tool_approval_repo_lifecycle() -> None:

@@ -2,11 +2,11 @@
 
 import anyio
 import pytest
+
+from src.domain.tools.value_objects.tool_call import ToolCall
 from src.infrastructure.tools.anyio_sandboxed_tool_runner import (
     AnyioSandboxedToolRunner,
 )
-
-from src.domain.tools.value_objects.tool_call import ToolCall
 
 
 def sample_calc(a: int, b: int) -> int:

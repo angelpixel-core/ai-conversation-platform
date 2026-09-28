@@ -4,9 +4,6 @@ from collections.abc import Iterator
 
 import pytest
 from sqlmodel import Session, SQLModel, create_engine
-from src.infrastructure.persistence.mssql.mssql_tool_approval_repository import (
-    MssqlToolApprovalRepository,
-)
 
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.domain.tools.entities.tool_approval_request import (
@@ -14,6 +11,9 @@ from src.domain.tools.entities.tool_approval_request import (
     ToolApprovalRequest,
 )
 from src.domain.tools.value_objects.tool_call import ToolCall
+from src.infrastructure.persistence.mssql.mssql_tool_approval_repository import (
+    MssqlToolApprovalRepository,
+)
 
 
 @pytest.fixture(name="sqlite_session")
