@@ -22,6 +22,8 @@ def test_alembic_migrations_upgrade_and_downgrade() -> None:
         assert "idempotency_keys" in tables
         assert "audit_logs" in tables
         assert "stream_buffer_chunks" in tables
+        assert "tenants" in tables
+        assert "tenant_policies" in tables
 
         # Downgrade to initial revision
         command.downgrade(config, "d60987c4b536")
@@ -30,3 +32,5 @@ def test_alembic_migrations_upgrade_and_downgrade() -> None:
         assert "idempotency_keys" not in tables_after
         assert "audit_logs" not in tables_after
         assert "stream_buffer_chunks" not in tables_after
+        assert "tenants" not in tables_after
+        assert "tenant_policies" not in tables_after

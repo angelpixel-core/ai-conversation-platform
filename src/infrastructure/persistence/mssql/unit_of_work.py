@@ -8,6 +8,7 @@ from sqlmodel import Session
 
 from src.application.shared.ports.unit_of_work import UnitOfWork
 from src.domain.conversations.ports.conversation_repository import ConversationRepository
+from src.domain.tenants.ports.tenant_repository_port import TenantRepositoryPort
 from src.infrastructure.persistence.mssql.audit_repository import MssqlAuditRepository
 from src.infrastructure.persistence.mssql.idempotency_repository import (
     MssqlIdempotencyRepository,
@@ -17,6 +18,7 @@ from src.infrastructure.persistence.mssql.repository import MssqlConversationRep
 from src.infrastructure.persistence.mssql.stream_buffer_repository import (
     MssqlStreamBufferRepository,
 )
+from src.infrastructure.persistence.mssql.tenant_repository import MssqlTenantRepository
 
 
 class MssqlUnitOfWork(UnitOfWork):
@@ -30,6 +32,14 @@ class MssqlUnitOfWork(UnitOfWork):
         self._idempotency: MssqlIdempotencyRepository | None = None
         self._audit: MssqlAuditRepository | None = None
         self._stream_buffer: MssqlStreamBufferRepository | None = None
+        self._tenants: MssqlTenantRepository | None = None
+
+    @property
+    def tenants(self) -> TenantRepositoryPort:  # pyright: ignore[reportIncompatibleVariableOverride]
+        """Active repository for Tenant aggregate within this transaction."""
+        if self._tenants is None:
+            raise RuntimeError("UnitOfWork has not been started. Use 'with uow:' context.")
+        return self._tenants
 
     @property
     def conversations(self) -> ConversationRepository:  # pyright: ignore[reportIncompatibleVariableOverride]
@@ -74,6 +84,7 @@ class MssqlUnitOfWork(UnitOfWork):
         self._idempotency = MssqlIdempotencyRepository(session=self._session)
         self._audit = MssqlAuditRepository(session=self._session)
         self._stream_buffer = MssqlStreamBufferRepository(session=self._session)
+        self._tenants = MssqlTenantRepository(session=self._session)
         return self
 
     def __exit__(
@@ -95,6 +106,7 @@ class MssqlUnitOfWork(UnitOfWork):
                 self._idempotency = None
                 self._audit = None
                 self._stream_buffer = None
+                self._tenants = None
 
     def commit(self) -> None:
         """Atomically commit all changes made within the active transaction."""
