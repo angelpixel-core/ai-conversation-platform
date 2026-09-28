@@ -145,17 +145,17 @@ Evolucionar la plataforma hacia una solución SaaS Enterprise multi-inquilino co
 
 *Extracción de cabeceras, códigos HTTP empresariales y Swagger segregado.*
 
-- [ ] **Middleware de Contexto de Inquilino (`TenantContextMiddleware`)**
+- [x] **Middleware de Contexto de Inquilino (`TenantContextMiddleware`)**
   - Archivo: `src/interfaces/http/middlewares/tenant_context_middleware.py` (Inspecciona `X-Tenant-ID`, rechaza peticiones no identificadas con `400 Bad Request` en rutas protegidas y administra el ciclo de vida del `TenantContext`).
-- [ ] **Dependencia FastAPI de Inquilino (`get_current_tenant_id`)**
+- [x] **Dependencia FastAPI de Inquilino (`get_current_tenant_id`)**
   - Archivo: `src/interfaces/http/dependencies/tenant_dependency.py` (Inyección tipada para controladores que requieran el inquilino activo).
-- [ ] **Router de Administración de Tenants y Políticas**
+- [x] **Router de Administración de Tenants y Políticas**
   - Archivo: `src/interfaces/http/routers/tenant_admin_router.py`
     - `GET /admin/tenants/{id}/budget` (`200 OK`)
     - `PATCH /admin/tenants/{id}/policy` (`200 OK`)
-- [ ] **Manejo Centralizado de Excepciones de Cuota**
+- [x] **Manejo Centralizado de Excepciones de Cuota**
   - Mapear `TenantQuotaExceededDomainEvent` / `TenantQuotaExceededError` a `HTTP 402 Payment Required` con detalle del saldo y política.
-- [ ] **Tests Unitarios e Integración HTTP**
+- [x] **Tests Unitarios e Integración HTTP**
   - Archivos:
     - `tests/unit/interfaces/http/test_tenant_context_middleware.py`
     - `tests/unit/interfaces/http/test_tenant_dependency.py`

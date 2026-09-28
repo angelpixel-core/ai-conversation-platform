@@ -2,11 +2,11 @@
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+
+from src.application.shared.tenancy.tenant_context import get_current_tenant_id
 from src.interfaces.http.middlewares.tenant_context_middleware import (
     TenantContextMiddleware,
 )
-
-from src.application.shared.tenancy.tenant_context import get_current_tenant_id
 
 
 def test_tenant_middleware_allows_public_paths() -> None:

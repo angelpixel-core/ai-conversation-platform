@@ -2,12 +2,12 @@
 
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
+
+from src.application.shared.tenancy.tenant_context import tenant_context
 from src.interfaces.http.dependencies.tenant_dependency import (
     get_current_tenant_id_dep,
     get_optional_tenant_id_dep,
 )
-
-from src.application.shared.tenancy.tenant_context import tenant_context
 
 
 def test_tenant_dependency_returns_active_context() -> None:

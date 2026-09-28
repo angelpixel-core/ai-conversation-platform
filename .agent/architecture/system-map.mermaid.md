@@ -11,6 +11,9 @@ graph TD
         CLIExport["CLI export-openapi"]
         WorkerProcess["Worker Process (src/worker.py)"]
         WorkerContainerNode["WorkerContainer (src/worker_container.py)"]
+        TenantContextMiddlewareNode["TenantContextMiddleware"]
+        TenantDependencyNode["TenantDependency (get_current_tenant_id_dep)"]
+        TenantAdminRouterNode["TenantAdminRouter (/admin/tenants)"]
     end
 
     subgraph Application ["Application Layer (CQRS & Ports)"]
@@ -120,6 +123,12 @@ graph TD
     RouterFastAPI --> StreamRecoveryServiceNode
     ResumableSSE --> StreamRecoveryServiceNode
     RouterFastAPI --> AppSettings
+    RouterFastAPI --> TenantContextMiddlewareNode
+    RouterFastAPI --> TenantAdminRouterNode
+    TenantContextMiddlewareNode --> TenantContextNode
+    TenantDependencyNode --> TenantContextNode
+    TenantAdminRouterNode --> UOWPort
+    TenantAdminRouterNode --> ReserveQuotaHandler
 
     %% Application orchestration
     CreateConvHandler --> CreateConvCmd
