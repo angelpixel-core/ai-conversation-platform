@@ -14,6 +14,9 @@ graph TD
         TenantContextMiddlewareNode["TenantContextMiddleware"]
         TenantDependencyNode["TenantDependency (get_current_tenant_id_dep)"]
         TenantAdminRouterNode["TenantAdminRouter (/admin/tenants)"]
+        KnowledgeRouterNode["KnowledgeRouter (/tenants/{tenant_id}/documents)"]
+        KnowledgeSchemasNode["KnowledgeSchemas (DTOs)"]
+        CitationsSSENode["Streaming Citations (SSE: citation)"]
     end
 
     subgraph Application ["Application Layer (CQRS & Ports)"]
@@ -308,4 +311,10 @@ graph TD
     AnyioDocumentIndexerWorkerNode --> DocumentChunkEntity
     AnyioDocumentIndexerWorkerNode --> KnowledgeTopologyNode
     KnowledgeTopologyNode -- Extiende --> RabbitMQTopology
+    RouterFastAPI --> KnowledgeRouterNode
+    KnowledgeRouterNode --> KnowledgeSchemasNode
+    KnowledgeRouterNode --> UOWPort
+    RouterFastAPI --> CitationsSSENode
+    CitationsSSENode --> HybridRetrieverServiceNode
+    WorkerHandlerNode --> HybridRetrieverServiceNode
 ```

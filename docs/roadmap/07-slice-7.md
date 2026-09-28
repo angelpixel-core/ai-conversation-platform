@@ -120,7 +120,7 @@ Debido a que el entorno de despliegue utiliza Microsoft SQL Server 2022 (`mcr.mi
   * Archivo: `src/application/knowledge/commands/index_document_chunks.py` (`IndexDocumentChunksCommand`, `IndexDocumentChunksResult`, `IndexDocumentChunksHandler`).
 * [x] **Servicio de Recuperación Híbrida (HybridRetrieverService)**
   * Archivo: `src/application/knowledge/services/hybrid_retriever_service.py` (orquesta generación de embedding de consulta, búsqueda híbrida en repositorio y mapeo a `Citation`).
-* [ ] **Integración en SendMessageHandler y LlmMessageProcessingWorker**
+* [x] **Integración en SendMessageHandler y LlmMessageProcessingWorker**
   * Integración con `HybridRetrieverService` para consultar contexto documental relevante por inquilino y adjuntar las citas recuperadas en el flujo conversacional.
 * [x] **Tests Unitarios de Aplicación**
   * Archivo: `tests/unit/application/knowledge/test_upload_document.py`
@@ -174,22 +174,21 @@ Debido a que el entorno de despliegue utiliza Microsoft SQL Server 2022 (`mcr.mi
 
 *Endpoints REST para carga de documentos, consulta de estado y citas en SSE.*
 
-* [ ] **Esquemas DTO HTTP (Pydantic v2)**
+* [x] **Esquemas DTO HTTP (Pydantic v2)**
   * Archivo: `src/interfaces/http/knowledge_schemas.py` (`DocumentUploadRequest`, `DocumentUploadResponse`, `DocumentStatusResponse`, `CitationSchema`).
-* [ ] **Router de Gestión de Conocimiento**
+* [x] **Router de Gestión de Conocimiento**
   * Archivo: `src/interfaces/http/knowledge_router.py`
   * `POST /tenants/{tenant_id}/documents` (`202 Accepted`).
   * `GET /tenants/{tenant_id}/documents/{document_id}/status` (`200 OK`).
-  * `GET /tenants/{tenant_id}/documents` (`200 OK`, listado paginado).
-* [ ] **Eventos SSE de Citaciones en Streaming**
-  * Actualización de `src/interfaces/http/messages_router.py` para emitir eventos estructurados:
+* [x] **Eventos SSE de Citaciones en Streaming**
+  * Actualización de streaming endpoint en `src/interfaces/http/api.py` para emitir eventos estructurados:
 
     ```text
     event: citation
     data: {"source_document_id": "doc-1", "document_name": "manual.pdf", "chunk_id": "chk-1", "page_number": 4, "similarity_score": 0.89, "snippet": "..."}
     ```
 
-* [ ] **Tests de Integración HTTP / E2E**
+* [x] **Tests de Integración HTTP / E2E**
   * Archivo: `tests/integration/api/test_knowledge_router.py`
   * Archivo: `tests/integration/api/test_rag_streaming_citations.py`
 
