@@ -120,6 +120,10 @@ graph TD
         MssqlTenantRepoNode["MssqlTenantRepository"]
         InMemoryTenantRepoNode["InMemoryTenantRepositoryAdapter"]
         InMemoryModelCatalogNode["InMemoryModelCatalogAdapter"]
+        KnowledgeDataMapperNode["KnowledgeDataMapper"]
+        MssqlKnowledgeRepoNode["MssqlKnowledgeRepository"]
+        FakeEmbeddingClientNode["FakeEmbeddingClientAdapter"]
+        HttpxEmbeddingClientNode["HttpxEmbeddingClientAdapter"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 
@@ -287,4 +291,13 @@ graph TD
     UOWPort --> KnowledgeRepoPortNode
     InMemoryKnowledgeRepoNode -- Implementa --> KnowledgeRepoPortNode
     InMemoryUOW --> InMemoryKnowledgeRepoNode
+    MssqlKnowledgeRepoNode -- Implementa --> KnowledgeRepoPortNode
+    MssqlUOW --> MssqlKnowledgeRepoNode
+    MssqlKnowledgeRepoNode --> KnowledgeDataMapperNode
+    MssqlKnowledgeRepoNode --> MssqlModels
+    KnowledgeDataMapperNode --> DocumentAggregate
+    KnowledgeDataMapperNode --> DocumentChunkEntity
+    KnowledgeDataMapperNode --> MssqlModels
+    FakeEmbeddingClientNode -- Implementa --> EmbeddingClientPortNode
+    HttpxEmbeddingClientNode -- Implementa --> EmbeddingClientPortNode
 ```

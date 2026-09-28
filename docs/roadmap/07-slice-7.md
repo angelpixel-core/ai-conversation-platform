@@ -133,23 +133,23 @@ Debido a que el entorno de despliegue utiliza Microsoft SQL Server 2022 (`mcr.mi
 
 *Modelos relacionales consolidados, repositorio MSSQL portable y migraciones Alembic.*
 
-* [ ] **Modelos ORM Físicos en `src/infrastructure/persistence/mssql/models.py`**
+* [x] **Modelos ORM Físicos en `src/infrastructure/persistence/mssql/models.py`**
   * `DocumentModel` (tabla `knowledge_documents`): `id`, `tenant_id` (indexado), `filename`, `content_type`, `status`, `total_chunks`, `created_at`, `updated_at`.
   * `DocumentChunkModel` (tabla `knowledge_document_chunks`): `id`, `tenant_id` (indexado), `document_id` (FK a `knowledge_documents.id`), `sequence_number`, `content`, `embedding_json` (`NVARCHAR(MAX)`), `page_number`, `created_at`.
   * Índices compuestos: `(tenant_id, id)` y `(tenant_id, document_id)`.
-* [ ] **Mapper de Dominio/Persistencia**
+* [x] **Mapper de Dominio/Persistencia**
   * Archivo: `src/infrastructure/persistence/mssql/knowledge_mapper.py` (`to_domain_document`, `to_model_document`, `to_domain_chunk`, `to_model_chunk`).
-* [ ] **Adaptador de Repositorio de Conocimiento en MSSQL**
+* [x] **Adaptador de Repositorio de Conocimiento en MSSQL**
   * Archivo: `src/infrastructure/persistence/mssql/mssql_knowledge_repository.py`
   * Implementa `KnowledgeRepositoryPort` con filtrado mandatorio por `tenant_id` y cálculo de score híbrido (vector dot product + token lexical overlap).
-* [ ] **Adaptadores de Cliente de Embeddings**
+* [x] **Adaptadores de Cliente de Embeddings**
   * Fake para tests: `src/infrastructure/embeddings/fake_embedding_client.py`.
   * Cliente HTTP real: `src/infrastructure/embeddings/httpx_embedding_client.py` (asíncrono con HTTPX y AnyIO).
-* [ ] **Migración de Base de Datos Alembic**
+* [x] **Migración de Base de Datos Alembic**
   * Archivo: `src/infrastructure/persistence/mssql/migrations/versions/0004_knowledge_documents_and_vectors.py`
   * `down_revision = "0003_multi_tenant_and_budgets"`.
-* [ ] **Tests de Integración de Persistencia**
-  * Archivo: `tests/integration/infrastructure/mssql/test_mssql_knowledge_repository.py`
+* [x] **Tests de Integración de Persistencia**
+  * Archivos: `tests/unit/infrastructure/mssql/test_knowledge_models.py`, `tests/unit/infrastructure/mssql/test_knowledge_mapper.py`, `tests/unit/infrastructure/mssql/test_mssql_knowledge_repository.py`, `tests/unit/infrastructure/mssql/test_mssql_migrations.py`, `tests/unit/infrastructure/embeddings/test_embedding_clients.py`.
 
 ---
 
