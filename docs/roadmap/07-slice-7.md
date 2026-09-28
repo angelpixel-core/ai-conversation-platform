@@ -114,15 +114,15 @@ Debido a que el entorno de despliegue utiliza Microsoft SQL Server 2022 (`mcr.mi
 
 *Orquestación de ingesta, cálculo de similitud híbrida y fundamentación del contexto en conversaciones.*
 
-* [ ] **Comando y Handler de Carga Documental**
+* [x] **Comando y Handler de Carga Documental**
   * Archivo: `src/application/knowledge/commands/upload_document.py` (`UploadDocumentCommand`, `UploadDocumentResult`, `UploadDocumentHandler`).
-* [ ] **Comando y Handler de Indexación de Chunks**
+* [x] **Comando y Handler de Indexación de Chunks**
   * Archivo: `src/application/knowledge/commands/index_document_chunks.py` (`IndexDocumentChunksCommand`, `IndexDocumentChunksResult`, `IndexDocumentChunksHandler`).
-* [ ] **Servicio de Recuperación Híbrida (HybridRetrieverService)**
+* [x] **Servicio de Recuperación Híbrida (HybridRetrieverService)**
   * Archivo: `src/application/knowledge/services/hybrid_retriever_service.py` (orquesta generación de embedding de consulta, búsqueda híbrida en repositorio y mapeo a `Citation`).
-* [ ] **Integración en SendMessageHandler**
-  * Actualización de `src/application/conversations/commands/send_message.py` para consultar `HybridRetrieverService` cuando existan bases de conocimiento y adjuntar las citas recuperadas.
-* [ ] **Tests Unitarios de Aplicación**
+* [ ] **Integración en SendMessageHandler y LlmMessageProcessingWorker**
+  * Integración con `HybridRetrieverService` para consultar contexto documental relevante por inquilino y adjuntar las citas recuperadas en el flujo conversacional.
+* [x] **Tests Unitarios de Aplicación**
   * Archivo: `tests/unit/application/knowledge/test_upload_document.py`
   * Archivo: `tests/unit/application/knowledge/test_index_document_chunks.py`
   * Archivo: `tests/unit/application/knowledge/test_hybrid_retriever_service.py`

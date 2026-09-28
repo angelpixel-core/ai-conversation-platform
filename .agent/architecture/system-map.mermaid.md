@@ -44,6 +44,11 @@ graph TD
         ReserveQuotaHandler["ReserveQuotaCommandHandler"]
         SettleQuotaCmd["SettleQuotaCommand"]
         SettleQuotaHandler["SettleQuotaCommandHandler"]
+        UploadDocCmd["UploadDocumentCommand"]
+        UploadDocHandler["UploadDocumentHandler"]
+        IndexChunksCmd["IndexDocumentChunksCommand"]
+        IndexChunksHandler["IndexDocumentChunksHandler"]
+        HybridRetrieverServiceNode["HybridRetrieverService"]
     end
 
     subgraph Domain ["Domain Layer (Core Business)"]
@@ -82,11 +87,13 @@ graph TD
         KnowledgeRetrievedEvent["KnowledgeContextRetrievedDomainEvent"]
         KnowledgeRepoPortNode["KnowledgeRepositoryPort (Port)"]
         EmbeddingClientPortNode["EmbeddingClientPort (Port)"]
+        DocumentNotFoundErr["DocumentNotFoundError"]
     end
 
     subgraph Infrastructure ["Infrastructure (Driven Adapters)"]
         InMemoryUOW["InMemoryUnitOfWork"]
         InMemoryRepo["InMemoryConversationRepository"]
+        InMemoryKnowledgeRepoNode["InMemoryKnowledgeRepositoryAdapter"]
         HttpxClient["HttpxClientAdapter"]
         InMemoryOutbox["InMemoryOutboxRepository"]
         OutboxDispatcher["OutboxDispatcher"]
@@ -265,4 +272,19 @@ graph TD
     WorkerContainerNode --> ModelRouterServiceNode
     WorkerContainerNode --> SettleQuotaHandler
     InMemoryModelCatalogNode -- Implementa --> ModelCatalogPortNode
+    UploadDocHandler --> UploadDocCmd
+    UploadDocHandler --> UOWPort
+    UploadDocHandler --> DocumentAggregate
+    IndexChunksHandler --> IndexChunksCmd
+    IndexChunksHandler --> UOWPort
+    IndexChunksHandler --> EmbeddingClientPortNode
+    IndexChunksHandler --> DocumentAggregate
+    IndexChunksHandler --> DocumentChunkEntity
+    HybridRetrieverServiceNode --> EmbeddingClientPortNode
+    HybridRetrieverServiceNode --> KnowledgeRepoPortNode
+    HybridRetrieverServiceNode --> CitationVO
+    DocumentNotFoundErr -- Deriva de --> DomainError
+    UOWPort --> KnowledgeRepoPortNode
+    InMemoryKnowledgeRepoNode -- Implementa --> KnowledgeRepoPortNode
+    InMemoryUOW --> InMemoryKnowledgeRepoNode
 ```
