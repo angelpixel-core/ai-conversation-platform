@@ -184,4 +184,3 @@ async def test_index_document_chunks_embedding_failure_marks_document_failed() -
     updated_doc = uow.knowledge.get_document(tid, "doc-1")
     assert updated_doc is not None
     assert updated_doc.status == DocumentStatus.FAILED
-
