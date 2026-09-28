@@ -1,5 +1,6 @@
 """Primary HTTP Adapter (FastAPI) for conversation management and SSE streaming."""
 
+import json
 from collections.abc import AsyncIterator
 from datetime import datetime
 from typing import Annotated
@@ -23,13 +24,21 @@ from src.application.conversations.queries.stream_conversation import (
 from src.application.conversations.services.stream_recovery_service import (
     StreamRecoveryService,
 )
+from src.application.knowledge.services.hybrid_retriever_service import (
+    HybridRetrieverService,
+)
 from src.application.shared.idempotency.idempotent_command_executor import (
     IdempotencyConflictError,
     IdempotentCommandExecutor,
 )
 from src.application.shared.ports.unit_of_work import UnitOfWork
 from src.domain.conversations.exceptions import ConversationNotFoundError
+from src.domain.knowledge.value_objects.citation import Citation
 from src.domain.shared.domain_error import DomainError
+from src.domain.tenants.value_objects.tenant_id import TenantId
+from src.infrastructure.messaging.rabbitmq.anyio_document_indexer_worker import (
+    AnyioDocumentIndexerWorker,
+)
 from src.interfaces.http.dependencies.idempotency_dependency import (
     get_optional_idempotency_key,
 )
@@ -38,6 +47,9 @@ from src.interfaces.http.middlewares.tenant_context_middleware import (
 )
 from src.interfaces.http.resumable_sse_endpoint import (
     build_resumable_sse_response,
+)
+from src.interfaces.http.routers.knowledge_router import (
+    create_knowledge_router,
 )
 from src.interfaces.http.routers.tenant_admin_router import (
     create_tenant_admin_router,
@@ -177,10 +189,48 @@ def _register_message_routes(
         return await _execute()
 
 
+async def _fetch_streaming_citations(
+    retriever_service: HybridRetrieverService | None,
+    unit_of_work: UnitOfWork | None,
+    conversation_id: UUID,
+    tenant_id_str: str | None,
+) -> list[Citation]:
+    if retriever_service is None or unit_of_work is None:
+        return []
+    with unit_of_work:
+        conv = unit_of_work.conversations.get(conversation_id)
+        if conv is None or not conv.messages:
+            return []
+        last_msg = conv.messages[-1]
+        tid = TenantId(tenant_id_str or "default-tenant")
+        return await retriever_service.retrieve_context(
+            tenant_id=tid,
+            query=last_msg.content,
+            top_k=3,
+            min_score=0.1,
+        )
+
+
+async def _sse_event_stream(
+    token_iterator: AsyncIterator[str],
+    citations: list[Citation],
+) -> AsyncIterator[str]:
+    try:
+        for citation in citations:
+            yield f"event: citation\ndata: {json.dumps(citation.to_dict())}\n\n"
+        async for token in token_iterator:
+            yield f"data: {token}\n\n"
+        yield "data: [DONE]\n\n"
+    except Exception as exc:
+        yield f"data: [ERROR] {str(exc)}\n\n"
+
+
 def _register_streaming_routes(
     app: FastAPI,
     stream_handler: StreamConversationQueryHandler | None,
     stream_recovery_service: StreamRecoveryService | None = None,
+    retriever_service: HybridRetrieverService | None = None,
+    unit_of_work: UnitOfWork | None = None,
 ) -> None:
     @app.get(
         "/conversations/{conversation_id}/stream",
@@ -195,8 +245,11 @@ def _register_streaming_routes(
         temperature: float = 0.7,
         max_tokens: int = 1000,
         last_event_id: Annotated[str | None, Header(alias="Last-Event-ID")] = None,
+        x_tenant_id: Annotated[str | None, Header(alias="X-Tenant-Id")] = None,
     ) -> StreamingResponse:
-        if last_event_id is not None and stream_recovery_service is not None:
+        if stream_recovery_service is not None and (
+            last_event_id is not None or stream_handler is None
+        ):
             return await build_resumable_sse_response(
                 stream_id=str(conversation_id),
                 recovery_service=stream_recovery_service,
@@ -204,16 +257,14 @@ def _register_streaming_routes(
             )
 
         if stream_handler is None:
-            if stream_recovery_service is not None:
-                return await build_resumable_sse_response(
-                    stream_id=str(conversation_id),
-                    recovery_service=stream_recovery_service,
-                    last_event_id=last_event_id,
-                )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="StreamConversationQueryHandler not configured.",
             )
+
+        citations = await _fetch_streaming_citations(
+            retriever_service, unit_of_work, conversation_id, x_tenant_id
+        )
 
         try:
             query = StreamConversationQuery(
@@ -227,16 +278,8 @@ def _register_streaming_routes(
         except (ValueError, DomainError) as exc:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
-        async def sse_event_generator() -> AsyncIterator[str]:
-            try:
-                async for token in token_iterator:
-                    yield f"data: {token}\n\n"
-                yield "data: [DONE]\n\n"
-            except Exception as exc:
-                yield f"data: [ERROR] {str(exc)}\n\n"
-
         return StreamingResponse(
-            sse_event_generator(),
+            _sse_event_stream(token_iterator, citations),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache",
@@ -256,6 +299,8 @@ def build_api(
     *,
     handler: CreateConversationHandler | None = None,
     enable_tenant_middleware: bool = False,
+    retriever_service: HybridRetrieverService | None = None,
+    indexer_worker: AnyioDocumentIndexerWorker | None = None,
 ) -> FastAPI:
     """Create the HTTP adapter around application use cases."""
     if create_conversation_handler is None and handler is not None:
@@ -278,9 +323,16 @@ def build_api(
     _register_health_routes(app)
     _register_conversation_routes(app, create_conversation_handler, idempotent_executor)
     _register_message_routes(app, send_message_handler, idempotent_executor)
-    _register_streaming_routes(app, stream_conversation_handler, stream_recovery_service)
+    _register_streaming_routes(
+        app,
+        stream_conversation_handler,
+        stream_recovery_service,
+        retriever_service=retriever_service,
+        unit_of_work=unit_of_work,
+    )
 
     if unit_of_work is not None:
         app.include_router(create_tenant_admin_router(unit_of_work))
+        app.include_router(create_knowledge_router(unit_of_work, indexer_worker=indexer_worker))
 
     return app

@@ -1,5 +1,11 @@
 """RabbitMQ infrastructure messaging implementation."""
 
+from src.infrastructure.messaging.rabbitmq.anyio_document_indexer_worker import (
+    AnyioDocumentIndexerWorker,
+)
+from src.infrastructure.messaging.rabbitmq.knowledge_topology_config import (
+    KnowledgeTopologyConfig,
+)
 from src.infrastructure.messaging.rabbitmq.rabbitmq_connection_manager import (
     RabbitMQConnectionManager,
 )
@@ -15,6 +21,8 @@ from src.infrastructure.messaging.rabbitmq.rabbitmq_topology_config import (
 )
 
 __all__ = [
+    "AnyioDocumentIndexerWorker",
+    "KnowledgeTopologyConfig",
     "RabbitMQConnectionManager",
     "RabbitMQConsumerAdapter",
     "RabbitMQPublisherAdapter",
