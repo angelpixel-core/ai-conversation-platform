@@ -14,10 +14,20 @@ from src.application.conversations.queries.stream_conversation import (
 from src.application.conversations.services.stream_recovery_service import (
     StreamRecoveryService,
 )
+from src.application.routing.services.model_router_service import (
+    ModelRouterService,
+)
 from src.application.shared.idempotency.idempotent_command_executor import (
     IdempotentCommandExecutor,
 )
+from src.application.tenants.commands.reserve_quota_command import (
+    ReserveQuotaCommandHandler,
+)
+from src.application.tenants.commands.settle_quota_command import (
+    SettleQuotaCommandHandler,
+)
 from src.container import AppContainer, create_app_container
+from src.domain.routing.ports.model_catalog_port import ModelCatalogPort
 from src.infrastructure.persistence.in_memory import (
     InMemoryAuditRepositoryAdapter,
     InMemoryIdempotencyRepositoryAdapter,
@@ -29,6 +39,9 @@ from src.infrastructure.persistence.mssql import (
     MssqlIdempotencyRepository,
     MssqlStreamBufferRepository,
     MssqlUnitOfWork,
+)
+from src.infrastructure.routing.in_memory_model_catalog import (
+    InMemoryModelCatalogAdapter,
 )
 from src.infrastructure.shared.config.settings import (
     PersistenceDriver,
@@ -51,6 +64,10 @@ def test_create_app_container_default_wires_in_memory() -> None:
     assert isinstance(container.send_message_handler, SendMessageHandler)
     assert isinstance(container.stream_conversation_handler, StreamConversationQueryHandler)
     assert isinstance(container.fastapi_app, FastAPI)
+    assert isinstance(container.model_catalog, ModelCatalogPort)
+    assert isinstance(container.model_router_service, ModelRouterService)
+    assert isinstance(container.reserve_quota_handler, ReserveQuotaCommandHandler)
+    assert isinstance(container.settle_quota_handler, SettleQuotaCommandHandler)
 
 
 def test_create_app_container_with_mssql_driver() -> None:
@@ -67,4 +84,18 @@ def test_create_app_container_with_mssql_driver() -> None:
     assert isinstance(container.stream_buffer_repo, MssqlStreamBufferRepository)
     assert isinstance(container.stream_recovery_service, StreamRecoveryService)
     assert isinstance(container.idempotent_executor, IdempotentCommandExecutor)
+    assert isinstance(container.fastapi_app, FastAPI)
+    assert isinstance(container.model_catalog, ModelCatalogPort)
+    assert isinstance(container.model_router_service, ModelRouterService)
+    assert isinstance(container.reserve_quota_handler, ReserveQuotaCommandHandler)
+    assert isinstance(container.settle_quota_handler, SettleQuotaCommandHandler)
+
+
+def test_create_app_container_with_custom_catalog_and_tenant_middleware() -> None:
+    custom_catalog = InMemoryModelCatalogAdapter()
+    container = create_app_container(
+        model_catalog=custom_catalog,
+        enable_tenant_middleware=True,
+    )
+    assert container.model_catalog is custom_catalog
     assert isinstance(container.fastapi_app, FastAPI)

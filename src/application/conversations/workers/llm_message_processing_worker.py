@@ -1,6 +1,7 @@
 """LLM Message Processing Worker handler for background inference."""
 
 import logging
+from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
@@ -17,11 +18,17 @@ from src.application.shared.ports.stream_buffer_repository_port import (
     StreamBufferRepositoryPort,
 )
 from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.shared.tenancy.tenant_context import tenant_context
+from src.application.tenants.commands.settle_quota_command import (
+    SettleQuotaCommand,
+    SettleQuotaCommandHandler,
+)
 from src.domain.audit.audit_log_entity import AuditLogRecord
 from src.domain.audit.ports.audit_repository_port import AuditRepositoryPort
 from src.domain.conversations.exceptions import ConversationNotFoundError
 from src.domain.conversations.value_objects.stream_chunk import StreamChunk
 from src.domain.shared.events.event_envelope import EventEnvelope
+from src.domain.tenants.value_objects.tenant_id import TenantId
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +44,9 @@ class LlmMessageProcessingWorker:
         stream_buffer_repo: StreamBufferRepositoryPort | None = None,
         audit_repo: AuditRepositoryPort | None = None,
         idempotency_repo: IdempotencyRepositoryPort | None = None,
+        fallback_llm_client: LlmClientPort | None = None,
+        settle_handler: SettleQuotaCommandHandler | None = None,
+        cost_per_token: Decimal = Decimal("0.0001"),
     ) -> None:
         self._unit_of_work = unit_of_work
         self._llm_client = llm_client
@@ -46,6 +56,9 @@ class LlmMessageProcessingWorker:
         self._stream_buffer_repo = stream_buffer_repo
         self._audit_repo = audit_repo
         self._idempotency_repo = idempotency_repo
+        self._fallback_llm_client = fallback_llm_client
+        self._settle_handler = settle_handler
+        self._cost_per_token = cost_per_token
 
     def _should_skip_event(self, envelope: EventEnvelope) -> bool:
         payload: dict[str, Any] = envelope.payload
@@ -89,16 +102,36 @@ class LlmMessageProcessingWorker:
     ) -> tuple[list[str], str]:
         tokens: list[str] = []
         seq = 1
-        async for token in self._llm_client.stream_chat(messages=messages):
-            tokens.append(token)
-            if self._stream_buffer_repo is not None:
-                chunk = StreamChunk.create(
-                    sequence_number=seq,
-                    content=token,
-                    is_final=False,
-                )
-                await self._stream_buffer_repo.append_chunk(stream_id=stream_id, chunk=chunk)
-            seq += 1
+        try:
+            async for token in self._llm_client.stream_chat(messages=messages):
+                tokens.append(token)
+                if self._stream_buffer_repo is not None:
+                    chunk = StreamChunk.create(
+                        sequence_number=seq,
+                        content=token,
+                        is_final=False,
+                    )
+                    await self._stream_buffer_repo.append_chunk(stream_id=stream_id, chunk=chunk)
+                seq += 1
+        except Exception as primary_exc:
+            if self._fallback_llm_client is None:
+                raise
+            logger.warning(
+                "Primary LLM client failed (%s). Triggering fallback client under AnyIO.",
+                primary_exc,
+            )
+            tokens.clear()
+            seq = 1
+            async for token in self._fallback_llm_client.stream_chat(messages=messages):
+                tokens.append(token)
+                if self._stream_buffer_repo is not None:
+                    chunk = StreamChunk.create(
+                        sequence_number=seq,
+                        content=token,
+                        is_final=False,
+                    )
+                    await self._stream_buffer_repo.append_chunk(stream_id=stream_id, chunk=chunk)
+                seq += 1
 
         if self._stream_buffer_repo is not None:
             final_chunk = StreamChunk.create(sequence_number=seq, content="", is_final=True)
@@ -138,47 +171,73 @@ class LlmMessageProcessingWorker:
             return
 
         payload: dict[str, Any] = envelope.payload
-        conversation_id = self._extract_conversation_id(payload, envelope.id)
-        idempotency_key = f"worker:event:{envelope.id}"
+        tenant_id_raw = payload.get("tenant_id") or "default-tenant"
+        tenant_id = TenantId(str(tenant_id_raw))
 
-        if not await self._try_acquire_idempotency(idempotency_key, envelope.id):
-            return
+        with tenant_context(tenant_id):
+            conversation_id = self._extract_conversation_id(payload, envelope.id)
+            idempotency_key = f"worker:event:{envelope.id}"
 
-        try:
-            with self._unit_of_work as uow:
-                conversation = uow.conversations.get(conversation_id)
-                if conversation is None:
-                    raise ConversationNotFoundError(f"Conversation {conversation_id} not found.")
-                messages = [
-                    {"role": msg.role.value, "content": msg.content}
-                    for msg in conversation.messages
-                ]
+            if not await self._try_acquire_idempotency(idempotency_key, envelope.id):
+                return
 
-            stream_id = str(payload.get("stream_id") or conversation_id)
-            tokens, response = await self._stream_and_buffer_tokens(stream_id, messages)
+            try:
+                with self._unit_of_work as uow:
+                    conversation = uow.conversations.get(conversation_id)
+                    if conversation is None:
+                        raise ConversationNotFoundError(
+                            f"Conversation {conversation_id} not found."
+                        )
+                    messages = [
+                        {"role": msg.role.value, "content": msg.content}
+                        for msg in conversation.messages
+                    ]
 
-            command = AppendAssistantMessageCommand(
-                conversation_id=conversation_id, content=response
-            )
-            self._append_handler.handle(command)
+                stream_id = str(payload.get("stream_id") or conversation_id)
+                tokens, response = await self._stream_and_buffer_tokens(stream_id, messages)
 
-            await self._record_audit_log(conversation_id, stream_id, tokens, response, envelope.id)
+                command = AppendAssistantMessageCommand(
+                    conversation_id=conversation_id, content=response
+                )
+                self._append_handler.handle(command)
 
-            if self._idempotency_repo is not None:
-                await self._idempotency_repo.mark_completed(
-                    key=idempotency_key,
-                    response_code=200,
-                    response_body={"conversation_id": str(conversation_id)},
+                await self._record_audit_log(
+                    conversation_id, stream_id, tokens, response, envelope.id
                 )
 
-            logger.info("Successfully appended assistant response for conv %s.", conversation_id)
+                if self._settle_handler is not None:
+                    actual_cost = Decimal(len(tokens)) * self._cost_per_token
+                    reserved_cost_raw = payload.get("reserved_cost")
+                    reserved_cost = (
+                        Decimal(str(reserved_cost_raw))
+                        if reserved_cost_raw is not None
+                        else actual_cost
+                    )
+                    self._settle_handler.handle(
+                        SettleQuotaCommand(
+                            tenant_id=tenant_id.value,
+                            reserved_cost=reserved_cost,
+                            actual_cost=actual_cost,
+                        )
+                    )
 
-        except Exception as exc:
-            if self._idempotency_repo is not None:
-                await self._idempotency_repo.mark_failed(
-                    key=idempotency_key, error_message=str(exc)
+                if self._idempotency_repo is not None:
+                    await self._idempotency_repo.mark_completed(
+                        key=idempotency_key,
+                        response_code=200,
+                        response_body={"conversation_id": str(conversation_id)},
+                    )
+
+                logger.info(
+                    "Successfully appended assistant response for conv %s.", conversation_id
                 )
-            raise
+
+            except Exception as exc:
+                if self._idempotency_repo is not None:
+                    await self._idempotency_repo.mark_failed(
+                        key=idempotency_key, error_message=str(exc)
+                    )
+                raise
 
     async def __call__(self, envelope: EventEnvelope) -> None:
         """Allow direct callable invocation satisfying EventHandler protocol."""

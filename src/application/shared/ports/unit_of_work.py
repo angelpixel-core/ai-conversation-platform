@@ -3,6 +3,7 @@ from types import TracebackType
 from typing import Self
 
 from src.domain.conversations.ports.conversation_repository import ConversationRepository
+from src.domain.tenants.ports.tenant_repository_port import TenantRepositoryPort
 
 
 class UnitOfWork(ABC):
@@ -13,6 +14,7 @@ class UnitOfWork(ABC):
     """
 
     conversations: ConversationRepository
+    tenants: TenantRepositoryPort
 
     @abstractmethod
     def __enter__(self) -> Self:

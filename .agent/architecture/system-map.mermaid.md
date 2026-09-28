@@ -11,6 +11,9 @@ graph TD
         CLIExport["CLI export-openapi"]
         WorkerProcess["Worker Process (src/worker.py)"]
         WorkerContainerNode["WorkerContainer (src/worker_container.py)"]
+        TenantContextMiddlewareNode["TenantContextMiddleware"]
+        TenantDependencyNode["TenantDependency (get_current_tenant_id_dep)"]
+        TenantAdminRouterNode["TenantAdminRouter (/admin/tenants)"]
     end
 
     subgraph Application ["Application Layer (CQRS & Ports)"]
@@ -35,6 +38,12 @@ graph TD
         StreamRecoveryServiceNode["StreamRecoveryService"]
         ResumeStreamQueryNode["ResumeStreamQuery"]
         ResumeStreamHandlerNode["ResumeStreamQueryHandler"]
+        TenantContextNode["TenantContext (src/application/shared/tenancy)"]
+        ModelRouterServiceNode["ModelRouterService"]
+        ReserveQuotaCmd["ReserveQuotaCommand"]
+        ReserveQuotaHandler["ReserveQuotaCommandHandler"]
+        SettleQuotaCmd["SettleQuotaCommand"]
+        SettleQuotaHandler["SettleQuotaCommandHandler"]
     end
 
     subgraph Domain ["Domain Layer (Core Business)"]
@@ -51,6 +60,18 @@ graph TD
         StreamChunkVO["StreamChunk (ValueObject)"]
         AuditLogEntity["AuditLogRecord (Entity)"]
         AuditRepoPort["AuditRepository (Port)"]
+        TenantIdVO["TenantId (ValueObject)"]
+        MonetaryBudgetVO["MonetaryBudget (ValueObject)"]
+        ModelRouteVO["ModelRoute (ValueObject)"]
+        TenantAggregate["Tenant (AggregateRoot)"]
+        TenantPolicyEntity["TenantPolicy (Entity)"]
+        TenantBudgetReservedEvent["TenantBudgetReservedDomainEvent"]
+        TenantBudgetSettledEvent["TenantBudgetSettledDomainEvent"]
+        TenantQuotaExceededEvent["TenantQuotaExceededDomainEvent"]
+        TenantSuspendedEvent["TenantSuspendedDomainEvent"]
+        FallbackActivatedEvent["ModelRouteFallbackActivatedDomainEvent"]
+        TenantRepoPort["TenantRepositoryPort (Port)"]
+        ModelCatalogPortNode["ModelCatalogPort (Port)"]
     end
 
     subgraph Infrastructure ["Infrastructure (Driven Adapters)"]
@@ -78,6 +99,10 @@ graph TD
         MssqlIdempotencyRepo["MssqlIdempotencyRepository"]
         MssqlAuditRepo["MssqlAuditRepository"]
         MssqlStreamBufferRepo["MssqlStreamBufferRepository"]
+        TenantDataMapperNode["TenantDataMapper"]
+        MssqlTenantRepoNode["MssqlTenantRepository"]
+        InMemoryTenantRepoNode["InMemoryTenantRepositoryAdapter"]
+        InMemoryModelCatalogNode["InMemoryModelCatalogAdapter"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 
@@ -99,6 +124,12 @@ graph TD
     RouterFastAPI --> StreamRecoveryServiceNode
     ResumableSSE --> StreamRecoveryServiceNode
     RouterFastAPI --> AppSettings
+    RouterFastAPI --> TenantContextMiddlewareNode
+    RouterFastAPI --> TenantAdminRouterNode
+    TenantContextMiddlewareNode --> TenantContextNode
+    TenantDependencyNode --> TenantContextNode
+    TenantAdminRouterNode --> UOWPort
+    TenantAdminRouterNode --> ReserveQuotaHandler
 
     %% Application orchestration
     CreateConvHandler --> CreateConvCmd
@@ -182,6 +213,8 @@ graph TD
     WorkerHandlerNode --> StreamBufferRepoPort
     WorkerHandlerNode --> AuditRepoPort
     WorkerHandlerNode --> IdempotencyRepoPort
+    WorkerHandlerNode --> TenantContextNode
+    WorkerHandlerNode --> SettleQuotaHandler
     AppSettings --> RabbitMQConnManager
     InMemoryIdempotencyRepo -- Implementa --> IdempotencyRepoPort
     InMemoryAuditRepo -- Implementa --> AuditRepoPort
@@ -194,4 +227,28 @@ graph TD
     MssqlIdempotencyRepo --> MssqlModels
     MssqlAuditRepo --> MssqlModels
     MssqlStreamBufferRepo --> MssqlModels
+    ReserveQuotaHandler --> UOWPort
+    ReserveQuotaHandler --> TenantAggregate
+    ReserveQuotaHandler --> TenantRepoPort
+    SettleQuotaHandler --> UOWPort
+    SettleQuotaHandler --> TenantAggregate
+    SettleQuotaHandler --> TenantRepoPort
+    ModelRouterServiceNode --> ModelCatalogPortNode
+    ModelRouterServiceNode --> TenantAggregate
+    MssqlTenantRepoNode -- Implementa --> TenantRepoPort
+    InMemoryTenantRepoNode -- Implementa --> TenantRepoPort
+    MssqlTenantRepoNode --> TenantDataMapperNode
+    MssqlTenantRepoNode --> MssqlModels
+    TenantDataMapperNode --> TenantAggregate
+    TenantDataMapperNode --> MssqlModels
+    MssqlUOW --> MssqlTenantRepoNode
+    InMemoryUOW --> InMemoryTenantRepoNode
+    AppContainerNode --> ModelCatalogPortNode
+    AppContainerNode --> ModelRouterServiceNode
+    AppContainerNode --> ReserveQuotaHandler
+    AppContainerNode --> SettleQuotaHandler
+    WorkerContainerNode --> ModelCatalogPortNode
+    WorkerContainerNode --> ModelRouterServiceNode
+    WorkerContainerNode --> SettleQuotaHandler
+    InMemoryModelCatalogNode -- Implementa --> ModelCatalogPortNode
 ```

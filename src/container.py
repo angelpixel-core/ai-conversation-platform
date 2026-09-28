@@ -17,6 +17,9 @@ from src.application.conversations.queries.stream_conversation import (
 from src.application.conversations.services.stream_recovery_service import (
     StreamRecoveryService,
 )
+from src.application.routing.services.model_router_service import (
+    ModelRouterService,
+)
 from src.application.shared.idempotency.idempotent_command_executor import (
     IdempotentCommandExecutor,
 )
@@ -28,10 +31,17 @@ from src.application.shared.ports.stream_buffer_repository_port import (
     StreamBufferRepositoryPort,
 )
 from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.tenants.commands.reserve_quota_command import (
+    ReserveQuotaCommandHandler,
+)
+from src.application.tenants.commands.settle_quota_command import (
+    SettleQuotaCommandHandler,
+)
 from src.domain.audit.ports.audit_repository_port import AuditRepositoryPort
 from src.domain.conversations.ports.conversation_repository import (
     ConversationRepository,
 )
+from src.domain.routing.ports.model_catalog_port import ModelCatalogPort
 from src.infrastructure.llm.fake_llm_client import FakeLlmClientAdapter
 from src.infrastructure.persistence.in_memory import (
     InMemoryAuditRepositoryAdapter,
@@ -47,6 +57,9 @@ from src.infrastructure.persistence.mssql import (
     MssqlUnitOfWork,
     create_mssql_engine,
     create_session_factory,
+)
+from src.infrastructure.routing.in_memory_model_catalog import (
+    InMemoryModelCatalogAdapter,
 )
 from src.infrastructure.shared.config.settings import (
     PersistenceDriver,
@@ -73,12 +86,19 @@ class AppContainer:
     send_message_handler: SendMessageHandler
     stream_conversation_handler: StreamConversationQueryHandler
     fastapi_app: FastAPI
+    model_catalog: ModelCatalogPort
+    model_router_service: ModelRouterService
+    reserve_quota_handler: ReserveQuotaCommandHandler
+    settle_quota_handler: SettleQuotaCommandHandler
 
 
 def create_app_container(
     settings: Settings | None = None,
     unit_of_work: UnitOfWork | None = None,
     llm_client: LlmClientPort | None = None,
+    model_catalog: ModelCatalogPort | None = None,
+    *,
+    enable_tenant_middleware: bool | None = None,
 ) -> AppContainer:
     """Build and wire application dependencies into a cohesive container."""
     current_settings = settings or get_settings()
@@ -128,12 +148,25 @@ def create_app_container(
         llm_client=client,
     )
 
+    catalog = model_catalog if model_catalog is not None else InMemoryModelCatalogAdapter()
+    model_router = ModelRouterService(catalog=catalog)
+    reserve_handler = ReserveQuotaCommandHandler(unit_of_work=uow)
+    settle_handler = SettleQuotaCommandHandler(unit_of_work=uow)
+
+    use_tenant_middleware = (
+        enable_tenant_middleware
+        if enable_tenant_middleware is not None
+        else current_settings.ENABLE_TENANT_MIDDLEWARE
+    )
+
     fastapi_app = build_api(
         create_conversation_handler=create_handler,
         send_message_handler=send_handler,
         stream_conversation_handler=stream_handler,
         idempotent_executor=idempotent_executor,
         stream_recovery_service=stream_recovery_service,
+        unit_of_work=uow,
+        enable_tenant_middleware=use_tenant_middleware,
     )
 
     return AppContainer(
@@ -148,6 +181,10 @@ def create_app_container(
         send_message_handler=send_handler,
         stream_conversation_handler=stream_handler,
         fastapi_app=fastapi_app,
+        model_catalog=catalog,
+        model_router_service=model_router,
+        reserve_quota_handler=reserve_handler,
+        settle_quota_handler=settle_handler,
     )
 
 

@@ -12,6 +12,9 @@ from src.infrastructure.persistence.in_memory.in_memory_stream_buffer_repository
 from src.infrastructure.persistence.in_memory.repository import (
     InMemoryConversationRepository,
 )
+from src.infrastructure.persistence.in_memory.tenant_repository import (
+    InMemoryTenantRepositoryAdapter,
+)
 from src.infrastructure.persistence.in_memory.unit_of_work import (
     InMemoryUnitOfWork,
 )
@@ -21,5 +24,6 @@ __all__ = [
     "InMemoryConversationRepository",
     "InMemoryIdempotencyRepositoryAdapter",
     "InMemoryStreamBufferRepositoryAdapter",
+    "InMemoryTenantRepositoryAdapter",
     "InMemoryUnitOfWork",
 ]

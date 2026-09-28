@@ -30,6 +30,13 @@ class RabbitMQTopologyConfig:
     dlx_exchange_name: str = "ai_platform.events.dlx"
     dlq_name: str = "conversation.llm_processing.dlq"
     routing_key: str = "conversation.message.appended"
+    tenant_routing_pattern: str = "tenant.*.conversation.message.appended"
+
+    def format_tenant_routing_key(
+        self, tenant_id: str, event_type: str = "conversation.message.appended"
+    ) -> str:
+        """Generate multi-tenant routing key in format tenant.{tenant_id}.{event_type}."""
+        return f"tenant.{tenant_id}.{event_type}"
 
     async def declare_topology(
         self,
@@ -70,6 +77,7 @@ class RabbitMQTopologyConfig:
             },
         )
         await queue.bind(exchange, routing_key=self.routing_key)
+        await queue.bind(exchange, routing_key=self.tenant_routing_pattern)
 
         return TopologyDeclarationResult(
             exchange=exchange,

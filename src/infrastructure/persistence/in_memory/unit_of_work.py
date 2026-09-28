@@ -3,6 +3,9 @@ from typing import Self
 
 from src.application.shared.ports.unit_of_work import UnitOfWork
 from src.infrastructure.persistence.in_memory.repository import InMemoryConversationRepository
+from src.infrastructure.persistence.in_memory.tenant_repository import (
+    InMemoryTenantRepositoryAdapter,
+)
 
 
 class InMemoryUnitOfWork(UnitOfWork):
@@ -14,6 +17,7 @@ class InMemoryUnitOfWork(UnitOfWork):
 
     def __init__(self) -> None:
         self.conversations = InMemoryConversationRepository()
+        self.tenants = InMemoryTenantRepositoryAdapter()
         self._committed = False
 
     def __enter__(self) -> Self:
