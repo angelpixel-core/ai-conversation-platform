@@ -27,13 +27,20 @@ from src.application.shared.idempotency.idempotent_command_executor import (
     IdempotencyConflictError,
     IdempotentCommandExecutor,
 )
+from src.application.shared.ports.unit_of_work import UnitOfWork
 from src.domain.conversations.exceptions import ConversationNotFoundError
 from src.domain.shared.domain_error import DomainError
 from src.interfaces.http.dependencies.idempotency_dependency import (
     get_optional_idempotency_key,
 )
+from src.interfaces.http.middlewares.tenant_context_middleware import (
+    TenantContextMiddleware,
+)
 from src.interfaces.http.resumable_sse_endpoint import (
     build_resumable_sse_response,
+)
+from src.interfaces.http.routers.tenant_admin_router import (
+    create_tenant_admin_router,
 )
 from src.interfaces.http.schemas import (
     ConversationResponse,
@@ -245,8 +252,10 @@ def build_api(
     stream_conversation_handler: StreamConversationQueryHandler | None = None,
     idempotent_executor: IdempotentCommandExecutor | None = None,
     stream_recovery_service: StreamRecoveryService | None = None,
+    unit_of_work: UnitOfWork | None = None,
     *,
     handler: CreateConversationHandler | None = None,
+    enable_tenant_middleware: bool = False,
 ) -> FastAPI:
     """Create the HTTP adapter around application use cases."""
     if create_conversation_handler is None and handler is not None:
@@ -263,9 +272,15 @@ def build_api(
         openapi_url="/openapi.json",
     )
 
+    if enable_tenant_middleware:
+        app.add_middleware(TenantContextMiddleware)
+
     _register_health_routes(app)
     _register_conversation_routes(app, create_conversation_handler, idempotent_executor)
     _register_message_routes(app, send_message_handler, idempotent_executor)
     _register_streaming_routes(app, stream_conversation_handler, stream_recovery_service)
+
+    if unit_of_work is not None:
+        app.include_router(create_tenant_admin_router(unit_of_work))
 
     return app

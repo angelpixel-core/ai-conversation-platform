@@ -7,6 +7,13 @@ import pytest
 from src.application.conversations.workers.llm_message_processing_worker import (
     LlmMessageProcessingWorker,
 )
+from src.application.routing.services.model_router_service import (
+    ModelRouterService,
+)
+from src.application.tenants.commands.settle_quota_command import (
+    SettleQuotaCommandHandler,
+)
+from src.domain.routing.ports.model_catalog_port import ModelCatalogPort
 from src.infrastructure.messaging.in_memory.in_memory_message_broker import (
     InMemoryMessageBroker,
 )
@@ -40,6 +47,9 @@ def test_create_worker_container_default_wires_in_memory() -> None:
     assert isinstance(container.unit_of_work, InMemoryUnitOfWork)
     assert isinstance(container.consumer, InMemoryMessageBroker)
     assert isinstance(container.worker_handler, LlmMessageProcessingWorker)
+    assert isinstance(container.settle_quota_handler, SettleQuotaCommandHandler)
+    assert isinstance(container.model_router_service, ModelRouterService)
+    assert isinstance(container.model_catalog, ModelCatalogPort)
 
 
 def test_create_worker_container_with_mssql_driver() -> None:

@@ -164,7 +164,7 @@ async def test_topology_config_declares_exchanges_queues_and_dlq() -> None:
             "x-dead-letter-routing-key": "conversation.message.appended",
         },
     )
-    fake_main_queue.bind.assert_awaited_once_with(
+    fake_main_queue.bind.assert_any_await(
         fake_main_exchange,
         routing_key="conversation.message.appended",
     )

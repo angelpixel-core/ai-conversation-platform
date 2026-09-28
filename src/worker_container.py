@@ -10,9 +10,16 @@ from dataclasses import dataclass
 from src.application.conversations.workers.llm_message_processing_worker import (
     LlmMessageProcessingWorker,
 )
+from src.application.routing.services.model_router_service import (
+    ModelRouterService,
+)
 from src.application.shared.ports.event_consumer_port import EventConsumerPort
 from src.application.shared.ports.llm_client import LlmClientPort
 from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.tenants.commands.settle_quota_command import (
+    SettleQuotaCommandHandler,
+)
+from src.domain.routing.ports.model_catalog_port import ModelCatalogPort
 from src.infrastructure.llm.fake_llm_client import FakeLlmClientAdapter
 from src.infrastructure.messaging.in_memory.in_memory_message_broker import (
     InMemoryMessageBroker,
@@ -40,6 +47,9 @@ from src.infrastructure.persistence.mssql import (
     create_mssql_engine,
     create_session_factory,
 )
+from src.infrastructure.routing.in_memory_model_catalog import (
+    InMemoryModelCatalogAdapter,
+)
 from src.infrastructure.shared.config.settings import (
     MessagingDriver,
     PersistenceDriver,
@@ -58,6 +68,9 @@ class WorkerContainer:
     llm_client: LlmClientPort
     consumer: EventConsumerPort
     worker_handler: LlmMessageProcessingWorker
+    settle_quota_handler: SettleQuotaCommandHandler | None = None
+    model_router_service: ModelRouterService | None = None
+    model_catalog: ModelCatalogPort | None = None
     connection_manager: RabbitMQConnectionManager | None = None
     topology_config: RabbitMQTopologyConfig | None = None
 
@@ -87,6 +100,8 @@ def create_worker_container(
     consumer: EventConsumerPort | None = None,
     connection_manager: RabbitMQConnectionManager | None = None,
     topology_config: RabbitMQTopologyConfig | None = None,
+    fallback_llm_client: LlmClientPort | None = None,
+    model_catalog: ModelCatalogPort | None = None,
 ) -> WorkerContainer:
     """Build and wire the autonomous background worker container."""
     current_settings = settings or get_settings()
@@ -114,6 +129,10 @@ def create_worker_container(
     # 2. Wire LLM Client
     client = llm_client if llm_client is not None else FakeLlmClientAdapter()
 
+    catalog = model_catalog if model_catalog is not None else InMemoryModelCatalogAdapter()
+    model_router = ModelRouterService(catalog=catalog)
+    settle_handler = SettleQuotaCommandHandler(unit_of_work=uow)
+
     # 3. Wire Worker Handler
     worker_handler = LlmMessageProcessingWorker(
         unit_of_work=uow,
@@ -121,6 +140,8 @@ def create_worker_container(
         stream_buffer_repo=stream_buffer_repo,
         audit_repo=audit_repo,
         idempotency_repo=idempotency_repo,
+        fallback_llm_client=fallback_llm_client,
+        settle_handler=settle_handler,
     )
 
     # 4. Wire Messaging / Consumer
@@ -161,6 +182,9 @@ def create_worker_container(
         llm_client=client,
         consumer=cons,
         worker_handler=worker_handler,
+        settle_quota_handler=settle_handler,
+        model_router_service=model_router,
+        model_catalog=catalog,
         connection_manager=conn_mgr,
         topology_config=topo,
     )
