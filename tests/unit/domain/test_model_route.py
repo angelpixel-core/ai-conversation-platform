@@ -3,6 +3,7 @@
 from decimal import Decimal
 
 import pytest
+
 from src.domain.routing.value_objects.model_route import ModelRoute
 
 

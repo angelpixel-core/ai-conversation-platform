@@ -1,6 +1,7 @@
 """Unit tests for TenantId value object."""
 
 import pytest
+
 from src.domain.tenants.value_objects.tenant_id import TenantId
 
 

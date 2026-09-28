@@ -51,6 +51,9 @@ graph TD
         StreamChunkVO["StreamChunk (ValueObject)"]
         AuditLogEntity["AuditLogRecord (Entity)"]
         AuditRepoPort["AuditRepository (Port)"]
+        TenantIdVO["TenantId (ValueObject)"]
+        MonetaryBudgetVO["MonetaryBudget (ValueObject)"]
+        ModelRouteVO["ModelRoute (ValueObject)"]
     end
 
     subgraph Infrastructure ["Infrastructure (Driven Adapters)"]

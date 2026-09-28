@@ -3,6 +3,7 @@
 from decimal import Decimal
 
 import pytest
+
 from src.domain.tenants.value_objects.monetary_budget import MonetaryBudget
 
 
