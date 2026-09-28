@@ -147,17 +147,17 @@ Evolucionar la plataforma de un sistema conversacional puramente reactivo a un m
 
 *Endpoints de gestión de aprobaciones y eventos SSE de ejecución.*
 
-* [ ] **Esquemas DTO HTTP (Pydantic v2)**
+* [x] **Esquemas DTO HTTP (Pydantic v2)**
   * Archivo: `src/interfaces/http/tools_schemas.py` (`ToolApprovalDecisionRequest`, `PendingApprovalResponse`, `ToolExecutionAuditResponse`).
-* [ ] **Router de Human-in-the-Loop (FastAPI)**
+* [x] **Router de Human-in-the-Loop (FastAPI)**
   * Archivo: `src/interfaces/http/approvals_router.py`
   * Endpoint `GET /tenants/{tenant_id}/approvals/pending` (`200 OK`).
   * Endpoint `POST /tenants/{tenant_id}/approvals/{approval_id}/decision` (`200 OK`).
-* [ ] **Eventos SSE de Herramientas en Streaming**
+* [x] **Eventos SSE de Herramientas en Streaming**
   * Modificación del stream en `src/interfaces/http/api.py` para emitir eventos en tiempo real:
     * `event: tool_call_started`
     * `event: tool_approval_required`
-* [ ] **Tests de Integración HTTP / E2E**
+* [x] **Tests de Integración HTTP / E2E**
   * Archivo: `tests/integration/api/test_tool_approval_flow.py`
   * Archivo: `tests/integration/api/test_sandboxed_timeout_error.py`
 

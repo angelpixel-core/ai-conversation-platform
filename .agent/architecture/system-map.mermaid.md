@@ -17,6 +17,9 @@ graph TD
         KnowledgeRouterNode["KnowledgeRouter (/tenants/{tenant_id}/documents)"]
         KnowledgeSchemasNode["KnowledgeSchemas (DTOs)"]
         CitationsSSENode["Streaming Citations (SSE: citation)"]
+        ApprovalsRouterNode["ApprovalsRouter (/tenants/{tenant_id}/approvals)"]
+        ToolsSchemasNode["ToolsSchemas (DTOs)"]
+        ToolSSENode["Streaming Tool Events (SSE: tool_approval_required, tool_call_started)"]
     end
 
     subgraph Application ["Application Layer (CQRS & Ports)"]
@@ -380,4 +383,11 @@ graph TD
     AnyioToolExecutionWorkerNode --> ToolRegistryPortNode
     AnyioToolExecutionWorkerNode --> EventPubPort
     AnyioToolExecutionWorkerNode --> ToolsTopologyNode
+    RouterFastAPI --> ApprovalsRouterNode
+    ApprovalsRouterNode --> ToolsSchemasNode
+    ApprovalsRouterNode --> UOWPort
+    ApprovalsRouterNode --> ApproveToolExecutionHandlerNode
+    ApprovalsRouterNode --> RejectToolExecutionHandlerNode
+    RouterFastAPI --> ToolSSENode
+    ToolSSENode --> UOWPort
 ```
