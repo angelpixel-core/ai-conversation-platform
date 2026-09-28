@@ -58,26 +58,27 @@ Evolucionar la plataforma de un sistema conversacional puramente reactivo a un m
 
 *Entidades de definición de herramientas, llamadas a funciones y estados de aprobación.*
 
-* [ ] **Value Objects de Herramientas y Llamadas**
+* [x] **Value Objects de Herramientas y Llamadas**
   * Archivo: `src/domain/tools/value_objects/tool_definition.py` (`name`, `description`, `parameters_schema`, `is_deterministic`, `requires_approval`).
   * Archivo: `src/domain/tools/value_objects/tool_call.py` (`call_id`, `tool_name`, `arguments`, `created_at`).
   * Archivo: `src/domain/tools/value_objects/tool_result.py` (`call_id`, `output`, `is_error`, `execution_time_ms`).
-* [ ] **Entidad de Dominio / Agregado: ToolApprovalRequest (HITL)**
+* [x] **Entidad de Dominio / Agregado: ToolApprovalRequest (HITL)**
   * Archivo: `src/domain/tools/entities/tool_approval_request.py`
   * Estados: `PENDING`, `APPROVED`, `REJECTED`, `EXPIRED`.
   * Métodos: `approval.approve(operator_id, justification)`, `approval.reject(operator_id, reason)`.
-* [ ] **Eventos de Dominio de Herramientas**
+* [x] **Eventos de Dominio de Herramientas**
   * Archivo: `src/domain/tools/events/tool_events.py`
   * Eventos: `ToolCallRequestedDomainEvent`, `ToolApprovalRequiredDomainEvent`, `ToolExecutionCompletedDomainEvent`, `ToolApprovalResolvedDomainEvent`.
-* [ ] **Puertos de Persistencia y Ejecución de Herramientas (Driven Ports)**
+* [x] **Puertos de Persistencia y Ejecución de Herramientas (Driven Ports)**
   * Archivo: `src/domain/tools/ports/tool_registry_port.py` (catálogo y habilitación por tenant).
   * Archivo: `src/domain/tools/ports/tool_approval_repository_port.py`.
   * Archivo: `src/domain/tools/ports/sandboxed_tool_runner_port.py`.
-* [ ] **Tests Unitarios de Dominio**
+* [x] **Tests Unitarios de Dominio**
   * Archivo: `tests/unit/domain/tools/test_tool_definition.py`
   * Archivo: `tests/unit/domain/tools/test_tool_call_and_result.py`
   * Archivo: `tests/unit/domain/tools/test_tool_approval_request.py`
   * Archivo: `tests/unit/domain/tools/test_tool_events.py`
+  * Archivo: `tests/unit/domain/tools/test_tool_ports.py`
 
 ---
 

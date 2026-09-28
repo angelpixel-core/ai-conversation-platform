@@ -91,6 +91,20 @@ graph TD
         KnowledgeRepoPortNode["KnowledgeRepositoryPort (Port)"]
         EmbeddingClientPortNode["EmbeddingClientPort (Port)"]
         DocumentNotFoundErr["DocumentNotFoundError"]
+        ToolDefinitionVO["ToolDefinition (ValueObject)"]
+        ToolCallVO["ToolCall (ValueObject)"]
+        ToolResultVO["ToolResult (ValueObject)"]
+        ToolApprovalRequestAggregate["ToolApprovalRequest (AggregateRoot)"]
+        ToolCallRequestedEvent["ToolCallRequestedDomainEvent"]
+        ToolApprovalRequiredEvent["ToolApprovalRequiredDomainEvent"]
+        ToolExecutionCompletedEvent["ToolExecutionCompletedDomainEvent"]
+        ToolApprovalResolvedEvent["ToolApprovalResolvedDomainEvent"]
+        ToolRegistryPortNode["ToolRegistryPort (Port)"]
+        ToolApprovalRepoPortNode["ToolApprovalRepositoryPort (Port)"]
+        SandboxedToolRunnerPortNode["SandboxedToolRunnerPort (Port)"]
+        ToolNotFoundErr["ToolNotFoundError"]
+        ToolExecutionErr["ToolExecutionError"]
+        InvalidApprovalStateErr["InvalidApprovalStateError"]
     end
 
     subgraph Infrastructure ["Infrastructure (Driven Adapters)"]
@@ -192,6 +206,12 @@ graph TD
     DocumentAggregate -.-> DocumentUploadedEvent
     DocumentAggregate -.-> DocumentIndexedEvent
     DocumentChunkEntity --> EmbeddingVectorVO
+    ToolApprovalRequestAggregate --> ToolCallVO
+    ToolApprovalRequestAggregate -.-> ToolApprovalRequiredEvent
+    ToolApprovalRequestAggregate -.-> ToolApprovalResolvedEvent
+    ToolNotFoundErr -- Deriva de --> DomainError
+    ToolExecutionErr -- Deriva de --> DomainError
+    InvalidApprovalStateErr -- Deriva de --> DomainError
 
     %% Application to Domain Ports
     UOWPort --> ConvRepoPort
