@@ -74,6 +74,12 @@ graph TD
         ModelCatalogPortNode["ModelCatalogPort (Port)"]
         EmbeddingVectorVO["EmbeddingVector (ValueObject)"]
         CitationVO["Citation (ValueObject)"]
+        DocumentAggregate["Document (AggregateRoot)"]
+        DocumentChunkEntity["DocumentChunk (Entity)"]
+        DocumentUploadedEvent["DocumentUploadedDomainEvent"]
+        DocumentIndexedEvent["DocumentIndexedDomainEvent"]
+        DocumentFailedEvent["DocumentIndexingFailedDomainEvent"]
+        KnowledgeRetrievedEvent["KnowledgeContextRetrievedDomainEvent"]
     end
 
     subgraph Infrastructure ["Infrastructure (Driven Adapters)"]
@@ -164,6 +170,10 @@ graph TD
     ConvAggregate -.-> MsgAppendedEvent
     ConvAggregate -.-> AssistantCompletedEvent
     ConvNotFoundErr -- Deriva de --> DomainError
+    DocumentAggregate --> DocumentChunkEntity
+    DocumentAggregate -.-> DocumentUploadedEvent
+    DocumentAggregate -.-> DocumentIndexedEvent
+    DocumentChunkEntity --> EmbeddingVectorVO
 
     %% Application to Domain Ports
     UOWPort --> ConvRepoPort
