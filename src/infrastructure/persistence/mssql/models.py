@@ -50,3 +50,45 @@ class OutboxMessageModel(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
     processed_at: datetime | None = Field(default=None, nullable=True)
     error_message: str | None = Field(default=None, nullable=True)
+
+
+class IdempotencyRecordModel(SQLModel, table=True):
+    """Physical relational model for the 'idempotency_keys' table."""
+
+    __tablename__ = "idempotency_keys"  # pyright: ignore[reportAssignmentType]
+
+    key: str = Field(primary_key=True, max_length=255, nullable=False)
+    status: str = Field(max_length=20, index=True, nullable=False)
+    response_code: int | None = Field(default=None, nullable=True)
+    response_body: str | None = Field(default=None, nullable=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
+
+
+class AuditLogModel(SQLModel, table=True):
+    """Physical relational model for the 'audit_logs' table."""
+
+    __tablename__ = "audit_logs"  # pyright: ignore[reportAssignmentType]
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True, index=True, nullable=False)
+    event_name: str = Field(max_length=100, index=True, nullable=False)
+    actor_id: str = Field(max_length=100, index=True, nullable=False)
+    resource_type: str = Field(max_length=50, index=True, nullable=False)
+    resource_id: str = Field(max_length=100, index=True, nullable=False)
+    action: str = Field(max_length=50, nullable=False)
+    tokens_consumed: int = Field(default=0, nullable=False)
+    payload_json: str | None = Field(default=None, nullable=True)
+    occurred_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
+
+
+class StreamBufferChunkModel(SQLModel, table=True):
+    """Physical relational model for the 'stream_buffer_chunks' table."""
+
+    __tablename__ = "stream_buffer_chunks"  # pyright: ignore[reportAssignmentType]
+
+    id: str = Field(primary_key=True, max_length=64, nullable=False)
+    stream_id: str = Field(max_length=100, index=True, nullable=False)
+    sequence_number: int = Field(index=True, nullable=False)
+    content: str = Field(nullable=False)
+    is_final: bool = Field(default=False, nullable=False)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)

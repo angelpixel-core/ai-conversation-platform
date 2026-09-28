@@ -26,8 +26,16 @@ from src.infrastructure.messaging.rabbitmq.rabbitmq_consumer_adapter import (
 from src.infrastructure.messaging.rabbitmq.rabbitmq_topology_config import (
     RabbitMQTopologyConfig,
 )
-from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWork
+from src.infrastructure.persistence.in_memory import (
+    InMemoryAuditRepositoryAdapter,
+    InMemoryIdempotencyRepositoryAdapter,
+    InMemoryStreamBufferRepositoryAdapter,
+    InMemoryUnitOfWork,
+)
 from src.infrastructure.persistence.mssql import (
+    MssqlAuditRepository,
+    MssqlIdempotencyRepository,
+    MssqlStreamBufferRepository,
     MssqlUnitOfWork,
     create_mssql_engine,
     create_session_factory,
@@ -84,20 +92,36 @@ def create_worker_container(
     current_settings = settings or get_settings()
 
     # 1. Wire Persistence
+    stream_buffer_repo = None
+    audit_repo = None
+    idempotency_repo = None
+
     if unit_of_work is not None:
         uow = unit_of_work
     elif current_settings.PERSISTENCE_DRIVER == PersistenceDriver.MSSQL:
         engine = create_mssql_engine(current_settings.get_database_url())
         session_factory = create_session_factory(engine)
         uow = MssqlUnitOfWork(session_factory=session_factory)
+        stream_buffer_repo = MssqlStreamBufferRepository(session=session_factory)
+        audit_repo = MssqlAuditRepository(session=session_factory)
+        idempotency_repo = MssqlIdempotencyRepository(session=session_factory)
     else:
         uow = InMemoryUnitOfWork()
+        stream_buffer_repo = InMemoryStreamBufferRepositoryAdapter()
+        audit_repo = InMemoryAuditRepositoryAdapter()
+        idempotency_repo = InMemoryIdempotencyRepositoryAdapter()
 
     # 2. Wire LLM Client
     client = llm_client if llm_client is not None else FakeLlmClientAdapter()
 
     # 3. Wire Worker Handler
-    worker_handler = LlmMessageProcessingWorker(unit_of_work=uow, llm_client=client)
+    worker_handler = LlmMessageProcessingWorker(
+        unit_of_work=uow,
+        llm_client=client,
+        stream_buffer_repo=stream_buffer_repo,
+        audit_repo=audit_repo,
+        idempotency_repo=idempotency_repo,
+    )
 
     # 4. Wire Messaging / Consumer
     conn_mgr = connection_manager
