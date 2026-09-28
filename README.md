@@ -37,12 +37,14 @@ Production-grade Python reference platform for AI-powered conversational service
   - `GET /conversations/{id}/stream`: Real-time token-by-token streaming using Server-Sent Events (`text/event-stream`).
 
 ### Slice 3: Persistent Storage with Microsoft SQL Server & SQLModel
+
 - **Enterprise Relational Persistence**: Microsoft SQL Server 2022 engine integration via `SQLModel` / `SQLAlchemy` with transactional `pymssql` driver.
 - **Relational Models & Schemas**: Dedicated relational mappings for `conversations`, `messages`, and `outbox_messages` with cascading foreign keys and optimized indexes.
 - **ACID Unit of Work & Repository**: `MssqlUnitOfWork`, `MssqlConversationRepository`, and `MssqlOutboxRepository` guaranteeing aggregate state and domain events commit atomically.
 - **Database Migrations**: Alembic migration suite configured with single-command `make db/upgrade` and `make db/downgrade`.
 
 ### Slice 4: Decoupled Event Broker Worker (RabbitMQ & Autonomous Worker)
+
 - **AMQP 0-9-1 Messaging Broker**: `RabbitMQConnectionManager`, `RabbitMQTopologyConfig`, `RabbitMQPublisherAdapter`, and `RabbitMQConsumerAdapter` with resilient reconnect handling via `aio-pika`.
 - **Transactional Outbox Relay**: `OutboxRelayService` extracting pending events from SQL Server with non-blocking row locks (`WITH (UPDLOCK, READPAST)`) and publishing to RabbitMQ (`conversation.events` topic exchange).
 - **Autonomous Background Worker**: Standalone background daemon (`src/worker.py` and `WorkerContainer`) consuming from `conversation.llm_processing.queue`, invoking LLM inference, and appending assistant responses.
@@ -51,12 +53,14 @@ Production-grade Python reference platform for AI-powered conversational service
 - **Multi-Container Orchestration**: Full `docker-compose.yml` configuration (API, Worker, SQL Server 2022, RabbitMQ) and dedicated `Makefile` developer targets.
 
 ### Slice 5: Enterprise Auditing, Distributed Idempotency & Resilient Stream Recovery
+
 - **Distributed Idempotency (Deduplication)**: `IdempotencyKey` Value Object, `IdempotencyRepositoryPort`, and `IdempotentCommandExecutor` ensuring exactly-once processing on mutating endpoints (`POST /conversations`, `POST /conversations/{id}/messages`) with automated conflict detection (`HTTP 409 Conflict`).
 - **Immutable Enterprise Auditing**: `AuditLogRecord` domain entity and `AuditRepositoryPort` persisting structured audit trails and token consumption metrics in MSSQL.
 - **Resilient SSE Stream Recovery**: `StreamChunk` Value Object, `StreamBufferRepositoryPort`, and `StreamRecoveryService` supporting network drop reconnections via `Last-Event-ID` without re-triggering LLM inference.
 - **Structured Concurrency with AnyIO**: Native `anyio.create_task_group()` and `contextvars` management ensuring clean context propagation and non-leaking asynchronous workflows.
 
 ### Slice 6: Multi-Tenant Policy Engine, Dynamic Model Routing & Cost Budgets
+
 - **Strict Multi-Tenant Isolation**: Scoped logical data segregation across database tables, repositories, and messaging queues using `TenantId` slugs and `TenantContext`.
 - **Atomic Pessimistic Budgeting (MSSQL)**: Two-phase quota governance (`ReserveQuotaCommand` and `SettleQuotaCommand`) acquiring `WITH (ROWLOCK, UPDLOCK)` row-level locks on SQL Server to eliminate double-spending race conditions.
 - **Quota Rejection (`HTTP 402 Payment Required`)**: Automated rejection with financial details when a tenant's available balance is insufficient.
@@ -64,6 +68,7 @@ Production-grade Python reference platform for AI-powered conversational service
 - **Tenant Administration & Governance**: Dedicated management router (`/admin/tenants/{id}/budget`, `/admin/tenants/{id}/policy`, `/admin/tenants/{id}/reserve`) and `TenantContextMiddleware` enforcing tenant header checks on protected routes.
 
 ### Slice 7: Semantic Vector Search, Hybrid RAG & Knowledge Grounding
+
 - **Normalized Vector Embeddings**: `EmbeddingVector` Value Object enforcing L2-normalization, cosine similarity, and dimensional consistency validation for high-dimensional vector representations.
 - **Portable Hybrid Relational Storage (MSSQL 2022 & SQLite)**: `DocumentModel` and `DocumentChunkModel` with serialized vector arrays, providing fast cosine similarity combined with token lexical overlap without requiring proprietary vector database extensions.
 - **Asynchronous Ingestion Pipeline with AnyIO**: `AnyioDocumentIndexerWorker` consuming document upload events from RabbitMQ (`ai_platform.knowledge_events` topic exchange / `knowledge.indexing.queue`), chunking text, and generating batch embeddings concurrently using `anyio.create_task_group()` and `anyio.Semaphore`.
@@ -390,12 +395,17 @@ make check-all     # Run full quality barrier (format + lint + types + security 
 
 ## 🗺️ Project Roadmap
 
-- [x] **Slice 1:** Create Conversation, DDD Domain Model & Hexagonal Architecture Base
-- [x] **Slice 2:** User Messaging, Transactional Outbox Pattern & SSE Token Streaming
-- [x] **Slice 3:** Persistent Storage with Microsoft SQL Server & SQLModel (Transactional Outbox DB)
-- [x] **Slice 4:** Decoupled Event Broker Worker (RabbitMQ Pub/Sub & Autonomous Background Worker)
-- [x] **Slice 5:** Enterprise Auditing, Distributed Idempotency & Resilient Stream Recovery
-- [x] **Slice 6:** Multi-Tenant Policy Engine, Dynamic Model Routing & Cost Budgets
-- [x] **Slice 7:** Semantic Vector Search, Hybrid RAG & Knowledge Grounding
-- [ ] **Slice 8:** Autonomous Multi-Agent Tool Execution & Production Deployment
-
+- [x] [**Slice 1:** Create Conversation, DDD Domain Model & Hexagonal Architecture Base](docs/roadmap/01-create-conversation.md)
+- [x] [**Slice 2:** User Messaging, Transactional Outbox Pattern & SSE Token Streaming](docs/roadmap/02-send-message-and-streaming.md)
+- [x] [**Slice 3:** Persistent Storage with Microsoft SQL Server & SQLModel (Transactional Outbox DB)](docs/roadmap/03-mssql-persistent-storage.md)
+- [x] [**Slice 4:** Decoupled Event Broker Worker (RabbitMQ Pub/Sub & Autonomous Background Worker)](docs/roadmap/04-decoupled-event-broker-worker.md)
+  - 📄 Architecture Decision: [ADR 0003: Decoupled Worker & RabbitMQ Broker](.agent/architecture/decisions/0003-decoupled-worker-and-rabbitmq.md)
+- [x] [**Slice 5:** Enterprise Auditing, Distributed Idempotency & Resilient Stream Recovery](docs/roadmap/05-auditing-idempotency-and-stream-recovery.md)
+  - 📄 Architecture Decision: [ADR 0004: Distributed Idempotency & Resilient Stream Recovery](.agent/architecture/decisions/0004-distributed-idempotency-and-stream-recovery.md)
+- [x] [**Slice 6:** Multi-Tenant Policy Engine, Dynamic Model Routing & Cost Budgets](docs/roadmap/06-multi-tenant-policy-engine-and-budgets.md)
+  - 📄 Architecture Decision: [ADR 0005: Multi-Tenancy, Dynamic Model Routing & Budget Controls](.agent/architecture/decisions/0005-multi-tenancy-dynamic-routing-and-budget-controls.md)
+- [x] [**Slice 7:** Semantic Vector Search, Hybrid RAG & Knowledge Grounding](docs/roadmap/07-semantic-vector-search-and-hybrid-rag.md)
+  - 📄 Architecture Decision: [ADR 0006: Semantic Vector Search, Hybrid RAG & Knowledge Grounding](.agent/architecture/decisions/0006-hybrid-rag-and-mssql-vector-search.md)
+- [ ] [**Slice 8:** Secure Tool Calling, Sandboxed Execution & Human-in-the-Loop (HITL)](docs/roadmap/08-secure-tool-calling-and-hitl.md)
+  - 📄 Architecture Decision: [ADR 0007: Secure Tool Calling, Sandboxed Execution & Human-in-the-Loop](.agent/architecture/decisions/0007-secure-tool-calling-and-hitl.md)
+- [ ] **Slice 9:** Autonomous Multi-Agent Orchestration, Observability & Production Deployment

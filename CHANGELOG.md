@@ -45,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Wired `HybridRetrieverService`, `EmbeddingClientPort`, and `KnowledgeRepositoryPort` in `src/container.py` and `src/worker_container.py`.
   - Documented architectural decisions in `ADR 0006` (`.agent/architecture/decisions/0006-hybrid-rag-and-mssql-vector-search.md`).
   - Synchronized Living System Map in `.agent/architecture/system-map.mermaid.md`.
-  - Completed roadmap checklist in `docs/roadmap/07-slice-7.md`.
+  - Completed roadmap checklist in `docs/roadmap/07-semantic-vector-search-and-hybrid-rag.md`.
 
 ---
 
