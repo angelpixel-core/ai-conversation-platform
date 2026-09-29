@@ -5,6 +5,7 @@ from collections.abc import AsyncIterator
 import pytest
 
 from src.domain.governance.exceptions import SafetyPolicyViolationError
+from src.domain.governance.ports.safety_guardrail_port import SafetyGuardrailPort
 from src.domain.governance.value_objects.safety_verdict import SafetyVerdict
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.infrastructure.governance.anyio_stream_guardrail_filter import (
@@ -12,7 +13,7 @@ from src.infrastructure.governance.anyio_stream_guardrail_filter import (
 )
 
 
-class DummySafetyGuardrail:
+class DummySafetyGuardrail(SafetyGuardrailPort):
     """Mock guardrail port for testing stream filtering."""
 
     def __init__(self, block_on_text: str | None = None) -> None:
@@ -65,4 +66,4 @@ async def test_stream_filter_aborts_on_violation() -> None:
 
     assert exc_info.value.violation_type == "OUTPUT_LEAK"
     assert exc_info.value.matched_rule == "FORBIDDEN_OUTPUT_RULE"
-    assert output == ["Processing: ", "here is "]
+    assert output == ["Processing: ", "here is ", "FORBIDDEN_"]

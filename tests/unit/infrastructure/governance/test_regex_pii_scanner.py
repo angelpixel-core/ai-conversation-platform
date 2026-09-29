@@ -30,7 +30,7 @@ def test_scan_and_mask_email(scanner: RegexPiiScannerAdapter) -> None:
 
 def test_scan_and_mask_valid_credit_card_luhn(scanner: RegexPiiScannerAdapter) -> None:
     # Valid Visa card passes Luhn algorithm
-    valid_card = "4532-0150-1234-5678"  # standard Luhn valid test number
+    valid_card = "4532-0150-1234-5671"  # standard Luhn valid test number
     text = f"Payment details: card {valid_card} and expiration 12/28."
     masked, matches = scanner.scan_and_mask_pii(text)
 
@@ -42,7 +42,7 @@ def test_scan_and_mask_valid_credit_card_luhn(scanner: RegexPiiScannerAdapter) -
 
 def test_scanner_ignores_invalid_credit_card_luhn(scanner: RegexPiiScannerAdapter) -> None:
     # 16-digit sequence that fails Luhn check
-    invalid_card = "4532-0150-1234-5679"
+    invalid_card = "4532-0150-1234-5678"
     text = f"Order sequence id is {invalid_card}."
     masked, matches = scanner.scan_and_mask_pii(text)
 
