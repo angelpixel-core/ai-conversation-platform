@@ -3,6 +3,7 @@
 from dataclasses import FrozenInstanceError
 
 import pytest
+
 from src.domain.governance.value_objects.safety_verdict import SafetyVerdict
 
 

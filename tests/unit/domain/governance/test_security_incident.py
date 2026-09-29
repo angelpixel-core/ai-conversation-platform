@@ -3,6 +3,7 @@
 from datetime import UTC, datetime
 
 import pytest
+
 from src.domain.governance.entities.security_incident import SecurityIncident
 from src.domain.governance.events.governance_events import (
     PiiRedactionAppliedDomainEvent,
@@ -10,7 +11,6 @@ from src.domain.governance.events.governance_events import (
     SafetyViolationBlockedDomainEvent,
 )
 from src.domain.governance.value_objects.incident_severity import IncidentSeverity
-
 from src.domain.tenants.value_objects.tenant_id import TenantId
 
 

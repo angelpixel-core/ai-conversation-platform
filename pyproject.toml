@@ -62,6 +62,9 @@ select = [
 ]
 ignore = ["S101", "B024"]  # Allow assert in tests and base classes without abstract methods
 
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+
 [tool.pyright]
 include = ["src", "tests"]
 exclude = ["src/infrastructure/persistence/mssql/migrations"]
