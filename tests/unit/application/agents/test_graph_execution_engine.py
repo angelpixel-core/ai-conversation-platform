@@ -1,6 +1,5 @@
 """Unit tests for GraphExecutionEngine using AnyIO."""
 
-import anyio
 import pytest
 
 from src.application.agents.ports.subagent_executor_port import SubAgentExecutorPort

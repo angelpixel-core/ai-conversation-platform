@@ -1,7 +1,5 @@
 """Unit tests for StateReducerService."""
 
-import pytest
-
 from src.application.agents.services.state_reducer_service import StateReducerService
 
 
