@@ -8,6 +8,9 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
+from src.application.agents.ports.subagent_executor_port import (
+    SubAgentExecutorPort,
+)
 from src.application.conversations.workers.llm_message_processing_worker import (
     LlmMessageProcessingWorker,
 )
@@ -26,6 +29,9 @@ from src.application.tenants.commands.settle_quota_command import (
 from src.application.tools.services.tool_policy_evaluator_service import (
     ToolPolicyEvaluatorService,
 )
+from src.domain.agents.ports.workflow_checkpoint_repository_port import (
+    WorkflowCheckpointRepositoryPort,
+)
 from src.domain.knowledge.ports.embedding_client_port import EmbeddingClientPort
 from src.domain.knowledge.ports.knowledge_repository_port import (
     KnowledgeRepositoryPort,
@@ -43,6 +49,9 @@ from src.infrastructure.embeddings.fake_embedding_client import (
 from src.infrastructure.llm.fake_llm_client import FakeLlmClientAdapter
 from src.infrastructure.messaging.in_memory.in_memory_message_broker import (
     InMemoryMessageBroker,
+)
+from src.infrastructure.messaging.rabbitmq.anyio_subagent_worker import (
+    AnyioSubagentWorker,
 )
 from src.infrastructure.messaging.rabbitmq.anyio_tool_execution_worker import (
     AnyioToolExecutionWorker,
@@ -64,12 +73,14 @@ from src.infrastructure.persistence.in_memory import (
     InMemoryUnitOfWork,
 )
 from src.infrastructure.persistence.mssql import (
+    InMemoryWorkflowCheckpointRepositoryAdapter,
     MssqlAuditRepository,
     MssqlIdempotencyRepository,
     MssqlKnowledgeRepository,
     MssqlStreamBufferRepository,
     MssqlToolApprovalRepository,
     MssqlUnitOfWork,
+    MssqlWorkflowCheckpointRepository,
     create_mssql_engine,
     create_session_factory,
 )
@@ -108,6 +119,8 @@ class WorkerContainer:
     tool_runner: SandboxedToolRunnerPort | None = None
     tool_policy_evaluator: ToolPolicyEvaluatorService | None = None
     tool_execution_worker: AnyioToolExecutionWorker | None = None
+    workflow_checkpoint_repo: WorkflowCheckpointRepositoryPort | None = None
+    subagent_worker: AnyioSubagentWorker | None = None
 
     async def start(self) -> None:
         """Initialize messaging topology (if applicable) and begin consuming."""
@@ -233,6 +246,8 @@ def create_worker_container(
     fallback_llm_client: LlmClientPort | None = None,
     model_catalog: ModelCatalogPort | None = None,
     embedding_client: EmbeddingClientPort | None = None,
+    workflow_checkpoint_repo: WorkflowCheckpointRepositoryPort | None = None,
+    subagent_executor: SubAgentExecutorPort | None = None,
 ) -> WorkerContainer:
     """Build and wire the autonomous background worker container."""
     current_settings = settings or get_settings()
@@ -285,6 +300,19 @@ def create_worker_container(
     tool_runner = AnyioSandboxedToolRunner()
     tool_policy_evaluator = ToolPolicyEvaluatorService()
 
+    if workflow_checkpoint_repo is not None:
+        resolved_workflow_repo = workflow_checkpoint_repo
+    elif current_settings.PERSISTENCE_DRIVER == PersistenceDriver.MSSQL:
+        engine = create_mssql_engine(current_settings.get_database_url())
+        session_factory = create_session_factory(engine)
+        resolved_workflow_repo = MssqlWorkflowCheckpointRepository(session=session_factory())
+    else:
+        resolved_workflow_repo = InMemoryWorkflowCheckpointRepositoryAdapter()
+
+    subagent_worker = (
+        AnyioSubagentWorker(executor=subagent_executor) if subagent_executor is not None else None
+    )
+
     return WorkerContainer(
         unit_of_work=uow,
         llm_client=client,
@@ -300,4 +328,6 @@ def create_worker_container(
         tool_approval_repo=tool_approval_repo,
         tool_runner=tool_runner,
         tool_policy_evaluator=tool_policy_evaluator,
+        workflow_checkpoint_repo=resolved_workflow_repo,
+        subagent_worker=subagent_worker,
     )
