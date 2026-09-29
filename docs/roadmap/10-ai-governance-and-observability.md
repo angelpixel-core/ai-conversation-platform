@@ -137,24 +137,24 @@ Para preservar la pureza de la arquitectura hexagonal y evitar sobrecarga o ines
 
 *Tablas optimizadas en SQL Server 2022 para trazabilidad de seguridad y cumplimiento legal.*
 
-- [ ] **Modelos ORM Físicos en MSSQL (`models.py`)**
+- [x] **Modelos ORM Físicos en MSSQL (`models.py`)**
   - Archivo: `src/infrastructure/persistence/mssql/models.py`
   - Añade `SecurityIncidentModel` (`security_incidents` table) con índices `(tenant_id, id)` y `(tenant_id, created_at)`.
   - Añade `PiiAuditLogModel` (`pii_audit_logs` table) con hash SHA-256 de texto original y texto redactado.
 
-- [ ] **Mapper de Persistencia Relacional**
+- [x] **Mapper de Persistencia Relacional**
   - Archivo: `src/infrastructure/persistence/mssql/governance_mapper.py`
   - Mapeo bidireccional entre `SecurityIncident` y `SecurityIncidentModel`.
 
-- [ ] **Adaptadores de Repositorio de Incidentes (MSSQL e In-Memory)**
+- [x] **Adaptadores de Repositorio de Incidentes (MSSQL e In-Memory)**
   - Archivo: `src/infrastructure/persistence/mssql/mssql_incident_repository.py`
   - Escrituras atómicas con aislamiento de sesión independiente para garantizar persistencia incluso ante rollback del flujo principal.
   - Archivo: `src/infrastructure/persistence/in_memory/in_memory_incident_repository.py` (para tests rápidos en memoria).
 
-- [ ] **Migración de Base de Datos Alembic**
+- [x] **Migración de Base de Datos Alembic**
   - Archivo: `src/infrastructure/persistence/mssql/migrations/versions/0007_governance_and_security_audit.py`
 
-- [ ] **Tests de Integración con SQL Server (Testcontainers / MSSQL)**
+- [x] **Tests de Integración con SQL Server (Testcontainers / MSSQL)**
   - Archivo: `tests/unit/infrastructure/persistence/test_in_memory_incident_repository.py`
   - Archivo: `tests/integration/infrastructure/mssql/test_mssql_incident_repository.py`
 

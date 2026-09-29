@@ -214,6 +214,9 @@ graph TD
         InMemoryWorkflowCheckpointRepoNode["InMemoryWorkflowCheckpointRepositoryAdapter"]
         MultiAgentTopologyNode["MultiAgentTopologyConfig"]
         AnyioSubagentWorkerNode["AnyioSubagentWorker"]
+        GovernanceMapperNode["GovernanceMapper"]
+        MssqlIncidentRepoNode["MssqlIncidentRepository"]
+        InMemoryIncidentRepoNode["InMemoryIncidentRepositoryAdapter"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 
@@ -499,4 +502,10 @@ graph TD
     ListIncidentsQueryHandlerNode --> IncidentRepoPortNode
     GetGovernanceMetricsQueryHandlerNode --> IncidentRepoPortNode
     TraceContextCarrierNode --> TraceContextVO
+    MssqlIncidentRepoNode -- Implementa --> IncidentRepoPortNode
+    InMemoryIncidentRepoNode -- Implementa --> IncidentRepoPortNode
+    MssqlIncidentRepoNode --> GovernanceMapperNode
+    MssqlIncidentRepoNode --> MssqlModels
+    GovernanceMapperNode --> SecurityIncidentAggregate
+    GovernanceMapperNode --> MssqlModels
 ```
