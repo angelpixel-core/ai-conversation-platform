@@ -307,3 +307,43 @@ class WorkflowCheckpointModel(SQLModel, table=True):
     state_json: str = Field(nullable=False)
     status: str = Field(default="RUNNING", max_length=32, nullable=False)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
+
+
+class SecurityIncidentModel(SQLModel, table=True):
+    """Physical relational model for the 'security_incidents' table."""
+
+    __tablename__ = "security_incidents"  # pyright: ignore[reportAssignmentType]
+    __table_args__ = (
+        Index("ix_security_incidents_tenant_id", "tenant_id"),
+        Index("ix_security_incidents_tenant_created", "tenant_id", "created_at"),
+    )
+
+    id: str = Field(primary_key=True, max_length=64, nullable=False)
+    tenant_id: str = Field(
+        foreign_key="tenants.id", max_length=64, nullable=False, ondelete="CASCADE"
+    )
+    severity: str = Field(max_length=20, nullable=False)
+    rule_name: str = Field(max_length=128, nullable=False)
+    description: str = Field(default="", max_length=500, nullable=False)
+    prompt_preview: str = Field(default="", max_length=1000, nullable=False)
+    details_json: str = Field(default="{}", nullable=False)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
+
+
+class PiiAuditLogModel(SQLModel, table=True):
+    """Physical relational model for the 'pii_audit_logs' table."""
+
+    __tablename__ = "pii_audit_logs"  # pyright: ignore[reportAssignmentType]
+    __table_args__ = (
+        Index("ix_pii_audit_logs_tenant_id", "tenant_id"),
+        Index("ix_pii_audit_logs_created", "tenant_id", "created_at"),
+    )
+
+    id: str = Field(primary_key=True, max_length=64, nullable=False)
+    tenant_id: str = Field(
+        foreign_key="tenants.id", max_length=64, nullable=False, ondelete="CASCADE"
+    )
+    entity_type: str = Field(max_length=64, nullable=False)
+    masked_count: int = Field(default=1, nullable=False)
+    raw_hash_sha256: str = Field(max_length=64, nullable=False)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
