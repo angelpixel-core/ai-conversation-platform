@@ -38,7 +38,6 @@ from src.infrastructure.governance.anyio_stream_guardrail_filter import (
     AnyioStreamGuardrailFilter,
 )
 from src.infrastructure.messaging.in_memory.in_memory_message_broker import (
-
     InMemoryMessageBroker,
 )
 from src.infrastructure.messaging.rabbitmq.rabbitmq_connection_manager import (
@@ -98,7 +97,6 @@ def test_create_worker_container_with_mssql_driver() -> None:
     assert isinstance(container.retriever_service, HybridRetrieverService)
     assert isinstance(container.embedding_client, EmbeddingClientPort)
     assert isinstance(container.incident_repo, IncidentRepositoryPort)
-
 
 
 def test_create_worker_container_with_rabbitmq_driver() -> None:

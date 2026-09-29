@@ -29,7 +29,6 @@ from src.application.shared.governance.guarded_command_executor import (
 from src.application.shared.idempotency.idempotent_command_executor import (
     IdempotentCommandExecutor,
 )
-
 from src.application.tenants.commands.reserve_quota_command import (
     ReserveQuotaCommandHandler,
 )
@@ -49,7 +48,6 @@ from src.domain.governance.ports.safety_guardrail_port import (
 )
 from src.domain.knowledge.ports.embedding_client_port import EmbeddingClientPort
 from src.domain.routing.ports.model_catalog_port import ModelCatalogPort
-
 from src.domain.tools.ports.sandboxed_tool_runner_port import (
     SandboxedToolRunnerPort,
 )
@@ -130,7 +128,6 @@ def test_create_app_container_with_mssql_driver() -> None:
     assert isinstance(container.retriever_service, HybridRetrieverService)
     assert isinstance(container.embedding_client, EmbeddingClientPort)
     assert isinstance(container.incident_repo, IncidentRepositoryPort)
-
 
 
 def test_create_app_container_with_custom_catalog_and_tenant_middleware() -> None:

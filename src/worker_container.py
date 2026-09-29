@@ -32,6 +32,13 @@ from src.application.tools.services.tool_policy_evaluator_service import (
 from src.domain.agents.ports.workflow_checkpoint_repository_port import (
     WorkflowCheckpointRepositoryPort,
 )
+from src.domain.governance.ports.incident_repository_port import (
+    IncidentRepositoryPort,
+)
+from src.domain.governance.ports.pii_scanner_port import PiiScannerPort
+from src.domain.governance.ports.safety_guardrail_port import (
+    SafetyGuardrailPort,
+)
 from src.domain.knowledge.ports.embedding_client_port import EmbeddingClientPort
 from src.domain.knowledge.ports.knowledge_repository_port import (
     KnowledgeRepositoryPort,
@@ -45,6 +52,15 @@ from src.domain.tools.ports.tool_approval_repository_port import (
 )
 from src.infrastructure.embeddings.fake_embedding_client import (
     FakeEmbeddingClientAdapter,
+)
+from src.infrastructure.governance.anyio_stream_guardrail_filter import (
+    AnyioStreamGuardrailFilter,
+)
+from src.infrastructure.governance.heuristic_injection_detector_adapter import (
+    HeuristicInjectionDetectorAdapter,
+)
+from src.infrastructure.governance.regex_pii_scanner_adapter import (
+    RegexPiiScannerAdapter,
 )
 from src.infrastructure.llm.fake_llm_client import FakeLlmClientAdapter
 from src.infrastructure.messaging.in_memory.in_memory_message_broker import (
@@ -72,6 +88,9 @@ from src.infrastructure.persistence.in_memory import (
     InMemoryToolApprovalRepositoryAdapter,
     InMemoryUnitOfWork,
 )
+from src.infrastructure.persistence.in_memory.in_memory_incident_repository import (
+    InMemoryIncidentRepositoryAdapter,
+)
 from src.infrastructure.persistence.mssql import (
     InMemoryWorkflowCheckpointRepositoryAdapter,
     MssqlAuditRepository,
@@ -84,6 +103,9 @@ from src.infrastructure.persistence.mssql import (
     create_mssql_engine,
     create_session_factory,
 )
+from src.infrastructure.persistence.mssql.mssql_incident_repository import (
+    MssqlIncidentRepository,
+)
 from src.infrastructure.routing.in_memory_model_catalog import (
     InMemoryModelCatalogAdapter,
 )
@@ -93,6 +115,7 @@ from src.infrastructure.shared.config.settings import (
     Settings,
     get_settings,
 )
+from src.infrastructure.telemetry.opentelemetry_config import setup_opentelemetry
 from src.infrastructure.tools.anyio_sandboxed_tool_runner import (
     AnyioSandboxedToolRunner,
 )
@@ -121,6 +144,10 @@ class WorkerContainer:
     tool_execution_worker: AnyioToolExecutionWorker | None = None
     workflow_checkpoint_repo: WorkflowCheckpointRepositoryPort | None = None
     subagent_worker: AnyioSubagentWorker | None = None
+    incident_repo: IncidentRepositoryPort | None = None
+    pii_scanner: PiiScannerPort | None = None
+    safety_guardrail: SafetyGuardrailPort | None = None
+    stream_guardrail_filter: AnyioStreamGuardrailFilter | None = None
 
     async def start(self) -> None:
         """Initialize messaging topology (if applicable) and begin consuming."""
@@ -144,6 +171,7 @@ class WorkerContainer:
 def _wire_worker_persistence(
     settings: Settings,
     unit_of_work: UnitOfWork | None,
+    incident_repo: IncidentRepositoryPort | None = None,
 ) -> tuple[
     UnitOfWork,
     Any,
@@ -151,6 +179,7 @@ def _wire_worker_persistence(
     Any,
     KnowledgeRepositoryPort | None,
     ToolApprovalRepositoryPort | None,
+    IncidentRepositoryPort,
 ]:
     stream_buffer_repo = None
     audit_repo = None
@@ -160,18 +189,25 @@ def _wire_worker_persistence(
 
     if unit_of_work is not None:
         uow = unit_of_work
+        session_factory = getattr(uow, "_session_factory", None)
         try:
             read_knowledge_repo = uow.knowledge
         except RuntimeError:
-            session_factory = getattr(uow, "_session_factory", None)
             if session_factory is not None:
                 read_knowledge_repo = MssqlKnowledgeRepository(session=session_factory())
         try:
             read_tool_approval_repo = uow.tool_approvals
         except RuntimeError:
-            session_factory = getattr(uow, "_session_factory", None)
             if session_factory is not None:
                 read_tool_approval_repo = MssqlToolApprovalRepository(session=session_factory())
+        resolved_incident_repo = incident_repo or (
+            getattr(uow, "incidents", None)
+            or (
+                MssqlIncidentRepository(session=session_factory)
+                if session_factory is not None
+                else InMemoryIncidentRepositoryAdapter()
+            )
+        )
     elif settings.PERSISTENCE_DRIVER == PersistenceDriver.MSSQL:
         engine = create_mssql_engine(settings.get_database_url())
         session_factory = create_session_factory(engine)
@@ -181,6 +217,7 @@ def _wire_worker_persistence(
         idempotency_repo = MssqlIdempotencyRepository(session=session_factory)
         read_knowledge_repo = MssqlKnowledgeRepository(session=session_factory())
         read_tool_approval_repo = MssqlToolApprovalRepository(session=session_factory())
+        resolved_incident_repo = incident_repo or MssqlIncidentRepository(session=session_factory)
     else:
         uow = InMemoryUnitOfWork()
         stream_buffer_repo = InMemoryStreamBufferRepositoryAdapter()
@@ -188,6 +225,9 @@ def _wire_worker_persistence(
         idempotency_repo = InMemoryIdempotencyRepositoryAdapter()
         read_knowledge_repo = uow.knowledge
         read_tool_approval_repo = uow.tool_approvals
+        resolved_incident_repo = (
+            incident_repo or getattr(uow, "incidents", None) or InMemoryIncidentRepositoryAdapter()
+        )
 
     return (
         uow,
@@ -196,6 +236,7 @@ def _wire_worker_persistence(
         idempotency_repo,
         read_knowledge_repo,
         read_tool_approval_repo,
+        resolved_incident_repo,
     )
 
 
@@ -248,6 +289,12 @@ def create_worker_container(
     embedding_client: EmbeddingClientPort | None = None,
     workflow_checkpoint_repo: WorkflowCheckpointRepositoryPort | None = None,
     subagent_executor: SubAgentExecutorPort | None = None,
+    incident_repo: IncidentRepositoryPort | None = None,
+    pii_scanner: PiiScannerPort | None = None,
+    safety_guardrail: SafetyGuardrailPort | None = None,
+    stream_guardrail_filter: AnyioStreamGuardrailFilter | None = None,
+    *,
+    enable_opentelemetry: bool | None = None,
 ) -> WorkerContainer:
     """Build and wire the autonomous background worker container."""
     current_settings = settings or get_settings()
@@ -259,7 +306,8 @@ def create_worker_container(
         idempotency_repo,
         read_knowledge_repo,
         read_tool_approval_repo,
-    ) = _wire_worker_persistence(current_settings, unit_of_work)
+        resolved_incident_repo,
+    ) = _wire_worker_persistence(current_settings, unit_of_work, incident_repo)
 
     client = llm_client if llm_client is not None else FakeLlmClientAdapter()
     catalog = model_catalog if model_catalog is not None else InMemoryModelCatalogAdapter()
@@ -313,6 +361,22 @@ def create_worker_container(
         AnyioSubagentWorker(executor=subagent_executor) if subagent_executor is not None else None
     )
 
+    use_otel = (
+        enable_opentelemetry
+        if enable_opentelemetry is not None
+        else current_settings.ENABLE_OPENTELEMETRY
+    )
+    if use_otel:
+        setup_opentelemetry(service_name=f"{current_settings.OTEL_SERVICE_NAME}-worker")
+
+    pii_scanner_adapter = pii_scanner or RegexPiiScannerAdapter()
+    safety_guardrail_adapter = safety_guardrail or HeuristicInjectionDetectorAdapter()
+    stream_filter = (
+        stream_guardrail_filter
+        if stream_guardrail_filter is not None
+        else AnyioStreamGuardrailFilter(guardrail=safety_guardrail_adapter)
+    )
+
     return WorkerContainer(
         unit_of_work=uow,
         llm_client=client,
@@ -330,4 +394,8 @@ def create_worker_container(
         tool_policy_evaluator=tool_policy_evaluator,
         workflow_checkpoint_repo=resolved_workflow_repo,
         subagent_worker=subagent_worker,
+        incident_repo=resolved_incident_repo,
+        pii_scanner=pii_scanner_adapter,
+        safety_guardrail=safety_guardrail_adapter,
+        stream_guardrail_filter=stream_filter,
     )
