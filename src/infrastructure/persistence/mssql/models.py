@@ -195,9 +195,7 @@ class DocumentChunkModel(SQLModel, table=True):
     )
 
     id: str = Field(primary_key=True, max_length=64, nullable=False)
-    tenant_id: str = Field(
-        foreign_key="tenants.id", max_length=64, nullable=False, ondelete="CASCADE"
-    )
+    tenant_id: str = Field(foreign_key="tenants.id", max_length=64, nullable=False)
     document_id: str = Field(
         foreign_key="knowledge_documents.id",
         max_length=64,
@@ -226,9 +224,7 @@ class ToolApprovalModel(SQLModel, table=True):
     tenant_id: str = Field(
         foreign_key="tenants.id", max_length=64, nullable=False, ondelete="CASCADE"
     )
-    conversation_id: str = Field(
-        foreign_key="conversations.id", max_length=64, nullable=False, ondelete="CASCADE"
-    )
+    conversation_id: str = Field(max_length=64, nullable=False, index=True)
     call_id: str = Field(max_length=64, nullable=False)
     tool_name: str = Field(max_length=128, nullable=False)
     arguments_json: str = Field(nullable=False)
@@ -252,9 +248,7 @@ class ToolExecutionAuditModel(SQLModel, table=True):
     tenant_id: str = Field(
         foreign_key="tenants.id", max_length=64, nullable=False, ondelete="CASCADE"
     )
-    conversation_id: str = Field(
-        foreign_key="conversations.id", max_length=64, nullable=False, ondelete="CASCADE"
-    )
+    conversation_id: str = Field(max_length=64, nullable=False, index=True)
     call_id: str = Field(max_length=64, nullable=False)
     tool_name: str = Field(max_length=128, nullable=False)
     arguments_json: str = Field(nullable=False)
@@ -296,9 +290,7 @@ class WorkflowCheckpointModel(SQLModel, table=True):
     )
 
     id: str = Field(primary_key=True, max_length=64, nullable=False)
-    tenant_id: str = Field(
-        foreign_key="tenants.id", max_length=64, nullable=False, ondelete="CASCADE"
-    )
+    tenant_id: str = Field(foreign_key="tenants.id", max_length=64, nullable=False)
     workflow_id: str = Field(
         foreign_key="workflow_instances.id", max_length=64, nullable=False, ondelete="CASCADE"
     )
