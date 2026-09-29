@@ -5,6 +5,9 @@ from dataclasses import dataclass
 
 from fastapi import FastAPI
 
+from src.application.agents.services.graph_execution_engine import (
+    GraphExecutionEngine,
+)
 from src.application.conversations.commands.create_conversation import (
     CreateConversationHandler,
 )
@@ -43,6 +46,9 @@ from src.application.tenants.commands.settle_quota_command import (
 from src.application.tools.services.tool_policy_evaluator_service import (
     ToolPolicyEvaluatorService,
 )
+from src.domain.agents.ports.workflow_checkpoint_repository_port import (
+    WorkflowCheckpointRepositoryPort,
+)
 from src.domain.audit.ports.audit_repository_port import AuditRepositoryPort
 from src.domain.conversations.ports.conversation_repository import (
     ConversationRepository,
@@ -70,6 +76,7 @@ from src.infrastructure.persistence.in_memory import (
     InMemoryUnitOfWork,
 )
 from src.infrastructure.persistence.mssql import (
+    InMemoryWorkflowCheckpointRepositoryAdapter,
     MssqlAuditRepository,
     MssqlConversationRepository,
     MssqlIdempotencyRepository,
@@ -77,6 +84,7 @@ from src.infrastructure.persistence.mssql import (
     MssqlStreamBufferRepository,
     MssqlToolApprovalRepository,
     MssqlUnitOfWork,
+    MssqlWorkflowCheckpointRepository,
     create_mssql_engine,
     create_session_factory,
 )
@@ -120,6 +128,96 @@ class AppContainer:
     tool_approval_repo: ToolApprovalRepositoryPort | None = None
     tool_runner: SandboxedToolRunnerPort | None = None
     tool_policy_evaluator: ToolPolicyEvaluatorService | None = None
+    workflow_checkpoint_repo: WorkflowCheckpointRepositoryPort | None = None
+    graph_execution_engine: GraphExecutionEngine | None = None
+
+
+def _wire_app_persistence(
+    settings: Settings,
+    unit_of_work: UnitOfWork | None,
+    workflow_checkpoint_repo: WorkflowCheckpointRepositoryPort | None,
+) -> tuple[
+    UnitOfWork,
+    ConversationRepository,
+    IdempotencyRepositoryPort,
+    AuditRepositoryPort,
+    StreamBufferRepositoryPort,
+    KnowledgeRepositoryPort | None,
+    ToolApprovalRepositoryPort | None,
+    WorkflowCheckpointRepositoryPort,
+]:
+    read_repo: ConversationRepository | None = None
+    read_knowledge_repo: KnowledgeRepositoryPort | None = None
+    read_tool_approval_repo: ToolApprovalRepositoryPort | None = None
+
+    if unit_of_work is not None:
+        uow = unit_of_work
+        idempotency_repo = (
+            getattr(uow, "idempotency", None) or InMemoryIdempotencyRepositoryAdapter()
+        )
+        audit_repo = getattr(uow, "audit", None) or InMemoryAuditRepositoryAdapter()
+        stream_buffer_repo = (
+            getattr(uow, "stream_buffer", None) or InMemoryStreamBufferRepositoryAdapter()
+        )
+        session_factory = getattr(uow, "_session_factory", None)
+        try:
+            read_repo = uow.conversations
+        except RuntimeError:
+            if session_factory is not None:
+                read_repo = MssqlConversationRepository(session=session_factory())
+        try:
+            read_knowledge_repo = uow.knowledge
+        except RuntimeError:
+            if session_factory is not None:
+                read_knowledge_repo = MssqlKnowledgeRepository(session=session_factory())
+        try:
+            read_tool_approval_repo = uow.tool_approvals
+        except RuntimeError:
+            if session_factory is not None:
+                read_tool_approval_repo = MssqlToolApprovalRepository(session=session_factory())
+        resolved_workflow_repo = workflow_checkpoint_repo or (
+            MssqlWorkflowCheckpointRepository(session=session_factory())
+            if session_factory is not None
+            else InMemoryWorkflowCheckpointRepositoryAdapter()
+        )
+    elif settings.PERSISTENCE_DRIVER == PersistenceDriver.MSSQL:
+        engine = create_mssql_engine(settings.get_database_url())
+        session_factory = create_session_factory(engine)
+        uow = MssqlUnitOfWork(session_factory=session_factory)
+        read_repo = MssqlConversationRepository(session=session_factory())
+        idempotency_repo = MssqlIdempotencyRepository(session=session_factory)
+        audit_repo = MssqlAuditRepository(session=session_factory)
+        stream_buffer_repo = MssqlStreamBufferRepository(session=session_factory)
+        read_knowledge_repo = MssqlKnowledgeRepository(session=session_factory())
+        read_tool_approval_repo = MssqlToolApprovalRepository(session=session_factory())
+        resolved_workflow_repo = workflow_checkpoint_repo or MssqlWorkflowCheckpointRepository(
+            session=session_factory()
+        )
+    else:
+        uow = InMemoryUnitOfWork()
+        read_repo = uow.conversations
+        idempotency_repo = InMemoryIdempotencyRepositoryAdapter()
+        audit_repo = InMemoryAuditRepositoryAdapter()
+        stream_buffer_repo = InMemoryStreamBufferRepositoryAdapter()
+        read_knowledge_repo = uow.knowledge
+        read_tool_approval_repo = uow.tool_approvals
+        resolved_workflow_repo = (
+            workflow_checkpoint_repo or InMemoryWorkflowCheckpointRepositoryAdapter()
+        )
+
+    if read_repo is None:
+        read_repo = uow.conversations
+
+    return (
+        uow,
+        read_repo,
+        idempotency_repo,
+        audit_repo,
+        stream_buffer_repo,
+        read_knowledge_repo,
+        read_tool_approval_repo,
+        resolved_workflow_repo,
+    )
 
 
 def create_app_container(
@@ -130,60 +228,22 @@ def create_app_container(
     embedding_client: EmbeddingClientPort | None = None,
     *,
     enable_tenant_middleware: bool | None = None,
+    workflow_checkpoint_repo: WorkflowCheckpointRepositoryPort | None = None,
+    graph_execution_engine: GraphExecutionEngine | None = None,
 ) -> AppContainer:
     """Build and wire application dependencies into a cohesive container."""
     current_settings = settings or get_settings()
-    read_repo: ConversationRepository | None = None
-    read_knowledge_repo: KnowledgeRepositoryPort | None = None
-    read_tool_approval_repo: ToolApprovalRepositoryPort | None = None
 
-    if unit_of_work is not None:
-        uow = unit_of_work
-        idempotency_repo: IdempotencyRepositoryPort = (
-            getattr(uow, "idempotency", None) or InMemoryIdempotencyRepositoryAdapter()
-        )
-        audit_repo: AuditRepositoryPort = (
-            getattr(uow, "audit", None) or InMemoryAuditRepositoryAdapter()
-        )
-        stream_buffer_repo: StreamBufferRepositoryPort = (
-            getattr(uow, "stream_buffer", None) or InMemoryStreamBufferRepositoryAdapter()
-        )
-        try:
-            read_repo = uow.conversations
-        except RuntimeError:
-            session_factory = getattr(uow, "_session_factory", None)
-            if session_factory is not None:
-                read_repo = MssqlConversationRepository(session=session_factory())
-        try:
-            read_knowledge_repo = uow.knowledge
-        except RuntimeError:
-            session_factory = getattr(uow, "_session_factory", None)
-            if session_factory is not None:
-                read_knowledge_repo = MssqlKnowledgeRepository(session=session_factory())
-        try:
-            read_tool_approval_repo = uow.tool_approvals
-        except RuntimeError:
-            session_factory = getattr(uow, "_session_factory", None)
-            if session_factory is not None:
-                read_tool_approval_repo = MssqlToolApprovalRepository(session=session_factory())
-    elif current_settings.PERSISTENCE_DRIVER == PersistenceDriver.MSSQL:
-        engine = create_mssql_engine(current_settings.get_database_url())
-        session_factory = create_session_factory(engine)
-        uow = MssqlUnitOfWork(session_factory=session_factory)
-        read_repo = MssqlConversationRepository(session=session_factory())
-        idempotency_repo = MssqlIdempotencyRepository(session=session_factory)
-        audit_repo = MssqlAuditRepository(session=session_factory)
-        stream_buffer_repo = MssqlStreamBufferRepository(session=session_factory)
-        read_knowledge_repo = MssqlKnowledgeRepository(session=session_factory())
-        read_tool_approval_repo = MssqlToolApprovalRepository(session=session_factory())
-    else:
-        uow = InMemoryUnitOfWork()
-        read_repo = uow.conversations
-        idempotency_repo = InMemoryIdempotencyRepositoryAdapter()
-        audit_repo = InMemoryAuditRepositoryAdapter()
-        stream_buffer_repo = InMemoryStreamBufferRepositoryAdapter()
-        read_knowledge_repo = uow.knowledge
-        read_tool_approval_repo = uow.tool_approvals
+    (
+        uow,
+        read_repo,
+        idempotency_repo,
+        audit_repo,
+        stream_buffer_repo,
+        read_knowledge_repo,
+        read_tool_approval_repo,
+        resolved_workflow_repo,
+    ) = _wire_app_persistence(current_settings, unit_of_work, workflow_checkpoint_repo)
 
     client = llm_client if llm_client is not None else FakeLlmClientAdapter()
 
@@ -232,6 +292,8 @@ def create_app_container(
         unit_of_work=uow,
         enable_tenant_middleware=use_tenant_middleware,
         retriever_service=retriever_service,
+        workflow_checkpoint_repo=resolved_workflow_repo,
+        graph_execution_engine=graph_execution_engine,
     )
 
     return AppContainer(
@@ -255,6 +317,8 @@ def create_app_container(
         tool_approval_repo=tool_approval_repo,
         tool_runner=tool_runner,
         tool_policy_evaluator=tool_policy_evaluator,
+        workflow_checkpoint_repo=resolved_workflow_repo,
+        graph_execution_engine=graph_execution_engine,
     )
 
 

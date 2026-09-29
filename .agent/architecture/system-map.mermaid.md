@@ -20,6 +20,9 @@ graph TD
         ApprovalsRouterNode["ApprovalsRouter (/tenants/{tenant_id}/approvals)"]
         ToolsSchemasNode["ToolsSchemas (DTOs)"]
         ToolSSENode["Streaming Tool Events (SSE: tool_approval_required, tool_call_started)"]
+        WorkflowsRouterNode["WorkflowsRouter (/tenants/{tenant_id}/workflows)"]
+        AgentsSchemasNode["AgentsSchemas (DTOs)"]
+        WorkflowSSENode["Streaming Workflow Events (SSE: agent_handoff, subagent_completed, checkpoint_saved)"]
     end
 
     subgraph Application ["Application Layer (CQRS & Ports)"]
@@ -62,6 +65,13 @@ graph TD
         RejectToolExecutionHandlerNode["RejectToolExecutionHandler"]
         ExecuteSandboxedToolCmd["ExecuteSandboxedToolCommand"]
         ExecuteSandboxedToolHandlerNode["ExecuteSandboxedToolHandler"]
+        StateReducerServiceNode["StateReducerService"]
+        GraphExecutionEngineNode["GraphExecutionEngine"]
+        SubAgentExecutorPortNode["SubAgentExecutorPort (Port)"]
+        StartWorkflowCmd["StartWorkflowCommand"]
+        StartWorkflowHandlerNode["StartWorkflowCommandHandler"]
+        ResumeWorkflowCmd["ResumeWorkflowCommand"]
+        ResumeWorkflowHandlerNode["ResumeWorkflowCommandHandler"]
     end
 
     subgraph Domain ["Domain Layer (Core Business)"]
@@ -115,6 +125,23 @@ graph TD
         ToolNotFoundErr["ToolNotFoundError"]
         ToolExecutionErr["ToolExecutionError"]
         InvalidApprovalStateErr["InvalidApprovalStateError"]
+        AgentRoleVO["AgentRole (ValueObject)"]
+        GraphEdgeVO["GraphEdge (ValueObject)"]
+        StateSnapshotVO["StateSnapshot (ValueObject)"]
+        WorkflowIdVO["WorkflowId (ValueObject)"]
+        CheckpointIdVO["CheckpointId (ValueObject)"]
+        WorkflowGraphEntity["WorkflowGraph (Entity)"]
+        WorkflowInstanceAggregate["WorkflowInstance (AggregateRoot)"]
+        WorkflowStartedEvent["WorkflowStartedDomainEvent"]
+        SubAgentDelegatedEvent["SubAgentTaskDelegatedDomainEvent"]
+        CheckpointSavedEvent["CheckpointSavedDomainEvent"]
+        WorkflowApprovalReqEvent["WorkflowApprovalRequiredDomainEvent"]
+        WorkflowCompletedEvent["WorkflowCompletedDomainEvent"]
+        WorkflowCheckpointRepoPortNode["WorkflowCheckpointRepositoryPort (Port)"]
+        AgentCatalogPortNode["AgentCatalogPort (Port)"]
+        WorkflowNotFoundErr["WorkflowNotFoundError"]
+        InvalidGraphTransitionErr["InvalidGraphTransitionError"]
+        GraphCycleDetectedErr["GraphCycleDetectedError"]
     end
 
     subgraph Infrastructure ["Infrastructure (Driven Adapters)"]
@@ -159,6 +186,11 @@ graph TD
         AnyioSandboxedToolRunnerNode["AnyioSandboxedToolRunner"]
         ToolsTopologyNode["ToolsTopologyConfig"]
         AnyioToolExecutionWorkerNode["AnyioToolExecutionWorker"]
+        WorkflowMapperNode["WorkflowMapper"]
+        MssqlWorkflowCheckpointRepoNode["MssqlWorkflowCheckpointRepository"]
+        InMemoryWorkflowCheckpointRepoNode["InMemoryWorkflowCheckpointRepositoryAdapter"]
+        MultiAgentTopologyNode["MultiAgentTopologyConfig"]
+        AnyioSubagentWorkerNode["AnyioSubagentWorker"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 
@@ -396,4 +428,37 @@ graph TD
     ApprovalsRouterNode --> RejectToolExecutionHandlerNode
     RouterFastAPI --> ToolSSENode
     ToolSSENode --> UOWPort
+    RouterFastAPI --> WorkflowsRouterNode
+    WorkflowsRouterNode --> AgentsSchemasNode
+    WorkflowsRouterNode --> StartWorkflowHandlerNode
+    WorkflowsRouterNode --> ResumeWorkflowHandlerNode
+    WorkflowsRouterNode --> WorkflowCheckpointRepoPortNode
+    RouterFastAPI --> WorkflowSSENode
+    WorkflowInstanceAggregate -.-> WorkflowStartedEvent
+    WorkflowInstanceAggregate -.-> SubAgentDelegatedEvent
+    WorkflowInstanceAggregate -.-> CheckpointSavedEvent
+    WorkflowInstanceAggregate -.-> WorkflowApprovalReqEvent
+    WorkflowInstanceAggregate -.-> WorkflowCompletedEvent
+    WorkflowInstanceAggregate --> StateSnapshotVO
+    WorkflowGraphEntity --> GraphEdgeVO
+    WorkflowGraphEntity --> AgentRoleVO
+    StartWorkflowHandlerNode --> GraphExecutionEngineNode
+    StartWorkflowHandlerNode --> WorkflowCheckpointRepoPortNode
+    ResumeWorkflowHandlerNode --> GraphExecutionEngineNode
+    ResumeWorkflowHandlerNode --> WorkflowCheckpointRepoPortNode
+    GraphExecutionEngineNode --> StateReducerServiceNode
+    GraphExecutionEngineNode --> SubAgentExecutorPortNode
+    GraphExecutionEngineNode --> WorkflowGraphEntity
+    GraphExecutionEngineNode --> WorkflowInstanceAggregate
+    MssqlWorkflowCheckpointRepoNode -- Implementa --> WorkflowCheckpointRepoPortNode
+    InMemoryWorkflowCheckpointRepoNode -- Implementa --> WorkflowCheckpointRepoPortNode
+    MssqlWorkflowCheckpointRepoNode --> WorkflowMapperNode
+    MssqlWorkflowCheckpointRepoNode --> MssqlModels
+    WorkflowMapperNode --> WorkflowInstanceAggregate
+    WorkflowMapperNode --> StateSnapshotVO
+    WorkflowMapperNode --> MssqlModels
+    MultiAgentTopologyNode -- Extiende --> RabbitMQTopology
+    AnyioSubagentWorkerNode --> SubAgentExecutorPortNode
+    AnyioSubagentWorkerNode --> EventPubPort
+    AnyioSubagentWorkerNode --> MultiAgentTopologyNode
 ```

@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.0] - 2026-09-28 — Slice 9: Multi-Agent Orchestration, Hierarchical Supervisor & State Graphs
+
+### Added
+
+- **Domain Layer (Multi-Agent Entities, State Graph Value Objects & Ports):**
+  - Implemented `AgentRole` enum (`SUPERVISOR`, `SPECIALIST`, `CRITIC`, `SUMMARIZER`), `GraphNode`, `GraphEdge`, and `WorkflowGraph` value objects (`src/domain/agents/value_objects/graph_definition.py`) for declarative directed acyclic state graphs.
+  - Implemented `ExecutionState` and `AgentTask` value objects (`src/domain/agents/value_objects/execution_state.py`) capturing immutable execution snapshots, context variables, and subagent payloads.
+  - Implemented `WorkflowInstance` aggregate root (`src/domain/agents/entities/workflow_instance.py`) governing execution states (`PENDING`, `RUNNING`, `WAITING_APPROVAL`, `PAUSED`, `COMPLETED`, `FAILED`), step transitions, and domain events.
+  - Defined domain events: `WorkflowStartedDomainEvent`, `AgentTaskDelegatedDomainEvent`, `SubAgentCompletedDomainEvent`, `WorkflowSuspendedDomainEvent`, and `WorkflowCompletedDomainEvent`.
+  - Defined driven ports: `WorkflowRepositoryPort` (`save_instance`, `get_instance`, `save_checkpoint`, `get_latest_checkpoint`, `get_checkpoints`) and `SubAgentExecutorPort` (`execute_agent_task`).
+  - Added domain exceptions: `WorkflowNotFoundError`, `InvalidGraphDefinitionError`, and `WorkflowExecutionError`.
+- **Application Layer (Graph Engine, State Reducer & CQRS Handlers):**
+  - Implemented `StateReducerService` (`src/application/agents/services/state_reducer_service.py`) providing deterministic functional state merging for context dictionaries, messages, and citations.
+  - Implemented `GraphExecutionEngine` (`src/application/agents/services/graph_execution_engine.py`) managing graph node traversal, evaluating conditional routing edges, driving concurrent node execution with `anyio.create_task_group()`, handling HITL pauses, and persisting step checkpoints.
+  - Implemented CQRS commands and handlers: `StartWorkflowCommand` / `StartWorkflowCommandHandler` (`src/application/agents/commands/start_workflow.py`) and `ResumeWorkflowCommand` / `ResumeWorkflowCommandHandler` (`src/application/agents/commands/resume_workflow.py`).
+- **Infrastructure Layer (MSSQL 2022 Checkpoint Storage & SQLModel):**
+  - Implemented SQLModel relational tables `WorkflowInstanceModel` (`workflow_instances`) and `WorkflowCheckpointModel` (`workflow_checkpoints`) in `src/infrastructure/persistence/mssql/models.py` with multi-tenant compound indexes.
+  - Implemented `WorkflowDataMapper` (`src/infrastructure/persistence/mssql/workflow_mapper.py`) for lossless conversion between domain aggregates, execution states, and SQLModel records.
+  - Implemented `MssqlWorkflowRepository` (`src/infrastructure/persistence/mssql/mssql_workflow_repository.py`) supporting checkpoint history and pessimistic locking (`WITH (ROWLOCK, UPDLOCK)`).
+  - Implemented `InMemoryWorkflowRepositoryAdapter` (`src/infrastructure/persistence/in_memory/in_memory_workflow_repository.py`) for ultra-fast unit testing.
+  - Added Alembic migration `0006_workflow_instances_and_checkpoints.py`.
+- **RabbitMQ Multi-Agent Pipeline & AnyIO Subagent Worker:**
+  - Implemented `AgentsTopologyConfig` (`src/infrastructure/messaging/rabbitmq/agents_topology_config.py`) declaring `ai_platform.agents` topic exchange, `agent.supervisor.queue`, `agent.specialist.queue`, and DLQs.
+  - Implemented `RabbitMQSubAgentExecutorAdapter` (`src/infrastructure/agents/rabbitmq_subagent_executor.py`) providing decoupled asynchronous agent delegation.
+  - Implemented `AnyioSubAgentWorker` (`src/infrastructure/messaging/rabbitmq/anyio_subagent_worker.py`) consuming subagent tasks and processing inference with bounded concurrency (`anyio.Semaphore`).
+- **HTTP Interfaces, REST Endpoints & Real-Time SSE Streams:**
+  - Implemented `workflows_router.py` with endpoints:
+    - `POST /tenants/{tenant_id}/workflows` (`HTTP 202 Accepted`).
+    - `GET /tenants/{tenant_id}/workflows/{workflow_id}/checkpoints` (`HTTP 200 OK`).
+    - `POST /tenants/{tenant_id}/workflows/{workflow_id}/resume` (`HTTP 200 OK`).
+    - `GET /tenants/{tenant_id}/workflows/{workflow_id}/stream` (`HTTP 200 OK`, `text/event-stream`).
+  - Added Server-Sent Events (SSE) streaming for `event: agent_handoff`, `event: subagent_completed`, and `event: checkpoint_saved`.
+  - Defined Pydantic v2 schemas in `src/interfaces/http/agents_schemas.py`.
+  - Exported updated OpenAPI 3.1 specification and ReDoc HTML.
+- **Composition Roots, ADR & System Map:**
+  - Wired `WorkflowRepositoryPort`, `SubAgentExecutorPort`, `StateReducerService`, `GraphExecutionEngine`, and workflow commands/handlers in `src/container.py` and `src/worker_container.py`.
+  - Documented architectural decisions in `ADR 0008` (`.agent/architecture/decisions/0008-multi-agent-orchestration-and-state-graphs.md`).
+  - Synchronized Living Architecture Map in `.agent/architecture/system-map.mermaid.md`.
+  - Completed roadmap checklist in `docs/roadmap/09-multi-agent-orchestration-and-state-graphs.md`.
+
+---
+
 ## [0.8.0] - 2026-09-28 — Slice 8: Secure Tool Calling, Sandboxed Execution & Human-in-the-Loop (HITL)
 
 ### Added

@@ -84,6 +84,15 @@ Production-grade Python reference platform for AI-powered conversational service
 - **Decoupled RabbitMQ Tool Pipeline**: `ToolsTopologyConfig` (`ai_platform.tools` exchange and DLQ) and `AnyioToolExecutionWorker` processing authorized tool executions in parallel using `anyio.create_task_group()` and `anyio.Semaphore`.
 - **HITL Management REST API & Streaming Notifications**: Endpoints `GET /tenants/{tenant_id}/approvals/pending` and `POST /tenants/{tenant_id}/approvals/{approval_id}/decision`; real-time streaming notifications over SSE (`event: tool_approval_required` and `event: tool_call_started`).
 
+### Slice 9: Multi-Agent Orchestration, Hierarchical Supervisor & State Graphs
+
+- **Hierarchical Supervisor & Specialized Agent Roles**: `WorkflowInstance` Aggregate Root orchestrating role-based agents (`SUPERVISOR`, `SPECIALIST`, `CRITIC`, `SUMMARIZER`) with tenant isolation and execution lifecycle governance (`PENDING`, `RUNNING`, `WAITING_APPROVAL`, `PAUSED`, `COMPLETED`, `FAILED`).
+- **Declarative State Graphs & Execution Engine**: `WorkflowGraph`, `GraphNode`, and `GraphEdge` Value Objects defining directed state graphs with conditional routing expressions, executed by `GraphExecutionEngine` and reduced via deterministic `StateReducerService`.
+- **Concurrent Subagent Execution with AnyIO**: Parallel node and subagent evaluation using `anyio.create_task_group()` with non-blocking cooperative cancellation, timeouts, and state synchronization.
+- **Transactional MSSQL 2022 Checkpointing**: `WorkflowInstanceModel` and `WorkflowCheckpointModel` recording immutable step snapshots and state deltas (`MssqlWorkflowRepository`), with pessimistic row locking (`WITH (ROWLOCK, UPDLOCK)`) ensuring safe multi-worker resumption.
+- **Decoupled RabbitMQ Multi-Agent Pipeline**: `AgentsTopologyConfig` declaring `ai_platform.agents` topic exchange and dedicated agent queues (`agent.supervisor.queue`, `agent.specialist.queue`), processed asynchronously by `AnyioSubAgentWorker`.
+- **Multi-Agent REST API & Real-Time SSE Streams**: Endpoints `POST /tenants/{tenant_id}/workflows`, `GET /tenants/{tenant_id}/workflows/{id}/checkpoints`, and `POST /tenants/{tenant_id}/workflows/{id}/resume`; real-time streaming lifecycle events (`event: agent_handoff`, `event: subagent_completed`, `event: checkpoint_saved`).
+
 ---
 
 ## 🏛️ Architecture Overview
@@ -156,6 +165,15 @@ The system strictly follows the Dependency Rule of Clean Architecture:
 | `GET` | `/tenants/{tenant_id}/approvals/pending` | List all tool executions pending human operator review | *(None)* | `200 OK` |
 | `POST` | `/tenants/{tenant_id}/approvals/{approval_id}/decision` | Approve or reject a pending tool execution | *(None)* | `200 OK` / `400` / `404` |
 
+### Multi-Agent Orchestration & Workflow Endpoints
+
+| Method | Path | Description | Required Headers | Status Code |
+| :--- | :--- | :--- | :--- | :--- |
+| `POST` | `/tenants/{tenant_id}/workflows` | Initialize and trigger a multi-agent state graph workflow | *(None)* | `202 Accepted` |
+| `GET` | `/tenants/{tenant_id}/workflows/{workflow_id}/checkpoints` | Retrieve immutable execution snapshots and state timeline | *(None)* | `200 OK` / `404 Not Found` |
+| `POST` | `/tenants/{tenant_id}/workflows/{workflow_id}/resume` | Resume a paused or suspended workflow from its latest checkpoint | *(None)* | `200 OK` / `400` / `404` |
+| `GET` | `/tenants/{tenant_id}/workflows/{workflow_id}/stream` | Stream real-time agent handoff and subagent execution events via SSE | *(None)* | `200 OK` (`text/event-stream`) / `404` |
+
 ### Key Request Headers
 
 | Header | Example | Description |
@@ -215,7 +233,7 @@ make stack/down
 
 ## 🧪 Feature Walkthrough & Live Demonstration Guide
 
-This step-by-step guide allows developers and evaluators to start the platform and manually verify every capability across Slices 1 to 6.
+This step-by-step guide allows developers and evaluators to start the platform and manually verify every capability across Slices 1 to 9.
 
 ### Preparation: Start the Services
 
@@ -416,12 +434,53 @@ curl -N -H "X-Tenant-ID: corp-acme" \
 
 ---
 
+### Step 9: Multi-Agent Orchestration, State Graphs & Checkpoint Resumption (Slice 9)
+
+Demonstrate hierarchical multi-agent coordination, subagent state graph execution, and checkpoint resumption:
+
+```bash
+# 9.1 Launch a multi-agent workflow for a tenant (returns HTTP 202 Accepted)
+WORKFLOW_RESP=$(curl -s -X POST "http://localhost:8000/tenants/corp-acme/workflows" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "graph_name": "research_and_audit_pipeline",
+    "initial_context": {
+      "query": "Audit enterprise security guidelines and summarize risk factors."
+    }
+  }')
+echo $WORKFLOW_RESP | jq
+WORKFLOW_ID=$(echo $WORKFLOW_RESP | jq -r .workflow_id)
+
+# 9.2 Stream real-time agent handoffs and subagent executions via Server-Sent Events
+curl -N "http://localhost:8000/tenants/corp-acme/workflows/${WORKFLOW_ID}/stream"
+# Stream output will include:
+# event: agent_handoff
+# data: {"from_agent": "supervisor", "to_agent": "researcher", "task": "..."}
+# event: subagent_completed
+# data: {"agent": "researcher", "output": {...}}
+# event: checkpoint_saved
+# data: {"checkpoint_id": "...", "node": "researcher", "status": "RUNNING"}
+
+# 9.3 Inspect persisted checkpoint history and state snapshots from MSSQL
+curl -s "http://localhost:8000/tenants/corp-acme/workflows/${WORKFLOW_ID}/checkpoints" | jq
+
+# 9.4 Resume a paused or HITL-waiting workflow from its latest checkpoint
+curl -s -X POST "http://localhost:8000/tenants/corp-acme/workflows/${WORKFLOW_ID}/resume" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "node_id": "auditor",
+    "updated_context": {"supervisor_override": "Approved by human operator"}
+  }' | jq
+```
+
+---
+
 ## 🛠️ Developer Tooling & Verification
 
 A comprehensive `Makefile` provides one-command access to all quality barriers:
 
 ```bash
-make test          # Run all 474 unit & integration tests
+make test          # Run all 523 unit & integration tests
 make coverage      # Generate detailed test coverage report (>= 90%)
 make lint          # Run static code analysis with Ruff
 make format-check  # Verify code formatting conformance with Ruff
@@ -458,4 +517,5 @@ make check-all     # Run full quality barrier (format + lint + types + security 
   - 📄 Architecture Decision: [ADR 0006: Semantic Vector Search, Hybrid RAG & Knowledge Grounding](.agent/architecture/decisions/0006-hybrid-rag-and-mssql-vector-search.md)
 - [x] [**Slice 8:** Secure Tool Calling, Sandboxed Execution & Human-in-the-Loop (HITL)](docs/roadmap/08-secure-tool-calling-and-hitl.md)
   - 📄 Architecture Decision: [ADR 0007: Secure Tool Calling, Sandboxed Execution & Human-in-the-Loop](.agent/architecture/decisions/0007-secure-tool-calling-and-hitl.md)
-- [ ] **Slice 9:** Autonomous Multi-Agent Orchestration, Observability & Production Deployment
+- [x] [**Slice 9:** Multi-Agent Orchestration, Hierarchical Supervisor & State Graphs](docs/roadmap/09-multi-agent-orchestration-and-state-graphs.md)
+  - 📄 Architecture Decision: [ADR 0008: Multi-Agent Orchestration, Hierarchical Supervisor & State Graphs](.agent/architecture/decisions/0008-multi-agent-orchestration-and-state-graphs.md)
