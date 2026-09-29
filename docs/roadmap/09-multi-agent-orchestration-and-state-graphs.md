@@ -128,25 +128,27 @@ Permitir la resolución de problemas complejos dividiendo la carga de trabajo en
 
 *Modelos SQLModel en `models.py`, mapeadores DDD, repositorio transaccional y migraciones Alembic.*
 
-* [ ] **Modelos ORM Físicos en SQLModel (`src/infrastructure/persistence/mssql/models.py`)**
+* [x] **Modelos ORM Físicos en SQLModel (`src/infrastructure/persistence/mssql/models.py`)**
   * `WorkflowInstanceModel` (tabla `workflow_instances`): `id`, `tenant_id` (indexado), `name`, `status`, `current_node`, `created_at`, `updated_at`.
   * `WorkflowCheckpointModel` (tabla `workflow_checkpoints`): `id`, `tenant_id` (indexado), `workflow_id` (indexado), `version`, `node_id`, `state_json`, `created_at`.
   * Índices compuestos: `(tenant_id, id)` y `(tenant_id, workflow_id, version)`.
 
-* [ ] **Mapeador DDD (Workflow Mapper)**
+* [x] **Mapeador DDD (Workflow Mapper)**
   * Archivo: `src/infrastructure/persistence/mssql/workflow_mapper.py`
 
-* [ ] **Adaptador de Repositorio de Checkpoints en MSSQL**
+* [x] **Adaptador de Repositorio de Checkpoints en MSSQL**
   * Archivo: `src/infrastructure/persistence/mssql/mssql_workflow_checkpoint_repository.py`
   * Control de concurrencia pesimista con T-SQL `WITH (ROWLOCK, UPDLOCK)` para evitar doble reanudación o sobreescritura de checkpoints.
   * Archivo: `src/infrastructure/persistence/mssql/in_memory_workflow_checkpoint_repository.py` (adaptador en memoria para tests ultrarrápidos).
 
-* [ ] **Migración Alembic T-SQL**
+* [x] **Migración Alembic T-SQL**
   * Archivo: `src/infrastructure/persistence/mssql/migrations/versions/0006_multi_agent_checkpoints.py`
 
-* [ ] **Tests de Repositorio y Persistencia**
-  * Archivo: `tests/unit/infrastructure/persistence/mssql/test_workflow_checkpoint_repository.py`
-  * Archivo: `tests/integration/infrastructure/mssql/test_mssql_checkpoint_persistence.py`
+* [x] **Tests de Repositorio y Persistencia**
+  * Archivo: `tests/unit/infrastructure/mssql/test_workflow_models.py`
+  * Archivo: `tests/unit/infrastructure/mssql/test_workflow_mapper.py`
+  * Archivo: `tests/unit/infrastructure/mssql/test_mssql_workflow_checkpoint_repository.py`
+  * Archivo: `tests/unit/infrastructure/mssql/test_in_memory_workflow_checkpoint_repository.py`
 
 ---
 

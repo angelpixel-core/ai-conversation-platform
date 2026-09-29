@@ -183,6 +183,9 @@ graph TD
         AnyioSandboxedToolRunnerNode["AnyioSandboxedToolRunner"]
         ToolsTopologyNode["ToolsTopologyConfig"]
         AnyioToolExecutionWorkerNode["AnyioToolExecutionWorker"]
+        WorkflowMapperNode["WorkflowMapper"]
+        MssqlWorkflowCheckpointRepoNode["MssqlWorkflowCheckpointRepository"]
+        InMemoryWorkflowCheckpointRepoNode["InMemoryWorkflowCheckpointRepositoryAdapter"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 
@@ -436,4 +439,11 @@ graph TD
     GraphExecutionEngineNode --> SubAgentExecutorPortNode
     GraphExecutionEngineNode --> WorkflowGraphEntity
     GraphExecutionEngineNode --> WorkflowInstanceAggregate
+    MssqlWorkflowCheckpointRepoNode -- Implementa --> WorkflowCheckpointRepoPortNode
+    InMemoryWorkflowCheckpointRepoNode -- Implementa --> WorkflowCheckpointRepoPortNode
+    MssqlWorkflowCheckpointRepoNode --> WorkflowMapperNode
+    MssqlWorkflowCheckpointRepoNode --> MssqlModels
+    WorkflowMapperNode --> WorkflowInstanceAggregate
+    WorkflowMapperNode --> StateSnapshotVO
+    WorkflowMapperNode --> MssqlModels
 ```
