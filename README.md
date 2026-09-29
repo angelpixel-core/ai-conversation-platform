@@ -519,3 +519,5 @@ make check-all     # Run full quality barrier (format + lint + types + security 
   - 📄 Architecture Decision: [ADR 0007: Secure Tool Calling, Sandboxed Execution & Human-in-the-Loop](.agent/architecture/decisions/0007-secure-tool-calling-and-hitl.md)
 - [x] [**Slice 9:** Multi-Agent Orchestration, Hierarchical Supervisor & State Graphs](docs/roadmap/09-multi-agent-orchestration-and-state-graphs.md)
   - 📄 Architecture Decision: [ADR 0008: Multi-Agent Orchestration, Hierarchical Supervisor & State Graphs](.agent/architecture/decisions/0008-multi-agent-orchestration-and-state-graphs.md)
+- [ ] [**Slice 10:** Enterprise AI Governance, Real-Time Guardrails & Distributed Observability](docs/roadmap/10-ai-governance-and-observability.md)
+  - 📄 Architecture Decision: [ADR 0009: Enterprise AI Governance, Guardrails & OpenTelemetry](.agent/architecture/decisions/0009-ai-governance-guardrails-and-opentelemetry.md)
