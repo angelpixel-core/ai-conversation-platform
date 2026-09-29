@@ -1,7 +1,5 @@
 """Integration test: Sensitive PII automatically redacted before storage and inference."""
 
-from uuid import uuid4
-
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -62,10 +60,10 @@ async def test_pii_redacted_in_message_payload(
     client_and_repo: tuple[AsyncClient, InMemoryUnitOfWork],
 ) -> None:
     client, uow = client_and_repo
-    conv_id = uuid4()
-    CreateConversationHandler(uow).handle(
-        CreateConversationCommand(conversation_id=conv_id, title="PII Redaction Test")
+    create_res = CreateConversationHandler(uow).handle(
+        CreateConversationCommand(title="PII Redaction Test")
     )
+    conv_id = create_res.conversation_id
 
     pii_payload = {
         "content": (

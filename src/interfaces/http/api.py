@@ -6,8 +6,8 @@ from datetime import datetime
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import Depends, FastAPI, Header, HTTPException, status
-from fastapi.responses import StreamingResponse
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from src.application.agents.services.graph_execution_engine import (
     GraphExecutionEngine,
@@ -30,6 +30,9 @@ from src.application.conversations.services.stream_recovery_service import (
 from src.application.knowledge.services.hybrid_retriever_service import (
     HybridRetrieverService,
 )
+from src.application.shared.governance.guarded_command_executor import (
+    GuardedCommandExecutor,
+)
 from src.application.shared.idempotency.idempotent_command_executor import (
     IdempotencyConflictError,
     IdempotentCommandExecutor,
@@ -39,6 +42,10 @@ from src.domain.agents.ports.workflow_checkpoint_repository_port import (
     WorkflowCheckpointRepositoryPort,
 )
 from src.domain.conversations.exceptions import ConversationNotFoundError
+from src.domain.governance.exceptions import SafetyPolicyViolationError
+from src.domain.governance.ports.incident_repository_port import (
+    IncidentRepositoryPort,
+)
 from src.domain.knowledge.value_objects.citation import Citation
 from src.domain.shared.domain_error import DomainError
 from src.domain.tenants.value_objects.tenant_id import TenantId
@@ -48,6 +55,9 @@ from src.infrastructure.messaging.rabbitmq.anyio_document_indexer_worker import 
 from src.interfaces.http.dependencies.idempotency_dependency import (
     get_optional_idempotency_key,
 )
+from src.interfaces.http.middlewares.opentelemetry_middleware import (
+    OpenTelemetryMiddleware,
+)
 from src.interfaces.http.middlewares.tenant_context_middleware import (
     TenantContextMiddleware,
 )
@@ -56,6 +66,9 @@ from src.interfaces.http.resumable_sse_endpoint import (
 )
 from src.interfaces.http.routers.approvals_router import (
     create_approvals_router,
+)
+from src.interfaces.http.routers.governance_router import (
+    create_governance_router,
 )
 from src.interfaces.http.routers.knowledge_router import (
     create_knowledge_router,
@@ -138,6 +151,7 @@ def _register_message_routes(
     app: FastAPI,
     send_handler: SendMessageHandler | None,
     idempotent_executor: IdempotentCommandExecutor | None = None,
+    guarded_executor: GuardedCommandExecutor | None = None,
 ) -> None:
     @app.post(
         "/conversations/{conversation_id}/messages",
@@ -151,6 +165,7 @@ def _register_message_routes(
         conversation_id: UUID,
         request: SendMessageRequest,
         idempotency_key: Annotated[str | None, Depends(get_optional_idempotency_key)] = None,
+        x_tenant_id: Annotated[str | None, Header(alias="X-Tenant-Id")] = None,
     ) -> MessageResponse:
         handler = send_handler
         if handler is None:
@@ -159,10 +174,10 @@ def _register_message_routes(
                 detail="SendMessageHandler not configured.",
             )
 
-        async def _execute() -> MessageResponse:
+        async def _execute_with_text(text: str) -> MessageResponse:
             try:
                 res = handler.handle(
-                    SendMessageCommand(conversation_id=conversation_id, content=request.content)
+                    SendMessageCommand(conversation_id=conversation_id, content=text)
                 )
                 return MessageResponse(
                     conversation_id=res.conversation_id,
@@ -177,11 +192,21 @@ def _register_message_routes(
                     status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
                 ) from exc
 
+        async def _run_command() -> MessageResponse:
+            if guarded_executor is not None:
+                tid = TenantId(x_tenant_id or "default-tenant")
+                return await guarded_executor.execute_guarded(
+                    tenant_id=tid,
+                    raw_text=request.content,
+                    operation=_execute_with_text,
+                )
+            return await _execute_with_text(request.content)
+
         if idempotent_executor is not None and idempotency_key is not None:
             try:
                 return await idempotent_executor.execute(
                     key=idempotency_key,
-                    operation=_execute,
+                    operation=_run_command,
                     response_serializer=lambda r: {
                         "conversation_id": str(r.conversation_id),
                         "role": r.role,
@@ -198,7 +223,7 @@ def _register_message_routes(
             except IdempotencyConflictError as exc:
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
 
-        return await _execute()
+        return await _run_command()
 
 
 async def _fetch_streaming_citations(
@@ -340,9 +365,12 @@ def build_api(
     idempotent_executor: IdempotentCommandExecutor | None = None,
     stream_recovery_service: StreamRecoveryService | None = None,
     unit_of_work: UnitOfWork | None = None,
+    guarded_executor: GuardedCommandExecutor | None = None,
+    incident_repo: IncidentRepositoryPort | None = None,
     *,
     handler: CreateConversationHandler | None = None,
     enable_tenant_middleware: bool = False,
+    enable_opentelemetry_middleware: bool = False,
     retriever_service: HybridRetrieverService | None = None,
     indexer_worker: AnyioDocumentIndexerWorker | None = None,
     workflow_checkpoint_repo: WorkflowCheckpointRepositoryPort | None = None,
@@ -363,12 +391,36 @@ def build_api(
         openapi_url="/openapi.json",
     )
 
+    if enable_opentelemetry_middleware:
+        app.add_middleware(OpenTelemetryMiddleware)
+
     if enable_tenant_middleware:
         app.add_middleware(TenantContextMiddleware)
 
+    @app.exception_handler(SafetyPolicyViolationError)
+    async def safety_policy_violation_handler(
+        request: Request, exc: SafetyPolicyViolationError
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={
+                "error": "SafetyPolicyViolation",
+                "message": exc.message,
+                "violation_type": exc.violation_type,
+                "risk_score": exc.risk_score,
+                "matched_rule": exc.matched_rule,
+                "incident_id": exc.incident_id,
+            },
+        )
+
     _register_health_routes(app)
     _register_conversation_routes(app, create_conversation_handler, idempotent_executor)
-    _register_message_routes(app, send_message_handler, idempotent_executor)
+    _register_message_routes(
+        app,
+        send_message_handler,
+        idempotent_executor,
+        guarded_executor=guarded_executor,
+    )
     _register_streaming_routes(
         app,
         stream_conversation_handler,
@@ -376,6 +428,9 @@ def build_api(
         retriever_service=retriever_service,
         unit_of_work=unit_of_work,
     )
+
+    if incident_repo is not None:
+        app.include_router(create_governance_router(incident_repo))
 
     if unit_of_work is not None:
         app.include_router(create_tenant_admin_router(unit_of_work))

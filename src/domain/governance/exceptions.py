@@ -15,6 +15,7 @@ class SafetyPolicyViolationError(DomainError):
         incident_id: str | None = None,
     ) -> None:
         super().__init__(message)
+        self.message = message
         self.violation_type = violation_type
         self.risk_score = risk_score
         self.matched_rule = matched_rule
