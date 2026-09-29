@@ -54,6 +54,29 @@ async def test_record_incident_command_handler(mock_incident_repo: Mock) -> None
 
 
 @pytest.mark.anyio
+async def test_record_incident_command_handler_with_event_publisher(
+    mock_incident_repo: Mock,
+) -> None:
+    mock_publisher = Mock()
+    handler = RecordSecurityIncidentHandler(
+        incident_repo=mock_incident_repo,
+        event_publisher=mock_publisher,
+    )
+    command = RecordSecurityIncidentCommand(
+        tenant_id="corp-acme",
+        rule_name="PROMPT_INJECTION_RULE",
+        severity="CRITICAL",
+        description="Prompt injection detected",
+        prompt_preview="Ignore instructions",
+    )
+
+    incident_id = await handler.handle(command)
+
+    assert incident_id.startswith("inc-")
+    assert mock_publisher.publish.call_count == 2
+
+
+@pytest.mark.anyio
 async def test_list_incidents_query_handler(mock_incident_repo: Mock) -> None:
     tenant_id = TenantId("corp-acme")
     sample_incident = SecurityIncident.create(
