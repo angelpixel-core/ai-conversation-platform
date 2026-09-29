@@ -174,22 +174,22 @@ Permitir la resolución de problemas complejos dividiendo la carga de trabajo en
 
 *Endpoints REST para control de workflows y eventos SSE con la actividad de cada subagente.*
 
-* [ ] **Esquemas DTO HTTP (Pydantic v2)**
+* [x] **Esquemas DTO HTTP (Pydantic v2)**
   * Archivo: `src/interfaces/http/agents_schemas.py` (`StartWorkflowRequest`, `WorkflowStateResponse`, `WorkflowCheckpointResponse`, `AgentActivityEventSchema`).
 
-* [ ] **Router de Orquestación Multi-Agente (FastAPI)**
+* [x] **Router de Orquestación Multi-Agente (FastAPI)**
   * Archivo: `src/interfaces/http/routers/workflows_router.py`
   * `POST /tenants/{tenant_id}/workflows` (`202 Accepted`).
   * `GET /tenants/{tenant_id}/workflows/{workflow_id}/checkpoints` (`200 OK`).
   * `POST /tenants/{tenant_id}/workflows/{workflow_id}/resume` (`200 OK`).
 
-* [ ] **Eventos SSE de Transición de Nodos en Streaming**
+* [x] **Eventos SSE de Transición de Nodos en Streaming**
   * Integración en `src/interfaces/http/api.py` para emitir eventos de coordinación en tiempo real:
     * `event: agent_handoff` (data: `{"from": "supervisor", "to": "researcher", "step": 1}`)
     * `event: subagent_completed` (data: `{"agent": "researcher", "summary": "Found 3 references"}`)
     * `event: checkpoint_saved` (data: `{"workflow_id": "...", "version": 2}`)
 
-* [ ] **Tests de Integración HTTP / E2E**
+* [x] **Tests de Integración HTTP / E2E**
   * Archivo: `tests/integration/api/test_multi_agent_workflow_flow.py`
   * Archivo: `tests/integration/api/test_workflow_resume_endpoint.py`
 

@@ -20,6 +20,9 @@ graph TD
         ApprovalsRouterNode["ApprovalsRouter (/tenants/{tenant_id}/approvals)"]
         ToolsSchemasNode["ToolsSchemas (DTOs)"]
         ToolSSENode["Streaming Tool Events (SSE: tool_approval_required, tool_call_started)"]
+        WorkflowsRouterNode["WorkflowsRouter (/tenants/{tenant_id}/workflows)"]
+        AgentsSchemasNode["AgentsSchemas (DTOs)"]
+        WorkflowSSENode["Streaming Workflow Events (SSE: agent_handoff, subagent_completed, checkpoint_saved)"]
     end
 
     subgraph Application ["Application Layer (CQRS & Ports)"]
@@ -425,6 +428,12 @@ graph TD
     ApprovalsRouterNode --> RejectToolExecutionHandlerNode
     RouterFastAPI --> ToolSSENode
     ToolSSENode --> UOWPort
+    RouterFastAPI --> WorkflowsRouterNode
+    WorkflowsRouterNode --> AgentsSchemasNode
+    WorkflowsRouterNode --> StartWorkflowHandlerNode
+    WorkflowsRouterNode --> ResumeWorkflowHandlerNode
+    WorkflowsRouterNode --> WorkflowCheckpointRepoPortNode
+    RouterFastAPI --> WorkflowSSENode
     WorkflowInstanceAggregate -.-> WorkflowStartedEvent
     WorkflowInstanceAggregate -.-> SubAgentDelegatedEvent
     WorkflowInstanceAggregate -.-> CheckpointSavedEvent
