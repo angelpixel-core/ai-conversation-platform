@@ -1,6 +1,6 @@
 """Unit tests for InMemoryWorkflowCheckpointRepository adapter."""
 
-from src.domain.agents.entities.workflow_instance import WorkflowInstance, WorkflowStatus
+from src.domain.agents.entities.workflow_instance import WorkflowInstance
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.infrastructure.persistence.mssql.in_memory_workflow_checkpoint_repository import (
     InMemoryWorkflowCheckpointRepositoryAdapter,

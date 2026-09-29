@@ -6,10 +6,8 @@ import pytest
 from sqlmodel import Session, SQLModel, create_engine
 
 from src.domain.agents.entities.workflow_instance import WorkflowInstance, WorkflowStatus
-from src.domain.agents.value_objects.state_snapshot import StateSnapshot
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.infrastructure.persistence.mssql.models import (
-    ConversationModel,
     TenantModel,
 )
 from src.infrastructure.persistence.mssql.mssql_workflow_checkpoint_repository import (

@@ -262,3 +262,48 @@ class ToolExecutionAuditModel(SQLModel, table=True):
     is_error: bool = Field(default=False, nullable=False)
     execution_time_ms: float = Field(default=0.0, nullable=False)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
+
+
+class WorkflowInstanceModel(SQLModel, table=True):
+    """Physical relational model for the 'workflow_instances' table."""
+
+    __tablename__ = "workflow_instances"  # pyright: ignore[reportAssignmentType]
+    __table_args__ = (
+        Index("ix_workflow_instances_tenant_id", "tenant_id"),
+        Index("ix_workflow_instances_tenant_status", "tenant_id", "status"),
+    )
+
+    id: str = Field(primary_key=True, max_length=64, nullable=False)
+    tenant_id: str = Field(
+        foreign_key="tenants.id", max_length=64, nullable=False, ondelete="CASCADE"
+    )
+    name: str = Field(max_length=255, nullable=False)
+    status: str = Field(default="RUNNING", max_length=32, nullable=False)
+    current_node: str = Field(max_length=128, nullable=False)
+    state_json: str = Field(default="{}", nullable=False)
+    version: int = Field(default=1, nullable=False)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
+
+
+class WorkflowCheckpointModel(SQLModel, table=True):
+    """Physical relational model for the 'workflow_checkpoints' table."""
+
+    __tablename__ = "workflow_checkpoints"  # pyright: ignore[reportAssignmentType]
+    __table_args__ = (
+        Index("ix_workflow_checkpoints_tenant_id", "tenant_id"),
+        Index("ix_workflow_checkpoints_workflow_version", "tenant_id", "workflow_id", "version"),
+    )
+
+    id: str = Field(primary_key=True, max_length=64, nullable=False)
+    tenant_id: str = Field(
+        foreign_key="tenants.id", max_length=64, nullable=False, ondelete="CASCADE"
+    )
+    workflow_id: str = Field(
+        foreign_key="workflow_instances.id", max_length=64, nullable=False, ondelete="CASCADE"
+    )
+    version: int = Field(nullable=False)
+    node_id: str = Field(max_length=128, nullable=False)
+    state_json: str = Field(nullable=False)
+    status: str = Field(default="RUNNING", max_length=32, nullable=False)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
