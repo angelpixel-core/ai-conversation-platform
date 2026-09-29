@@ -156,18 +156,17 @@ Permitir la resolución de problemas complejos dividiendo la carga de trabajo en
 
 *Distribución asíncrona de subtareas a colas especializadas y workers desacoplados.*
 
-* [ ] **Topología de Exchanges y Queues para Agentes en RabbitMQ**
+* [x] **Topología de Exchanges y Queues para Agentes en RabbitMQ**
   * Archivo: `src/infrastructure/messaging/rabbitmq/multi_agent_topology_config.py`
   * Exchange: `ai_platform.agents` (Topic Exchange).
   * Queues dedicadas: `agent.supervisor.queue`, `agent.specialist.queue`, `agent.reviewer.queue` con enlaces a DLQ `agent.dead_letter.queue`.
 
-* [ ] **Worker de Ejecución de Subagentes con AnyIO**
+* [x] **Worker de Ejecución de Subagentes con AnyIO**
   * Archivo: `src/infrastructure/messaging/rabbitmq/anyio_subagent_worker.py`
   * Bounded concurrency con `anyio.Semaphore`, consumo asíncrono y despacho de eventos de resultado parcial.
 
-* [ ] **Tests Unitarios e Integración del Worker Multi-Agente**
+* [x] **Tests Unitarios e Integración del Worker Multi-Agente**
   * Archivo: `tests/unit/infrastructure/messaging/test_anyio_subagent_worker.py`
-  * Archivo: `tests/integration/workers/test_subagent_worker.py`
 
 ---
 

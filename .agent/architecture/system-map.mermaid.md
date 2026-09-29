@@ -186,6 +186,8 @@ graph TD
         WorkflowMapperNode["WorkflowMapper"]
         MssqlWorkflowCheckpointRepoNode["MssqlWorkflowCheckpointRepository"]
         InMemoryWorkflowCheckpointRepoNode["InMemoryWorkflowCheckpointRepositoryAdapter"]
+        MultiAgentTopologyNode["MultiAgentTopologyConfig"]
+        AnyioSubagentWorkerNode["AnyioSubagentWorker"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 
@@ -446,4 +448,8 @@ graph TD
     WorkflowMapperNode --> WorkflowInstanceAggregate
     WorkflowMapperNode --> StateSnapshotVO
     WorkflowMapperNode --> MssqlModels
+    MultiAgentTopologyNode -- Extiende --> RabbitMQTopology
+    AnyioSubagentWorkerNode --> SubAgentExecutorPortNode
+    AnyioSubagentWorkerNode --> EventPubPort
+    AnyioSubagentWorkerNode --> MultiAgentTopologyNode
 ```
