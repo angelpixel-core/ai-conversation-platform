@@ -3,15 +3,15 @@
 from typing import Any
 
 import pytest
-from src.infrastructure.messaging.rabbitmq.anyio_subagent_worker import AnyioSubagentWorker
-from src.infrastructure.messaging.rabbitmq.multi_agent_topology_config import (
-    MultiAgentTopologyConfig,
-)
 
 from src.application.agents.ports.subagent_executor_port import SubAgentExecutorPort
 from src.application.shared.ports.event_publisher import EventPublisher
 from src.domain.agents.value_objects.agent_role import AgentRole
 from src.domain.shared.events.event_envelope import EventEnvelope
+from src.infrastructure.messaging.rabbitmq.anyio_subagent_worker import AnyioSubagentWorker
+from src.infrastructure.messaging.rabbitmq.multi_agent_topology_config import (
+    MultiAgentTopologyConfig,
+)
 
 
 class FakeSubAgentExecutor(SubAgentExecutorPort):
@@ -57,9 +57,7 @@ def test_multi_agent_topology_config() -> None:
     assert "agent.specialist.queue" in config.queues
     assert "agent.reviewer.queue" in config.queues
 
-    routing_key = config.format_tenant_routing_key(
-        tenant_id="corp-acme", role_or_event="specialist"
-    )
+    routing_key = config.format_tenant_routing_key(tenant_id="corp-acme", event_type="specialist")
     assert routing_key == "tenant.corp-acme.agent.specialist"
 
 
