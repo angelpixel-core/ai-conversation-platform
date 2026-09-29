@@ -14,15 +14,22 @@ from src.application.conversations.queries.stream_conversation import (
 from src.application.conversations.services.stream_recovery_service import (
     StreamRecoveryService,
 )
+from src.application.governance.services.guardrail_pipeline_service import (
+    SafetyGuardrailPipelineService,
+)
 from src.application.knowledge.services.hybrid_retriever_service import (
     HybridRetrieverService,
 )
 from src.application.routing.services.model_router_service import (
     ModelRouterService,
 )
+from src.application.shared.governance.guarded_command_executor import (
+    GuardedCommandExecutor,
+)
 from src.application.shared.idempotency.idempotent_command_executor import (
     IdempotentCommandExecutor,
 )
+
 from src.application.tenants.commands.reserve_quota_command import (
     ReserveQuotaCommandHandler,
 )
@@ -33,8 +40,16 @@ from src.application.tools.services.tool_policy_evaluator_service import (
     ToolPolicyEvaluatorService,
 )
 from src.container import AppContainer, create_app_container
+from src.domain.governance.ports.incident_repository_port import (
+    IncidentRepositoryPort,
+)
+from src.domain.governance.ports.pii_scanner_port import PiiScannerPort
+from src.domain.governance.ports.safety_guardrail_port import (
+    SafetyGuardrailPort,
+)
 from src.domain.knowledge.ports.embedding_client_port import EmbeddingClientPort
 from src.domain.routing.ports.model_catalog_port import ModelCatalogPort
+
 from src.domain.tools.ports.sandboxed_tool_runner_port import (
     SandboxedToolRunnerPort,
 )
@@ -86,6 +101,11 @@ def test_create_app_container_default_wires_in_memory() -> None:
     assert isinstance(container.tool_approval_repo, ToolApprovalRepositoryPort)
     assert isinstance(container.tool_runner, SandboxedToolRunnerPort)
     assert isinstance(container.tool_policy_evaluator, ToolPolicyEvaluatorService)
+    assert isinstance(container.incident_repo, IncidentRepositoryPort)
+    assert isinstance(container.pii_scanner, PiiScannerPort)
+    assert isinstance(container.safety_guardrail, SafetyGuardrailPort)
+    assert isinstance(container.guardrail_pipeline, SafetyGuardrailPipelineService)
+    assert isinstance(container.guarded_executor, GuardedCommandExecutor)
 
 
 def test_create_app_container_with_mssql_driver() -> None:
@@ -109,6 +129,8 @@ def test_create_app_container_with_mssql_driver() -> None:
     assert isinstance(container.settle_quota_handler, SettleQuotaCommandHandler)
     assert isinstance(container.retriever_service, HybridRetrieverService)
     assert isinstance(container.embedding_client, EmbeddingClientPort)
+    assert isinstance(container.incident_repo, IncidentRepositoryPort)
+
 
 
 def test_create_app_container_with_custom_catalog_and_tenant_middleware() -> None:
