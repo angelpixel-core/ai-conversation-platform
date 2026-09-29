@@ -62,6 +62,13 @@ graph TD
         RejectToolExecutionHandlerNode["RejectToolExecutionHandler"]
         ExecuteSandboxedToolCmd["ExecuteSandboxedToolCommand"]
         ExecuteSandboxedToolHandlerNode["ExecuteSandboxedToolHandler"]
+        StateReducerServiceNode["StateReducerService"]
+        GraphExecutionEngineNode["GraphExecutionEngine"]
+        SubAgentExecutorPortNode["SubAgentExecutorPort (Port)"]
+        StartWorkflowCmd["StartWorkflowCommand"]
+        StartWorkflowHandlerNode["StartWorkflowCommandHandler"]
+        ResumeWorkflowCmd["ResumeWorkflowCommand"]
+        ResumeWorkflowHandlerNode["ResumeWorkflowCommandHandler"]
     end
 
     subgraph Domain ["Domain Layer (Core Business)"]
@@ -421,4 +428,12 @@ graph TD
     WorkflowInstanceAggregate --> StateSnapshotVO
     WorkflowGraphEntity --> GraphEdgeVO
     WorkflowGraphEntity --> AgentRoleVO
+    StartWorkflowHandlerNode --> GraphExecutionEngineNode
+    StartWorkflowHandlerNode --> WorkflowCheckpointRepoPortNode
+    ResumeWorkflowHandlerNode --> GraphExecutionEngineNode
+    ResumeWorkflowHandlerNode --> WorkflowCheckpointRepoPortNode
+    GraphExecutionEngineNode --> StateReducerServiceNode
+    GraphExecutionEngineNode --> SubAgentExecutorPortNode
+    GraphExecutionEngineNode --> WorkflowGraphEntity
+    GraphExecutionEngineNode --> WorkflowInstanceAggregate
 ```

@@ -102,22 +102,22 @@ Permitir la resolución de problemas complejos dividiendo la carga de trabajo en
 
 *Motor de avance de nodos, coordinación con AnyIO TaskGroups y sincronización paralela.*
 
-* [ ] **Motor de Ejecución de Grafos (Graph Execution Engine)**
+* [x] **Motor de Ejecución de Grafos (Graph Execution Engine)**
   * Archivo: `src/application/agents/services/graph_execution_engine.py`
   * Control del ciclo de vida del grafo, evaluación de condiciones de salida y orquestación con AnyIO TaskGroups.
 
-* [ ] **Comando: Start Workflow Execution**
+* [x] **Comando: Start Workflow Execution**
   * Comando DTO: `src/application/agents/commands/start_workflow_command.py`
   * Command Handler: `src/application/agents/commands/start_workflow_command_handler.py`
 
-* [ ] **Comando: Resume Workflow from Checkpoint**
+* [x] **Comando: Resume Workflow from Checkpoint**
   * Comando DTO: `src/application/agents/commands/resume_workflow_command.py`
   * Command Handler: `src/application/agents/commands/resume_workflow_command_handler.py`
 
-* [ ] **Servicio de Reducción y Fusión de Estados (State Reducer)**
+* [x] **Servicio de Reducción y Fusión de Estados (State Reducer)**
   * Archivo: `src/application/agents/services/state_reducer_service.py` (combina resultados concurrentes sin colisión de claves).
 
-* [ ] **Tests Unitarios de Aplicación**
+* [x] **Tests Unitarios de Aplicación**
   * Archivo: `tests/unit/application/agents/test_graph_execution_engine.py`
   * Archivo: `tests/unit/application/agents/test_state_reducer_service.py`
   * Archivo: `tests/unit/application/agents/test_workflow_command_handlers.py`
