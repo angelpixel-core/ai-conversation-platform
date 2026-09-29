@@ -197,23 +197,23 @@ Permitir la resolución de problemas complejos dividiendo la carga de trabajo en
 
 ### Fase 6: Ensamble, Container, Plantillas y Documentación de Decisiones
 
-* [ ] **Actualización de Contenedores de Dependencias**
+* [x] **Actualización de Contenedores de Dependencias**
   * Archivos: `src/container.py` y `src/worker_container.py`
   * Inyección de `WorkflowCheckpointRepositoryPort`, `GraphExecutionEngine` y servicios de orquestación.
 
-* [ ] **Extracción de Plantillas Canónicas (`.agent/templates/`)**
+* [x] **Extracción de Plantillas Canónicas (`.agent/templates/`)**
   * `workflow_graph.tt.py` y `test_workflow_graph.tt.py`
   * `workflow_instance.tt.py` y `test_workflow_instance.tt.py`
   * `graph_execution_engine.tt.py` y `test_graph_execution_engine.tt.py`
   * `anyio_subagent_worker.tt.py` y `test_anyio_subagent_worker.tt.py`
 
-* [ ] **Documento de Decisión Arquitectónica (ADR 0008)**
+* [x] **Documento de Decisión Arquitectónica (ADR 0008)**
   * Archivo: `.agent/architecture/decisions/0008-multi-agent-orchestration-and-state-graphs.md`.
 
-* [ ] **Actualización del Diagrama Vivo del Sistema**
+* [x] **Actualización del Diagrama Vivo del Sistema**
   * Archivo: `.agent/architecture/system-map.mermaid.md` (incorporación del Graph Engine, State Checkpoints en MSSQL y topología de colas de subagentes).
 
-* [ ] **Exportación de OpenAPI y ReDoc**
+* [x] **Exportación de OpenAPI y ReDoc**
   * Ejecución de `make docs-build` para regenerar `public/openapi.json` y `public/index.html`.
 
 ---
