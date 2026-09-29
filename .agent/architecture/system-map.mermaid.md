@@ -23,7 +23,12 @@ graph TD
         WorkflowsRouterNode["WorkflowsRouter (/tenants/{tenant_id}/workflows)"]
         AgentsSchemasNode["AgentsSchemas (DTOs)"]
         WorkflowSSENode["Streaming Workflow Events (SSE: agent_handoff, subagent_completed, checkpoint_saved)"]
+        OpenTelemetryMiddlewareNode["OpenTelemetryMiddleware (W3C trace context, X-Trace-ID, X-Span-ID)"]
+        GovernanceRouterNode["GovernanceRouter (/admin/tenants/{tenant_id}/incidents, /admin/governance/metrics)"]
+        GovernanceSchemasNode["GovernanceSchemas (IncidentResponse, GovernanceMetricsResponse)"]
+        SafetyViolationHandlerNode["SafetyPolicyViolation Handler (HTTP 400 Bad Request)"]
     end
+
 
     subgraph Application ["Application Layer (CQRS & Ports)"]
         CreateConvCmd["CreateConversationCommand"]
@@ -518,4 +523,13 @@ graph TD
     AnyioStreamGuardrailFilterNode -.-> SafetyPolicyViolationErr
     RabbitMQPub --> TraceContextCarrierNode
     RabbitMQConsumer --> TraceContextCarrierNode
+    RouterFastAPI --> OpenTelemetryMiddlewareNode
+    RouterFastAPI --> SafetyViolationHandlerNode
+    SafetyViolationHandlerNode -.-> SafetyPolicyViolationErr
+    RouterFastAPI --> GuardedCommandExecutorNode
+    RouterFastAPI --> GovernanceRouterNode
+    GovernanceRouterNode --> GovernanceSchemasNode
+    GovernanceRouterNode --> ListIncidentsQueryHandlerNode
+    GovernanceRouterNode --> GetGovernanceMetricsQueryHandlerNode
 ```
+

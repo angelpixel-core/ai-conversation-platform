@@ -191,23 +191,24 @@ Para preservar la pureza de la arquitectura hexagonal y evitar sobrecarga o ines
 
 *Respuestas de infracción, códigos de política, routers y headers de rastreo.*
 
-- [ ] **Middleware Global de OpenTelemetry & Trace Injection**
+- [x] **Middleware Global de OpenTelemetry & Trace Injection**
   - Archivo: `src/interfaces/http/middlewares/opentelemetry_middleware.py` (inyecta `trace_id` y `span_id` en headers de respuesta `X-Trace-ID` y `X-Span-ID`).
 
-- [ ] **Manejo Centralizado de Excepciones de Seguridad**
+- [x] **Manejo Centralizado de Excepciones de Seguridad**
   - Registro en `src/interfaces/http/api.py` para mapear `SafetyPolicyViolationError` a `HTTP 400 Bad Request` estructurado.
 
-- [ ] **Schemas y Router de Auditoría de Gobernanza (Admin API)**
+- [x] **Schemas y Router de Auditoría de Gobernanza (Admin API)**
   - Archivo: `src/interfaces/http/governance_schemas.py` (`IncidentResponse`, `GovernanceMetricsResponse`, `IncidentFilterParams`).
   - Archivo: `src/interfaces/http/routers/governance_router.py`
     - `GET /admin/tenants/{tenant_id}/incidents` (`HTTP 200 OK`).
     - `GET /admin/governance/metrics` (`HTTP 200 OK`).
 
-- [ ] **Tests de Integración HTTP / E2E**
+- [x] **Tests de Integración HTTP / E2E**
   - Archivo: `tests/integration/api/test_prompt_injection_blocked.py`
   - Archivo: `tests/integration/api/test_pii_redacted_response.py`
   - Archivo: `tests/integration/api/test_governance_admin_endpoints.py`
   - Archivo: `tests/integration/api/test_opentelemetry_headers.py`
+
 
 ---
 
