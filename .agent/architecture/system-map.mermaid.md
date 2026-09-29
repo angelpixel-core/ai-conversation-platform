@@ -142,6 +142,20 @@ graph TD
         WorkflowNotFoundErr["WorkflowNotFoundError"]
         InvalidGraphTransitionErr["InvalidGraphTransitionError"]
         GraphCycleDetectedErr["GraphCycleDetectedError"]
+        SafetyVerdictVO["SafetyVerdict (ValueObject)"]
+        PiiEntityMatchVO["PiiEntityMatch (ValueObject)"]
+        TraceContextVO["TraceContext (ValueObject)"]
+        IncidentSeverityVO["IncidentSeverity (ValueObject)"]
+        SecurityIncidentAggregate["SecurityIncident (AggregateRoot)"]
+        SafetyViolationBlockedEvent["SafetyViolationBlockedDomainEvent"]
+        PromptInjectionDetectedEvent["PromptInjectionDetectedDomainEvent"]
+        PiiRedactionAppliedEvent["PiiRedactionAppliedDomainEvent"]
+        SafetyGuardrailPortNode["SafetyGuardrailPort (Port)"]
+        PiiScannerPortNode["PiiScannerPort (Port)"]
+        IncidentRepoPortNode["IncidentRepositoryPort (Port)"]
+        SafetyPolicyViolationErr["SafetyPolicyViolationError"]
+        PiiMaskingErr["PiiMaskingError"]
+        IncidentNotFoundErr["IncidentNotFoundError"]
     end
 
     subgraph Infrastructure ["Infrastructure (Driven Adapters)"]
@@ -461,4 +475,8 @@ graph TD
     AnyioSubagentWorkerNode --> SubAgentExecutorPortNode
     AnyioSubagentWorkerNode --> EventPubPort
     AnyioSubagentWorkerNode --> MultiAgentTopologyNode
+    SecurityIncidentAggregate -.-> SafetyViolationBlockedEvent
+    SecurityIncidentAggregate -.-> PromptInjectionDetectedEvent
+    SecurityIncidentAggregate --> IncidentSeverityVO
+    SecurityIncidentAggregate --> TenantIdVO
 ```

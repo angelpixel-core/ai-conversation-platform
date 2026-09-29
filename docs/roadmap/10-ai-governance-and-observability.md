@@ -74,29 +74,29 @@ Para preservar la pureza de la arquitectura hexagonal y evitar sobrecarga o ines
 
 *Entidades de incidentes, políticas de seguridad, value objects de PII y trazabilidad.*
 
-- [ ] **Value Objects de Seguridad, PII y Trazabilidad**
+- [x] **Value Objects de Seguridad, PII y Trazabilidad**
   - Archivo: `src/domain/governance/value_objects/safety_verdict.py` (`is_safe`, `violation_type`, `risk_score`, `matched_rule`, `details`).
   - Archivo: `src/domain/governance/value_objects/pii_entity_match.py` (`entity_type`, `start_idx`, `end_idx`, `masked_value`, `original_preview`).
   - Archivo: `src/domain/governance/value_objects/trace_context.py` (W3C standard `trace_id`, `span_id`, `parent_span_id`, `trace_flags`, `tracestate`).
   - Archivo: `src/domain/governance/value_objects/incident_severity.py` (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`).
 
-- [ ] **Entidad de Dominio: SecurityIncident (Aggregate Root)**
+- [x] **Entidad de Dominio: SecurityIncident (Aggregate Root)**
   - Archivo: `src/domain/governance/entities/security_incident.py`
   - Invariantes de ciclo de vida: creación inmutable, registro de severidad, regla violada, tenant scoping y publicación de eventos de dominio.
 
-- [ ] **Eventos de Dominio de Gobernanza**
+- [x] **Eventos de Dominio de Gobernanza**
   - Archivo: `src/domain/governance/events/governance_events.py`
   - Eventos: `PromptInjectionDetectedDomainEvent`, `PiiRedactionAppliedDomainEvent`, `SafetyViolationBlockedDomainEvent`.
 
-- [ ] **Puertos de Seguridad y Repositorio Forense (Driven Ports)**
+- [x] **Puertos de Seguridad y Repositorio Forense (Driven Ports)**
   - Archivo: `src/domain/governance/ports/safety_guardrail_port.py` (`evaluate_input`, `evaluate_output_chunk`).
   - Archivo: `src/domain/governance/ports/pii_scanner_port.py` (`scan_and_mask_pii`).
   - Archivo: `src/domain/governance/ports/incident_repository_port.py` (`save_incident`, `get_incident`, `list_incidents_by_tenant`, `get_metrics`).
 
-- [ ] **Excepciones de Dominio**
+- [x] **Excepciones de Dominio**
   - Archivo: `src/domain/governance/exceptions.py` (`SafetyPolicyViolationError`, `PiiMaskingError`, `IncidentNotFoundError`).
 
-- [ ] **Tests Unitarios de Dominio (100% Verde)**
+- [x] **Tests Unitarios de Dominio (100% Verde)**
   - Archivo: `tests/unit/domain/governance/test_safety_verdict.py`
   - Archivo: `tests/unit/domain/governance/test_pii_entity_match.py`
   - Archivo: `tests/unit/domain/governance/test_trace_context.py`
