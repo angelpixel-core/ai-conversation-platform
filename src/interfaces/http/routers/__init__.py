@@ -5,6 +5,7 @@ from src.interfaces.http.routers.tenant_admin_router import (
     TenantPolicyResponse,
     create_tenant_admin_router,
 )
+from src.interfaces.http.routers.workflows_router import create_workflows_router
 
 __all__ = [
     "TenantBudgetResponse",
@@ -12,4 +13,5 @@ __all__ = [
     "create_approvals_router",
     "create_knowledge_router",
     "create_tenant_admin_router",
+    "create_workflows_router",
 ]

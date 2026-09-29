@@ -9,6 +9,9 @@ from uuid import UUID
 from fastapi import Depends, FastAPI, Header, HTTPException, status
 from fastapi.responses import StreamingResponse
 
+from src.application.agents.services.graph_execution_engine import (
+    GraphExecutionEngine,
+)
 from src.application.conversations.commands.create_conversation import (
     CreateConversationCommand,
     CreateConversationHandler,
@@ -32,6 +35,9 @@ from src.application.shared.idempotency.idempotent_command_executor import (
     IdempotentCommandExecutor,
 )
 from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.domain.agents.ports.workflow_checkpoint_repository_port import (
+    WorkflowCheckpointRepositoryPort,
+)
 from src.domain.conversations.exceptions import ConversationNotFoundError
 from src.domain.knowledge.value_objects.citation import Citation
 from src.domain.shared.domain_error import DomainError
@@ -56,6 +62,9 @@ from src.interfaces.http.routers.knowledge_router import (
 )
 from src.interfaces.http.routers.tenant_admin_router import (
     create_tenant_admin_router,
+)
+from src.interfaces.http.routers.workflows_router import (
+    create_workflows_router,
 )
 from src.interfaces.http.schemas import (
     ConversationResponse,
@@ -336,6 +345,8 @@ def build_api(
     enable_tenant_middleware: bool = False,
     retriever_service: HybridRetrieverService | None = None,
     indexer_worker: AnyioDocumentIndexerWorker | None = None,
+    workflow_checkpoint_repo: WorkflowCheckpointRepositoryPort | None = None,
+    graph_execution_engine: GraphExecutionEngine | None = None,
 ) -> FastAPI:
     """Create the HTTP adapter around application use cases."""
     if create_conversation_handler is None and handler is not None:
@@ -370,5 +381,13 @@ def build_api(
         app.include_router(create_tenant_admin_router(unit_of_work))
         app.include_router(create_knowledge_router(unit_of_work, indexer_worker=indexer_worker))
         app.include_router(create_approvals_router(unit_of_work))
+
+    if workflow_checkpoint_repo is not None:
+        app.include_router(
+            create_workflows_router(
+                checkpoint_repo=workflow_checkpoint_repo,
+                execution_engine=graph_execution_engine,
+            )
+        )
 
     return app
