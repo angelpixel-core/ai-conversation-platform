@@ -115,6 +115,23 @@ graph TD
         ToolNotFoundErr["ToolNotFoundError"]
         ToolExecutionErr["ToolExecutionError"]
         InvalidApprovalStateErr["InvalidApprovalStateError"]
+        AgentRoleVO["AgentRole (ValueObject)"]
+        GraphEdgeVO["GraphEdge (ValueObject)"]
+        StateSnapshotVO["StateSnapshot (ValueObject)"]
+        WorkflowIdVO["WorkflowId (ValueObject)"]
+        CheckpointIdVO["CheckpointId (ValueObject)"]
+        WorkflowGraphEntity["WorkflowGraph (Entity)"]
+        WorkflowInstanceAggregate["WorkflowInstance (AggregateRoot)"]
+        WorkflowStartedEvent["WorkflowStartedDomainEvent"]
+        SubAgentDelegatedEvent["SubAgentTaskDelegatedDomainEvent"]
+        CheckpointSavedEvent["CheckpointSavedDomainEvent"]
+        WorkflowApprovalReqEvent["WorkflowApprovalRequiredDomainEvent"]
+        WorkflowCompletedEvent["WorkflowCompletedDomainEvent"]
+        WorkflowCheckpointRepoPortNode["WorkflowCheckpointRepositoryPort (Port)"]
+        AgentCatalogPortNode["AgentCatalogPort (Port)"]
+        WorkflowNotFoundErr["WorkflowNotFoundError"]
+        InvalidGraphTransitionErr["InvalidGraphTransitionError"]
+        GraphCycleDetectedErr["GraphCycleDetectedError"]
     end
 
     subgraph Infrastructure ["Infrastructure (Driven Adapters)"]
@@ -396,4 +413,12 @@ graph TD
     ApprovalsRouterNode --> RejectToolExecutionHandlerNode
     RouterFastAPI --> ToolSSENode
     ToolSSENode --> UOWPort
+    WorkflowInstanceAggregate -.-> WorkflowStartedEvent
+    WorkflowInstanceAggregate -.-> SubAgentDelegatedEvent
+    WorkflowInstanceAggregate -.-> CheckpointSavedEvent
+    WorkflowInstanceAggregate -.-> WorkflowApprovalReqEvent
+    WorkflowInstanceAggregate -.-> WorkflowCompletedEvent
+    WorkflowInstanceAggregate --> StateSnapshotVO
+    WorkflowGraphEntity --> GraphEdgeVO
+    WorkflowGraphEntity --> AgentRoleVO
 ```

@@ -64,33 +64,37 @@ Permitir la resolución de problemas complejos dividiendo la carga de trabajo en
 
 *Entidades de grafo, value objects de estado inmutable, roles de agentes y puertos abstractos.*
 
-* [ ] **Value Objects de Grafo y Nodos**
+* [x] **Value Objects de Grafo y Nodos**
   * Archivo: `src/domain/agents/value_objects/workflow_id.py` (`WorkflowId`).
   * Archivo: `src/domain/agents/value_objects/checkpoint_id.py` (`CheckpointId`).
   * Archivo: `src/domain/agents/value_objects/agent_role.py` (`AgentRole`: SUPERVISOR, SPECIALIST, CRITIC, SUMMARIZER).
   * Archivo: `src/domain/agents/value_objects/graph_edge.py` (`GraphEdge`: `source_node`, `target_node`, `condition_expression`).
   * Archivo: `src/domain/agents/value_objects/state_snapshot.py` (`StateSnapshot`: `checkpoint_id`, `tenant_id`, `workflow_id`, `current_node`, `state_data`, `version`, `status`).
 
-* [ ] **Entidades de Dominio de Workflow y Grafo**
+* [x] **Entidades de Dominio de Workflow y Grafo**
   * Archivo: `src/domain/agents/entities/workflow_graph.py` (Definición declarativa de nodos, aristas, puntos de entrada y fin).
   * Archivo: `src/domain/agents/entities/workflow_instance.py` (Agregado raíz que administra el ciclo de vida del flujo, transiciones de estado e invariantes multi-tenant).
 
-* [ ] **Eventos de Dominio de Multi-Agente**
+* [x] **Eventos de Dominio de Multi-Agente**
   * Archivo: `src/domain/agents/events/workflow_events.py`
   * Eventos: `WorkflowStartedDomainEvent`, `SubAgentTaskDelegatedDomainEvent`, `CheckpointSavedDomainEvent`, `WorkflowApprovalRequiredDomainEvent`, `WorkflowCompletedDomainEvent`.
 
-* [ ] **Excepciones de Dominio**
+* [x] **Excepciones de Dominio**
   * Archivo: `src/domain/agents/exceptions.py`
   * Excepciones: `WorkflowNotFoundError`, `InvalidGraphTransitionError`, `GraphCycleDetectedError`, `SubAgentExecutionError`.
 
-* [ ] **Puertos de Persistencia de Checkpoints y Catálogo de Agentes (Driven Ports)**
+* [x] **Puertos de Persistencia de Checkpoints y Catálogo de Agentes (Driven Ports)**
   * Archivo: `src/domain/agents/ports/workflow_checkpoint_repository_port.py`.
   * Archivo: `src/domain/agents/ports/agent_catalog_port.py`.
 
-* [ ] **Tests Unitarios de Dominio**
+* [x] **Tests Unitarios de Dominio**
   * Archivo: `tests/unit/domain/agents/test_workflow_graph.py`
   * Archivo: `tests/unit/domain/agents/test_workflow_instance.py`
-  * Archivo: `tests/unit/domain/agents/test_state_snapshot_immutability.py`
+  * Archivo: `tests/unit/domain/agents/test_state_snapshot.py`
+  * Archivo: `tests/unit/domain/agents/test_agent_role.py`
+  * Archivo: `tests/unit/domain/agents/test_graph_edge.py`
+  * Archivo: `tests/unit/domain/agents/test_workflow_events.py`
+  * Archivo: `tests/unit/domain/agents/test_workflow_ports.py`
 
 ---
 
