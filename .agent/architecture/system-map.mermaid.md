@@ -217,6 +217,10 @@ graph TD
         GovernanceMapperNode["GovernanceMapper"]
         MssqlIncidentRepoNode["MssqlIncidentRepository"]
         InMemoryIncidentRepoNode["InMemoryIncidentRepositoryAdapter"]
+        RegexPiiScannerAdapterNode["RegexPiiScannerAdapter"]
+        HeuristicInjectionDetectorAdapterNode["HeuristicInjectionDetectorAdapter"]
+        AnyioStreamGuardrailFilterNode["AnyioStreamGuardrailFilter"]
+        OpenTelemetryConfigNode["OpenTelemetryConfig (W3C Propagator)"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 
@@ -508,4 +512,10 @@ graph TD
     MssqlIncidentRepoNode --> MssqlModels
     GovernanceMapperNode --> SecurityIncidentAggregate
     GovernanceMapperNode --> MssqlModels
+    RegexPiiScannerAdapterNode -- Implementa --> PiiScannerPortNode
+    HeuristicInjectionDetectorAdapterNode -- Implementa --> SafetyGuardrailPortNode
+    AnyioStreamGuardrailFilterNode --> SafetyGuardrailPortNode
+    AnyioStreamGuardrailFilterNode -.-> SafetyPolicyViolationErr
+    RabbitMQPub --> TraceContextCarrierNode
+    RabbitMQConsumer --> TraceContextCarrierNode
 ```

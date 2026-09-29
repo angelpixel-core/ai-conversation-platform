@@ -164,22 +164,22 @@ Para preservar la pureza de la arquitectura hexagonal y evitar sobrecarga o ines
 
 *Implementación física de analizadores de seguridad de alta velocidad y exportadores OTel.*
 
-- [ ] **Adaptadores de Guardrails (Pattern + Luhn + Heuristic Detector)**
+- [x] **Adaptadores de Guardrails (Pattern + Luhn + Heuristic Detector)**
   - Archivo: `src/infrastructure/governance/regex_pii_scanner_adapter.py` (Luhn algorithm para tarjetas, patrones regex para DNI/SSN, emails, teléfonos y API keys).
   - Archivo: `src/infrastructure/governance/heuristic_injection_detector_adapter.py` (detección de patrones DAN, jailbreak prompts, tags de evasión y system instructions override).
 
-- [ ] **Configuración e Inicialización de OpenTelemetry**
+- [x] **Configuración e Inicialización de OpenTelemetry**
   - Archivo: `src/infrastructure/telemetry/opentelemetry_config.py`
   - Inicialización limpia de TracerProvider con W3C Propagator y fallback resiliente en ausencia de colector externo.
 
-- [ ] **Filtro de Output Stream en AnyIO**
+- [x] **Filtro de Output Stream en AnyIO**
   - Archivo: `src/infrastructure/governance/anyio_stream_guardrail_filter.py`
   - Inspección con ventana deslizante sobre generadores asíncronos de tokens para interceptar en vuelo respuestas del modelo que violen políticas.
 
-- [ ] **Propagación en RabbitMQ y Worker**
+- [x] **Propagación en RabbitMQ y Worker**
   - Integración de `TraceContextCarrier` en `src/infrastructure/messaging/rabbitmq/` para inyectar headers AMQP `x-trace-id`, `x-span-id` y procesar en `worker_handler.py`.
 
-- [ ] **Tests de Integración de Guardrails & Tracing**
+- [x] **Tests de Integración de Guardrails & Tracing**
   - Archivo: `tests/unit/infrastructure/governance/test_regex_pii_scanner.py`
   - Archivo: `tests/unit/infrastructure/governance/test_heuristic_injection_detector.py`
   - Archivo: `tests/unit/infrastructure/governance/test_anyio_stream_guardrail_filter.py`
