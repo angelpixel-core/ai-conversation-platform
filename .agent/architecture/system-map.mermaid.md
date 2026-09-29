@@ -531,5 +531,14 @@ graph TD
     GovernanceRouterNode --> GovernanceSchemasNode
     GovernanceRouterNode --> ListIncidentsQueryHandlerNode
     GovernanceRouterNode --> GetGovernanceMetricsQueryHandlerNode
+    AppContainerNode --> IncidentRepoPortNode
+    AppContainerNode --> SafetyGuardrailPortNode
+    AppContainerNode --> PiiScannerPortNode
+    AppContainerNode --> SafetyGuardrailPipelineServiceNode
+    AppContainerNode --> GuardedCommandExecutorNode
+    WorkerContainerNode --> IncidentRepoPortNode
+    WorkerContainerNode --> SafetyGuardrailPortNode
+    WorkerContainerNode --> PiiScannerPortNode
+    WorkerContainerNode --> SafetyGuardrailPipelineServiceNode
 ```
 

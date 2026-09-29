@@ -214,10 +214,10 @@ Para preservar la pureza de la arquitectura hexagonal y evitar sobrecarga o ines
 
 ### Fase 6: Ensamble, Container, Plantillas y Documentación
 
-- [ ] **Actualización de `src/container.py` y `src/worker_container.py`**
+- [x] **Actualización de `src/container.py` y `src/worker_container.py`**
   - Inyección de dependencias para `SafetyGuardrailPort`, `PiiScannerPort`, `IncidentRepositoryPort`, `GuardrailPipelineService` y configuración OTel.
 
-- [ ] **Extracción de Plantillas Canónicas (`.agent/templates/`)**
+- [x] **Extracción de Plantillas Canónicas (`.agent/templates/`)**
   - `domain/value_objects/safety_verdict.tt.py`
   - `domain/entities/security_incident.tt.py`
   - `application/services/guardrail_pipeline_service.tt.py`
@@ -226,13 +226,13 @@ Para preservar la pureza de la arquitectura hexagonal y evitar sobrecarga o ines
   - `infrastructure/governance/anyio_stream_guardrail_filter.tt.py`
   - `tests/test_guardrail_pipeline.tt.py`
 
-- [ ] **Documento de Decisión Arquitectónica (ADR 0009)**
+- [x] **Documento de Decisión Arquitectónica (ADR 0009)**
   - Archivo: `.agent/architecture/decisions/0009-ai-governance-guardrails-and-opentelemetry.md`.
 
-- [ ] **Actualización del Diagrama Vivo (`system-map.mermaid.md`)**
+- [x] **Actualización del Diagrama Vivo (`system-map.mermaid.md`)**
   - Incorporación de nodos y relaciones para la capa de Guardrails, colector OTel y auditoría forense en MSSQL.
 
-- [ ] **Generación de Documentación y OpenAPI**
+- [x] **Generación de Documentación y OpenAPI**
   - Ejecución de `make docs-build` para regenerar `public/openapi.json` y `public/index.html` (ReDoc).
 
 ---
