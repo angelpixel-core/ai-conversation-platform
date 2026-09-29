@@ -108,24 +108,24 @@ Para preservar la pureza de la arquitectura hexagonal y evitar sobrecarga o ines
 
 *Intercepción desacoplada mediante AnyIO TaskGroups, decoradores y comandos CQRS.*
 
-- [ ] **Servicio de Aplicación: Safety Guardrail Pipeline**
+- [x] **Servicio de Aplicación: Safety Guardrail Pipeline**
   - Archivo: `src/application/governance/services/guardrail_pipeline_service.py`
   - Ejecuta validaciones concurrentes con `anyio.create_task_group()` (detección de inyección, escaneo de PII y evaluación de políticas de seguridad).
 
-- [ ] **Interceptor / Decorador Guardrail en Comandos**
+- [x] **Interceptor / Decorador Guardrail en Comandos**
   - Archivo: `src/application/shared/governance/guarded_command_executor.py`
   - Intercepta comandos (ej. `SendMessageCommand`), ejecuta el pipeline de guardrails, redacta PII y bloquea infracciones críticas registrando incidentes de forma automática.
 
-- [ ] **Portador de Contexto de Trazas (OTel / W3C Trace Propagator)**
+- [x] **Portador de Contexto de Trazas (OTel / W3C Trace Propagator)**
   - Archivo: `src/application/shared/telemetry/trace_context_carrier.py`
   - Serializa y deserializa encabezados W3C (`traceparent`, `tracestate`) para inyección transparente en eventos de dominio y mensajes de RabbitMQ.
 
-- [ ] **Comandos y Queries CQRS de Gobernanza**
+- [x] **Comandos y Queries CQRS de Gobernanza**
   - Archivo: `src/application/governance/commands/record_incident.py` (`RecordSecurityIncidentCommand`, `RecordSecurityIncidentHandler`).
   - Archivo: `src/application/governance/queries/list_incidents.py` (`ListIncidentsQuery`, `ListIncidentsQueryHandler`).
   - Archivo: `src/application/governance/queries/get_governance_metrics.py` (`GetGovernanceMetricsQuery`, `GetGovernanceMetricsQueryHandler`).
 
-- [ ] **Tests Unitarios de Aplicación**
+- [x] **Tests Unitarios de Aplicación**
   - Archivo: `tests/unit/application/governance/test_guardrail_pipeline_service.py`
   - Archivo: `tests/unit/application/governance/test_guarded_command_executor.py`
   - Archivo: `tests/unit/application/governance/test_trace_context_carrier.py`

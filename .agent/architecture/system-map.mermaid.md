@@ -72,6 +72,15 @@ graph TD
         StartWorkflowHandlerNode["StartWorkflowCommandHandler"]
         ResumeWorkflowCmd["ResumeWorkflowCommand"]
         ResumeWorkflowHandlerNode["ResumeWorkflowCommandHandler"]
+        SafetyGuardrailPipelineServiceNode["SafetyGuardrailPipelineService"]
+        GuardedCommandExecutorNode["GuardedCommandExecutor"]
+        TraceContextCarrierNode["TraceContextCarrier"]
+        RecordSecurityIncidentCmd["RecordSecurityIncidentCommand"]
+        RecordSecurityIncidentHandlerNode["RecordSecurityIncidentHandler"]
+        ListIncidentsQueryNode["ListIncidentsQuery"]
+        ListIncidentsQueryHandlerNode["ListIncidentsQueryHandler"]
+        GetGovernanceMetricsQueryNode["GetGovernanceMetricsQuery"]
+        GetGovernanceMetricsQueryHandlerNode["GetGovernanceMetricsQueryHandler"]
     end
 
     subgraph Domain ["Domain Layer (Core Business)"]
@@ -479,4 +488,15 @@ graph TD
     SecurityIncidentAggregate -.-> PromptInjectionDetectedEvent
     SecurityIncidentAggregate --> IncidentSeverityVO
     SecurityIncidentAggregate --> TenantIdVO
+    SafetyGuardrailPipelineServiceNode --> SafetyGuardrailPortNode
+    SafetyGuardrailPipelineServiceNode --> PiiScannerPortNode
+    GuardedCommandExecutorNode --> SafetyGuardrailPipelineServiceNode
+    GuardedCommandExecutorNode --> IncidentRepoPortNode
+    GuardedCommandExecutorNode -.-> SafetyPolicyViolationErr
+    RecordSecurityIncidentHandlerNode --> IncidentRepoPortNode
+    RecordSecurityIncidentHandlerNode --> EventPubPort
+    RecordSecurityIncidentHandlerNode --> SecurityIncidentAggregate
+    ListIncidentsQueryHandlerNode --> IncidentRepoPortNode
+    GetGovernanceMetricsQueryHandlerNode --> IncidentRepoPortNode
+    TraceContextCarrierNode --> TraceContextVO
 ```
