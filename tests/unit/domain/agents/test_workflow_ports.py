@@ -1,7 +1,5 @@
 """Unit tests verifying contracts of Agent Workflow driven ports."""
 
-import pytest
-
 from src.domain.agents.entities.workflow_instance import WorkflowInstance
 from src.domain.agents.ports.agent_catalog_port import AgentCatalogPort
 from src.domain.agents.ports.workflow_checkpoint_repository_port import (
@@ -21,12 +19,18 @@ class FakeWorkflowCheckpointRepository(WorkflowCheckpointRepositoryPort):
         self.checkpoints.append(snapshot)
 
     def get_latest_checkpoint(self, tenant_id: TenantId, workflow_id: str) -> StateSnapshot | None:
-        matching = [c for c in self.checkpoints if c.tenant_id == tenant_id and c.workflow_id == workflow_id]
+        matching = [
+            c for c in self.checkpoints if c.tenant_id == tenant_id and c.workflow_id == workflow_id
+        ]
         return sorted(matching, key=lambda c: c.version, reverse=True)[0] if matching else None
 
     def list_checkpoints(self, tenant_id: TenantId, workflow_id: str) -> list[StateSnapshot]:
         return sorted(
-            [c for c in self.checkpoints if c.tenant_id == tenant_id and c.workflow_id == workflow_id],
+            [
+                c
+                for c in self.checkpoints
+                if c.tenant_id == tenant_id and c.workflow_id == workflow_id
+            ],
             key=lambda c: c.version,
         )
 
