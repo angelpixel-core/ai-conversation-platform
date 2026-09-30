@@ -54,6 +54,8 @@ graph TD
         ResumeStreamHandlerNode["ResumeStreamQueryHandler"]
         TenantContextNode["TenantContext (src/application/shared/tenancy)"]
         ModelRouterServiceNode["ModelRouterService"]
+        ProvisionTenantCmd["ProvisionTenantCommand"]
+        ProvisionTenantHandler["ProvisionTenantCommandHandler"]
         ReserveQuotaCmd["ReserveQuotaCommand"]
         ReserveQuotaHandler["ReserveQuotaCommandHandler"]
         SettleQuotaCmd["SettleQuotaCommand"]
@@ -252,6 +254,7 @@ graph TD
     TenantContextMiddlewareNode --> TenantContextNode
     TenantDependencyNode --> TenantContextNode
     TenantAdminRouterNode --> UOWPort
+    TenantAdminRouterNode --> ProvisionTenantHandler
     TenantAdminRouterNode --> ReserveQuotaHandler
 
     %% Application orchestration

@@ -2,6 +2,7 @@
 
 import logging
 from dataclasses import dataclass
+from decimal import Decimal
 
 from fastapi import FastAPI
 
@@ -71,6 +72,10 @@ from src.domain.knowledge.ports.knowledge_repository_port import (
     KnowledgeRepositoryPort,
 )
 from src.domain.routing.ports.model_catalog_port import ModelCatalogPort
+from src.domain.tenants.entities.tenant import Tenant
+from src.domain.tenants.entities.tenant_policy import TenantPolicy, TenantTier
+from src.domain.tenants.value_objects.monetary_budget import MonetaryBudget
+from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.domain.tools.ports.sandboxed_tool_runner_port import (
     SandboxedToolRunnerPort,
 )
@@ -163,6 +168,39 @@ class AppContainer:
     guarded_executor: GuardedCommandExecutor | None = None
 
 
+def _seed_default_demo_tenant(uow: UnitOfWork) -> None:
+    """Auto-seed default demonstration tenant ('corp-acme') if absent."""
+    try:
+        with uow:
+            if uow.tenants.get(TenantId("corp-acme")) is None:
+                demo_tenant = Tenant(
+                    tenant_id=TenantId("corp-acme"),
+                    name="ACME Corporation",
+                    budget=MonetaryBudget(
+                        balance=Decimal("1000.00"),
+                        reserved_amount=Decimal("0.00"),
+                        currency="USD",
+                    ),
+                    policy=TenantPolicy(
+                        tier=TenantTier.STANDARD,
+                        max_tokens_per_request=4096,
+                        monthly_budget_usd=Decimal("500.00"),
+                        allowed_models=frozenset(
+                            {
+                                "gpt-4o",
+                                "gpt-4o-mini",
+                                "claude-3-5-sonnet",
+                                "gemini-1.5-flash",
+                            }
+                        ),
+                    ),
+                )
+                uow.tenants.add(demo_tenant)
+                uow.commit()
+    except Exception as exc:
+        logger.debug("Demo tenant auto-seed skipped: %s", exc)
+
+
 def _wire_app_persistence(
     settings: Settings,
     unit_of_work: UnitOfWork | None,
@@ -235,6 +273,7 @@ def _wire_app_persistence(
             session=session_factory()
         )
         resolved_incident_repo = incident_repo or MssqlIncidentRepository(session=session_factory)
+        _seed_default_demo_tenant(uow)
 
     else:
         uow = InMemoryUnitOfWork()

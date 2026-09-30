@@ -1,15 +1,21 @@
 """Tenant and Policy administration HTTP router."""
 
 from decimal import Decimal
+from typing import NoReturn
 
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
 from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.tenants.commands.provision_tenant_command import (
+    ProvisionTenantCommand,
+    ProvisionTenantCommandHandler,
+)
 from src.application.tenants.commands.reserve_quota_command import (
     ReserveQuotaCommand,
     ReserveQuotaCommandHandler,
 )
+from src.domain.tenants.entities.tenant import Tenant
 from src.domain.tenants.entities.tenant_policy import TenantPolicy, TenantTier
 from src.domain.tenants.value_objects.tenant_id import TenantId
 
@@ -18,6 +24,39 @@ class TenantBudgetResponse(BaseModel):
     """Schema representing tenant current budget figures."""
 
     tenant_id: str
+    balance: str
+    reserved_amount: str
+    available_balance: str
+    currency: str
+
+
+class CreateTenantRequest(BaseModel):
+    """Schema for provisioning a new tenant."""
+
+    id: str = Field(..., max_length=64, description="Unique tenant slug or identifier")
+    name: str = Field(..., max_length=200, description="Organization display name")
+    balance_usd: str = Field(default="1000.00", description="Initial allocated budget balance")
+    tier: str = Field(default="STANDARD", description="Tier (FREE, STANDARD, ENTERPRISE)")
+    max_tokens_per_request: int = Field(default=4096, description="Token limit per request")
+    monthly_budget_usd: str = Field(default="500.00", description="Monthly spending limit")
+    allowed_models: list[str] = Field(
+        default_factory=lambda: [
+            "gpt-4o",
+            "gpt-4o-mini",
+            "claude-3-5-sonnet",
+            "gemini-1.5-flash",
+        ],
+        description="Allowed models for this tenant",
+    )
+
+
+class TenantSummaryResponse(BaseModel):
+    """Schema for summarizing a tenant in list view."""
+
+    tenant_id: str
+    name: str
+    status: str
+    tier: str
     balance: str
     reserved_amount: str
     available_balance: str
@@ -58,9 +97,136 @@ class ReserveQuotaResponse(BaseModel):
     remaining_balance: str
 
 
+def _handle_reserve_quota_error(id: str, exc: ValueError) -> NoReturn:
+    msg = str(exc)
+    msg_lower = msg.lower()
+    if any(keyword in msg_lower for keyword in ("cuota excedida", "presupuesto", "saldo")):
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail=f"Presupuesto insuficiente o cuota excedida para el tenant '{id}'. {msg}",
+        ) from exc
+    if "no encontrado" in msg_lower:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=msg,
+        ) from exc
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=msg,
+    ) from exc
+
+
+def _build_updated_policy(
+    current_policy: TenantPolicy, request: UpdateTenantPolicyRequest
+) -> TenantPolicy:
+    tier = TenantTier(request.tier) if request.tier else current_policy.tier
+    max_tokens = (
+        request.max_tokens_per_request
+        if request.max_tokens_per_request is not None
+        else current_policy.max_tokens_per_request
+    )
+    monthly_budget = (
+        Decimal(request.monthly_budget_usd)
+        if request.monthly_budget_usd is not None
+        else current_policy.monthly_budget_usd
+    )
+    allowed_models = (
+        frozenset(request.allowed_models)
+        if request.allowed_models is not None
+        else current_policy.allowed_models
+    )
+    return TenantPolicy(
+        tier=tier,
+        max_tokens_per_request=max_tokens,
+        monthly_budget_usd=monthly_budget,
+        allowed_models=allowed_models,
+    )
+
+
+def _handle_create_tenant_error(exc: ValueError) -> NoReturn:
+    msg = str(exc)
+    if "ya existe" in msg.lower():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=msg,
+        ) from exc
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=msg,
+    ) from exc
+
+
+def _get_tenant_or_404(
+    unit_of_work: UnitOfWork, tenant_id: str, for_update: bool = False
+) -> Tenant:
+    tenant = (
+        unit_of_work.tenants.get_for_update(TenantId(tenant_id))
+        if for_update
+        else unit_of_work.tenants.get(TenantId(tenant_id))
+    )
+    if tenant is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tenant '{tenant_id}' no encontrado.",
+        )
+    return tenant
+
+
 def create_tenant_admin_router(unit_of_work: UnitOfWork) -> APIRouter:
     """Factory creating the administration APIRouter for tenants."""
     router = APIRouter(prefix="/admin/tenants", tags=["Tenant Administration"])
+
+    @router.post(
+        "",
+        response_model=TenantBudgetResponse,
+        status_code=status.HTTP_201_CREATED,
+        summary="Provision a new tenant organization",
+    )
+    def create_tenant(request: CreateTenantRequest) -> TenantBudgetResponse:
+        handler = ProvisionTenantCommandHandler(unit_of_work=unit_of_work)
+        try:
+            result = handler.handle(
+                ProvisionTenantCommand(
+                    tenant_id=request.id,
+                    name=request.name,
+                    initial_balance=Decimal(request.balance_usd),
+                    tier=request.tier,
+                    max_tokens_per_request=request.max_tokens_per_request,
+                    monthly_budget_usd=Decimal(request.monthly_budget_usd),
+                    allowed_models=frozenset(request.allowed_models),
+                )
+            )
+        except ValueError as exc:
+            _handle_create_tenant_error(exc)
+
+        return TenantBudgetResponse(
+            tenant_id=result.tenant_id,
+            balance=f"{result.balance:.4f}",
+            reserved_amount=f"{result.reserved_amount:.4f}",
+            available_balance=f"{result.available_balance:.4f}",
+            currency=result.currency,
+        )
+
+    @router.get(
+        "",
+        response_model=list[TenantSummaryResponse],
+        summary="List all registered tenants",
+    )
+    def list_tenants() -> list[TenantSummaryResponse]:
+        with unit_of_work as uow:
+            return [
+                TenantSummaryResponse(
+                    tenant_id=str(t.id),
+                    name=t.name,
+                    status=t.status.value,
+                    tier=t.policy.tier.value,
+                    balance=f"{t.budget.balance:.4f}",
+                    reserved_amount=f"{t.budget.reserved_amount:.4f}",
+                    available_balance=f"{t.budget.available_balance:.4f}",
+                    currency=t.budget.currency,
+                )
+                for t in uow.tenants.list()
+            ]
 
     @router.get(
         "/{id}/budget",
@@ -69,12 +235,7 @@ def create_tenant_admin_router(unit_of_work: UnitOfWork) -> APIRouter:
     )
     def get_tenant_budget(id: str) -> TenantBudgetResponse:
         with unit_of_work as uow:
-            tenant = uow.tenants.get(TenantId(id))
-            if tenant is None:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Tenant '{id}' no encontrado.",
-                )
+            tenant = _get_tenant_or_404(uow, id)
             return TenantBudgetResponse(
                 tenant_id=id,
                 balance=f"{tenant.budget.balance:.4f}",
@@ -90,39 +251,8 @@ def create_tenant_admin_router(unit_of_work: UnitOfWork) -> APIRouter:
     )
     def update_tenant_policy(id: str, request: UpdateTenantPolicyRequest) -> TenantPolicyResponse:
         with unit_of_work as uow:
-            tenant = uow.tenants.get_for_update(TenantId(id))
-            if tenant is None:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Tenant '{id}' no encontrado.",
-                )
-
-            current_policy = tenant.policy
-            tier = TenantTier(request.tier) if request.tier else current_policy.tier
-            max_tokens = (
-                request.max_tokens_per_request
-                if request.max_tokens_per_request is not None
-                else current_policy.max_tokens_per_request
-            )
-            monthly_budget = (
-                Decimal(request.monthly_budget_usd)
-                if request.monthly_budget_usd is not None
-                else current_policy.monthly_budget_usd
-            )
-            allowed_models = (
-                frozenset(request.allowed_models)
-                if request.allowed_models is not None
-                else current_policy.allowed_models
-            )
-
-            updated_policy = TenantPolicy(
-                tier=tier,
-                max_tokens_per_request=max_tokens,
-                monthly_budget_usd=monthly_budget,
-                allowed_models=allowed_models,
-            )
-
-            # Reconstitute tenant with updated policy
+            tenant = _get_tenant_or_404(uow, id, for_update=True)
+            updated_policy = _build_updated_policy(tenant.policy, request)
             tenant._policy = updated_policy  # pyright: ignore[reportPrivateUsage]
             uow.tenants.add(tenant)
             uow.commit()
@@ -151,27 +281,7 @@ def create_tenant_admin_router(unit_of_work: UnitOfWork) -> APIRouter:
                 )
             )
         except ValueError as exc:
-            msg = str(exc)
-            if (
-                "cuota excedida" in msg.lower()
-                or "presupuesto" in msg.lower()
-                or "saldo" in msg.lower()
-            ):
-                raise HTTPException(
-                    status_code=status.HTTP_402_PAYMENT_REQUIRED,
-                    detail=(
-                        f"Presupuesto insuficiente o cuota excedida para el tenant '{id}'. {msg}"
-                    ),
-                ) from exc
-            if "no encontrado" in msg.lower():
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=msg,
-                ) from exc
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=msg,
-            ) from exc
+            _handle_reserve_quota_error(id, exc)
 
         return ReserveQuotaResponse(
             tenant_id=id,

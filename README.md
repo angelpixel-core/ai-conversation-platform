@@ -268,10 +268,21 @@ Verify service availability and inspect the auto-generated schemas:
 ```bash
 # 1. Health check
 curl -s http://localhost:8000/health | jq
-
-# 2. Interactive Swagger UI: Open in browser
-open http://localhost:8000/docs
 ```
+
+```json
+{
+  "status": "ok"
+}
+```
+
+```bash
+# 2. Interactive Swagger UI: Open in browser
+open http://localhost:8000/docs  # Swagger
+open http://localhost:8000/redoc # ReDoc
+```
+
+![ReDoc](./docs/assets/walkthrough/ReDoc.png)
 
 ---
 
@@ -284,7 +295,18 @@ Demonstrate logical tenant scoping and security boundaries:
 curl -s -w "\nHTTP Status: %{http_code}\n" -X POST http://localhost:8000/conversations \
   -H "Content-Type: application/json" \
   -d '{"title": "Unidentified Tenant"}'
+```
 
+```json
+{
+  "id": "5920550b-79cb-4b97-acba-f4ea3afe8061",
+  "title": "Unidentified Tenant"
+}
+
+HTTP Status: 201
+```
+
+```bash
 # 2.2 Create conversation with explicit tenant context ('corp-acme')
 CONV_ID=$(curl -s -X POST http://localhost:8000/conversations \
   -H "Content-Type: application/json" \
@@ -292,6 +314,10 @@ CONV_ID=$(curl -s -X POST http://localhost:8000/conversations \
   -d '{"title": "Enterprise Cloud Migration"}' | jq -r '.id')
 
 echo "Created Conversation ID: $CONV_ID"
+```
+
+```txt
+Created Conversation ID: 668064db-d2c9-4f6c-bc30-4435bb9e41fd
 ```
 
 ---
@@ -310,7 +336,22 @@ curl -s -X POST "http://localhost:8000/conversations/${CONV_ID}/messages" \
   -H "X-Tenant-ID: corp-acme" \
   -H "Idempotency-Key: ${IDEMPOTENCY_KEY}" \
   -d '{"content": "Calculate infrastructure budget."}' | jq
+```
 
+```txt
+Executing initial request with key: f059fa8f-6ef0-437f-9e9e-4d41a9ded399
+```
+
+```json
+{
+  "conversation_id": "668064db-d2c9-4f6c-bc30-4435bb9e41fd",
+  "role": "user",
+  "content": "Calculate infrastructure budget.",
+  "created_at": "2026-09-29T21:22:43.568968Z"
+}
+```
+
+```bash
 # 3.2 Immediate retry with the EXACT SAME Idempotency-Key (returns identical cached result instantly)
 echo "Replaying identical request with key: $IDEMPOTENCY_KEY"
 curl -s -X POST "http://localhost:8000/conversations/${CONV_ID}/messages" \
@@ -318,6 +359,19 @@ curl -s -X POST "http://localhost:8000/conversations/${CONV_ID}/messages" \
   -H "X-Tenant-ID: corp-acme" \
   -H "Idempotency-Key: ${IDEMPOTENCY_KEY}" \
   -d '{"content": "Calculate infrastructure budget."}' | jq
+```
+
+```txt
+Replaying identical request with key: f059fa8f-6ef0-437f-9e9e-4d41a9ded399
+```
+
+```json
+{
+  "conversation_id": "668064db-d2c9-4f6c-bc30-4435bb9e41fd",
+  "role": "user",
+  "content": "Calculate infrastructure budget.",
+  "created_at": "2026-09-29T21:22:43.568968Z"
+}
 ```
 
 ---
@@ -330,10 +384,21 @@ Demonstrate live token streaming and reconnecting interrupted streams:
 # 4.1 Stream live AI response tokens via Server-Sent Events
 curl -N -H "X-Tenant-ID: corp-acme" \
   "http://localhost:8000/conversations/${CONV_ID}/stream?temperature=0.7&max_tokens=100"
+```
 
+```txt
+data: Respuesta 
+data: simulada 
+data: del 
+data: asistente 
+data: IA. 
+data: [DONE]
+```
+
+```bash
 # 4.2 Stream Recovery: If a client connection drops, resume from the last received chunk
 curl -N -H "X-Tenant-ID: corp-acme" \
-  -H "Last-Event-ID: chunk-2" \
+  -H "Last-Event-ID: 2" \
   "http://localhost:8000/conversations/${CONV_ID}/stream"
 ```
 
@@ -346,7 +411,19 @@ Demonstrate administrative control, dynamic policy updating, and budget exhausti
 ```bash
 # 5.1 Check current tenant balance, reserved quota, and available funds
 curl -s http://localhost:8000/admin/tenants/corp-acme/budget | jq
+```
 
+```json
+{
+  "tenant_id": "corp-acme",
+  "balance": "1000.0000",
+  "reserved_amount": "0.0000",
+  "available_balance": "1000.0000",
+  "currency": "USD"
+}
+```
+
+```bash
 # 5.2 Update tenant operational policy (upgrade to ENTERPRISE tier & authorize advanced models)
 curl -s -X PATCH http://localhost:8000/admin/tenants/corp-acme/policy \
   -H "Content-Type: application/json" \
@@ -356,13 +433,37 @@ curl -s -X PATCH http://localhost:8000/admin/tenants/corp-acme/policy \
     "monthly_budget_usd": "2500.00",
     "allowed_models": ["gpt-4o", "gpt-4o-mini", "claude-3-5-sonnet"]
   }' | jq
+```
 
+```json
+{
+  "tenant_id": "corp-acme",
+  "tier": "ENTERPRISE",
+  "max_tokens_per_request": 8192,
+  "monthly_budget_usd": "2500.0000",
+  "allowed_models": [
+    "claude-3-5-sonnet",
+    "gpt-4o",
+    "gpt-4o-mini"
+  ]
+}
+```
+
+```bash
 # 5.3 Trigger Quota Rejection (HTTP 402 Payment Required) when reservation exceeds balance
 curl -s -w "\nHTTP Status: %{http_code}\n" \
   -X POST http://localhost:8000/admin/tenants/corp-acme/reserve \
   -H "Content-Type: application/json" \
   -H "X-Tenant-ID: corp-acme" \
   -d '{"estimated_cost": "99999.00", "model_id": "gpt-4o"}' | jq
+```
+
+```json
+{
+  "detail": "Presupuesto insuficiente o cuota excedida para el tenant 'corp-acme'. Cuota excedida para tenant 'corp-acme'. Solicitado: 99999.00, Disponible: 1000.0000"
+}
+
+HTTP Status: 402
 ```
 
 ---
@@ -560,4 +661,3 @@ make check-all     # Run full quality barrier (format + lint + types + security 
   - 📄 Architecture Decision: [ADR 0008: Multi-Agent Orchestration, Hierarchical Supervisor & State Graphs](.agent/architecture/decisions/0008-multi-agent-orchestration-and-state-graphs.md)
 - [x] [**Slice 10:** Enterprise AI Governance, Real-Time Guardrails & Distributed Observability](docs/roadmap/10-ai-governance-and-observability.md)
   - 📄 Architecture Decision: [ADR 0009: Enterprise AI Governance, Guardrails & OpenTelemetry](.agent/architecture/decisions/0009-ai-governance-guardrails-and-opentelemetry.md)
-
