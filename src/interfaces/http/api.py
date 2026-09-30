@@ -38,6 +38,7 @@ from src.application.shared.idempotency.idempotent_command_executor import (
     IdempotentCommandExecutor,
 )
 from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.shared.tenancy.tenant_context import tenant_context
 from src.domain.agents.ports.workflow_checkpoint_repository_port import (
     WorkflowCheckpointRepositoryPort,
 )
@@ -114,6 +115,7 @@ def _register_conversation_routes(
     async def create_conversation(
         request: CreateConversationRequest,
         idempotency_key: Annotated[str | None, Depends(get_optional_idempotency_key)] = None,
+        x_tenant_id: Annotated[str | None, Header(alias="X-Tenant-Id")] = None,
     ) -> ConversationResponse:
         handler = create_handler
         if handler is None:
@@ -123,13 +125,15 @@ def _register_conversation_routes(
             )
 
         async def _execute() -> ConversationResponse:
-            try:
-                res = handler.handle(CreateConversationCommand(title=request.title))
-                return ConversationResponse(id=res.conversation_id, title=res.title)
-            except ValueError as exc:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
-                ) from exc
+            tid = TenantId(x_tenant_id or "default-tenant")
+            with tenant_context(tid):
+                try:
+                    res = handler.handle(CreateConversationCommand(title=request.title))
+                    return ConversationResponse(id=res.conversation_id, title=res.title)
+                except ValueError as exc:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+                    ) from exc
 
         if idempotent_executor is not None and idempotency_key is not None:
             try:
@@ -193,14 +197,15 @@ def _register_message_routes(
                 ) from exc
 
         async def _run_command() -> MessageResponse:
-            if guarded_executor is not None:
-                tid = TenantId(x_tenant_id or "default-tenant")
-                return await guarded_executor.execute_guarded(
-                    tenant_id=tid,
-                    raw_text=request.content,
-                    operation=_execute_with_text,
-                )
-            return await _execute_with_text(request.content)
+            tid = TenantId(x_tenant_id or "default-tenant")
+            with tenant_context(tid):
+                if guarded_executor is not None:
+                    return await guarded_executor.execute_guarded(
+                        tenant_id=tid,
+                        raw_text=request.content,
+                        operation=_execute_with_text,
+                    )
+                return await _execute_with_text(request.content)
 
         if idempotent_executor is not None and idempotency_key is not None:
             try:

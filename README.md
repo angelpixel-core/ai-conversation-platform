@@ -478,13 +478,28 @@ curl -s -X POST "http://localhost:8000/conversations/${CONV_ID}/messages" \
   -H "Content-Type: application/json" \
   -H "X-Tenant-ID: corp-acme" \
   -d '{"content": "Asynchronous background processing test."}' | jq
-
-# In the worker terminal, observe:
-# 1. Event consumption from RabbitMQ queue 'conversation.llm_processing.queue'
-# 2. Dynamic Model Router selecting appropriate LLM provider
-# 3. Stream buffer chunks saved to MSSQL
-# 4. Final SettleQuotaCommand adjusting actual token cost
 ```
+
+```json
+{
+  "conversation_id": "1793e569-9b88-462a-a7ba-634bd679d256",
+  "role": "user",
+  "content": "Asynchronous background processing test.",
+  "created_at": "2026-09-30T03:38:25.600465Z"
+}
+```
+
+> [!NOTE]
+> **Domain Invariant & Asynchronous Turn Cycle:**
+> Conversations enforce strict alternating turns between User and Assistant (`Cannot append user message before assistant responds.`).
+> When Message 1 was sent in Step 3, the `OutboxRelayService` in the worker process transactionally polled `outbox_messages`, dispatched the `MessageAppendedDomainEvent` to RabbitMQ, and the worker consumed the event to persist the AI assistant response. This completes the turn, allowing Step 6 to append the next user message without domain violation.
+
+In the worker terminal (`docker logs -f chatbot_worker`), observe:
+1. Event consumption from RabbitMQ queue `conversation.llm_processing.queue`
+2. Dynamic Model Router selecting appropriate LLM provider
+3. Stream buffer chunks saved to MSSQL
+4. Assistant reply appended to conversation
+5. Final `SettleQuotaCommand` adjusting actual token cost
 
 ---
 

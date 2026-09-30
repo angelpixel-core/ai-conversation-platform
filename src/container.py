@@ -169,34 +169,39 @@ class AppContainer:
 
 
 def _seed_default_demo_tenant(uow: UnitOfWork) -> None:
-    """Auto-seed default demonstration tenant ('corp-acme') if absent."""
+    """Auto-seed default demonstration tenants ('corp-acme' and 'default-tenant') if absent."""
+    demo_tenants = [
+        ("corp-acme", "ACME Corporation"),
+        ("default-tenant", "Default System Tenant"),
+    ]
     try:
         with uow:
-            if uow.tenants.get(TenantId("corp-acme")) is None:
-                demo_tenant = Tenant(
-                    tenant_id=TenantId("corp-acme"),
-                    name="ACME Corporation",
-                    budget=MonetaryBudget(
-                        balance=Decimal("1000.00"),
-                        reserved_amount=Decimal("0.00"),
-                        currency="USD",
-                    ),
-                    policy=TenantPolicy(
-                        tier=TenantTier.STANDARD,
-                        max_tokens_per_request=4096,
-                        monthly_budget_usd=Decimal("500.00"),
-                        allowed_models=frozenset(
-                            {
-                                "gpt-4o",
-                                "gpt-4o-mini",
-                                "claude-3-5-sonnet",
-                                "gemini-1.5-flash",
-                            }
+            for tid, tname in demo_tenants:
+                if uow.tenants.get(TenantId(tid)) is None:
+                    demo_tenant = Tenant(
+                        tenant_id=TenantId(tid),
+                        name=tname,
+                        budget=MonetaryBudget(
+                            balance=Decimal("1000.00"),
+                            reserved_amount=Decimal("0.00"),
+                            currency="USD",
                         ),
-                    ),
-                )
-                uow.tenants.add(demo_tenant)
-                uow.commit()
+                        policy=TenantPolicy(
+                            tier=TenantTier.STANDARD,
+                            max_tokens_per_request=4096,
+                            monthly_budget_usd=Decimal("500.00"),
+                            allowed_models=frozenset(
+                                {
+                                    "gpt-4o",
+                                    "gpt-4o-mini",
+                                    "claude-3-5-sonnet",
+                                    "gemini-1.5-flash",
+                                }
+                            ),
+                        ),
+                    )
+                    uow.tenants.add(demo_tenant)
+            uow.commit()
     except Exception as exc:
         logger.debug("Demo tenant auto-seed skipped: %s", exc)
 

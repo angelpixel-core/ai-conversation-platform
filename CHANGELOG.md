@@ -51,6 +51,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Extended `src/interfaces/http/api.py` to route mutating message commands through `GuardedCommandExecutor` and register `governance_router`.
 - Updated developer documentation and OpenAPI specification.
 
+### Fixed
+
+- **Transactional Outbox & Worker Lifecycle Integration:**
+  - Integrated `OutboxRelayService` into `WorkerContainer` and started it as a concurrent background poller using `anyio.create_task_group()` in `src/worker.py`.
+  - Added cancellation handling and transient failure resilience to `OutboxRelayService.run()`.
+  - Propagated active tenant context (`X-Tenant-Id`) into `create_conversation` and `send_message` endpoints, persisting `tenant_id` to outbox messages and conversation records.
+  - Auto-seeded `default-tenant` alongside `corp-acme` to prevent quota settlement failures on fallback flows.
+  - Resolved `ValueError: No se puede liquidar una reserva mayor a la activa` by defaulting `reserved_cost` to `Decimal("0.0000")` when no prior reservation was acquired.
+
 ### Security
 
 - Neutralized prompt injection and jailbreak attacks with zero LLM token consumption.

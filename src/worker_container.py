@@ -8,6 +8,9 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
+import anyio
+import anyio.abc
+
 from src.application.agents.ports.subagent_executor_port import (
     SubAgentExecutorPort,
 )
@@ -78,6 +81,9 @@ from src.infrastructure.messaging.rabbitmq.rabbitmq_connection_manager import (
 from src.infrastructure.messaging.rabbitmq.rabbitmq_consumer_adapter import (
     RabbitMQConsumerAdapter,
 )
+from src.infrastructure.messaging.rabbitmq.rabbitmq_publisher_adapter import (
+    RabbitMQPublisherAdapter,
+)
 from src.infrastructure.messaging.rabbitmq.rabbitmq_topology_config import (
     RabbitMQTopologyConfig,
 )
@@ -105,6 +111,9 @@ from src.infrastructure.persistence.mssql import (
 )
 from src.infrastructure.persistence.mssql.mssql_incident_repository import (
     MssqlIncidentRepository,
+)
+from src.infrastructure.persistence.outbox.outbox_relay_service import (
+    OutboxRelayService,
 )
 from src.infrastructure.routing.in_memory_model_catalog import (
     InMemoryModelCatalogAdapter,
@@ -148,19 +157,27 @@ class WorkerContainer:
     pii_scanner: PiiScannerPort | None = None
     safety_guardrail: SafetyGuardrailPort | None = None
     stream_guardrail_filter: AnyioStreamGuardrailFilter | None = None
+    outbox_relay: OutboxRelayService | None = None
 
-    async def start(self) -> None:
+    async def start(self, task_group: anyio.abc.TaskGroup | None = None) -> None:
         """Initialize messaging topology (if applicable) and begin consuming."""
         if self.connection_manager is not None and self.topology_config is not None:
             logger.info("Declaring RabbitMQ topology for background worker...")
             channel = await self.connection_manager.get_channel()
             await self.topology_config.declare_topology(channel)
 
+        if self.outbox_relay is not None and task_group is not None:
+            logger.info("Starting outbox relay poller in background task...")
+            task_group.start_soon(self.outbox_relay.run)
+
         logger.info("Starting background worker message consumption...")
         await self.consumer.start_consuming()
 
     async def stop(self) -> None:
         """Gracefully stop consuming and close broker connections."""
+        if self.outbox_relay is not None:
+            logger.info("Stopping outbox relay poller...")
+            self.outbox_relay.stop()
         logger.info("Stopping background worker message consumption...")
         await self.consumer.stop_consuming()
         if self.connection_manager is not None:
@@ -218,6 +235,9 @@ def _wire_worker_persistence(
         read_knowledge_repo = MssqlKnowledgeRepository(session=session_factory())
         read_tool_approval_repo = MssqlToolApprovalRepository(session=session_factory())
         resolved_incident_repo = incident_repo or MssqlIncidentRepository(session=session_factory)
+        from src.container import _seed_default_demo_tenant
+
+        _seed_default_demo_tenant(uow)
     else:
         uow = InMemoryUnitOfWork()
         stream_buffer_repo = InMemoryStreamBufferRepositoryAdapter()
@@ -293,6 +313,7 @@ def create_worker_container(
     pii_scanner: PiiScannerPort | None = None,
     safety_guardrail: SafetyGuardrailPort | None = None,
     stream_guardrail_filter: AnyioStreamGuardrailFilter | None = None,
+    outbox_relay: OutboxRelayService | None = None,
     *,
     enable_opentelemetry: bool | None = None,
 ) -> WorkerContainer:
@@ -339,6 +360,24 @@ def create_worker_container(
 
     routing_key = topo.routing_key if topo is not None else current_settings.RABBITMQ_ROUTING_KEY
     cons.subscribe(routing_key, worker_handler.handle)
+
+    outbox_relay_service = outbox_relay
+    if (
+        outbox_relay_service is None
+        and current_settings.PERSISTENCE_DRIVER == PersistenceDriver.MSSQL
+        and current_settings.MESSAGING_DRIVER == MessagingDriver.RABBITMQ
+    ):
+        session_factory = getattr(uow, "_session_factory", None)
+        if session_factory is not None and conn_mgr is not None:
+            publisher = RabbitMQPublisherAdapter(
+                connection_manager=conn_mgr,
+                exchange_name=current_settings.RABBITMQ_EXCHANGE,
+            )
+            outbox_relay_service = OutboxRelayService(
+                session_factory=session_factory,
+                message_broker=publisher,
+                poll_interval=0.5,
+            )
 
     tool_approval_repo = (
         read_tool_approval_repo
@@ -398,4 +437,5 @@ def create_worker_container(
         pii_scanner=pii_scanner_adapter,
         safety_guardrail=safety_guardrail_adapter,
         stream_guardrail_filter=stream_filter,
+        outbox_relay=outbox_relay_service,
     )

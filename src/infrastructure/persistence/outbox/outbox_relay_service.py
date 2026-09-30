@@ -129,8 +129,14 @@ class OutboxRelayService:
         """Run the polling loop continuously until stopped."""
         self._is_running = True
         while self._is_running:
-            count = await self.poll_and_publish_once()
-            if count == 0:
+            try:
+                count = await self.poll_and_publish_once()
+                if count == 0:
+                    await anyio.sleep(self.poll_interval)
+            except anyio.get_cancelled_exc_class():
+                break
+            except Exception as exc:
+                logger.warning("Outbox relay polling encountered transient error: %s", exc)
                 await anyio.sleep(self.poll_interval)
 
     def stop(self) -> None:
