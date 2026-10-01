@@ -76,6 +76,7 @@ class OutboxRelayService:
             )
             messages = session.exec(stmt).all()
             if not messages:
+                session.rollback()
                 return 0
 
             dispatched_count = 0

@@ -43,6 +43,7 @@ from src.domain.agents.ports.workflow_checkpoint_repository_port import (
     WorkflowCheckpointRepositoryPort,
 )
 from src.domain.conversations.exceptions import ConversationNotFoundError
+from src.domain.conversations.value_objects.message import MessageRole
 from src.domain.governance.exceptions import SafetyPolicyViolationError
 from src.domain.governance.ports.incident_repository_port import (
     IncidentRepositoryPort,
@@ -298,6 +299,43 @@ async def _sse_event_stream(
         yield f"data: [ERROR] {str(exc)}\n\n"
 
 
+async def _resolve_assistant_stream_fallback(
+    conversation_id: UUID,
+    error: DomainError,
+    stream_recovery_service: StreamRecoveryService | None = None,
+    unit_of_work: UnitOfWork | None = None,
+) -> AsyncIterator[str]:
+    if "last message is not from user" not in str(error).lower():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+
+    stream_id = str(conversation_id)
+
+    if stream_recovery_service is not None:
+        tokens = await stream_recovery_service.get_buffered_tokens(stream_id)
+        if tokens:
+
+            async def _buffered_tokens() -> AsyncIterator[str]:
+                for t in tokens:
+                    yield t
+
+            return _buffered_tokens()
+
+    if unit_of_work is not None:
+        with unit_of_work as uow:
+            conv = uow.conversations.get(conversation_id)
+            if conv and conv.messages and conv.messages[-1].role == MessageRole.ASSISTANT:
+                content = conv.messages[-1].content
+
+                async def _content_tokens() -> AsyncIterator[str]:
+                    words = content.split(" ")
+                    for i, word in enumerate(words):
+                        yield word if i == len(words) - 1 else f"{word} "
+
+                return _content_tokens()
+
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+
+
 def _register_streaming_routes(
     app: FastAPI,
     stream_handler: StreamConversationQueryHandler | None,
@@ -349,7 +387,14 @@ def _register_streaming_routes(
             token_iterator = await stream_handler.handle(query)
         except ConversationNotFoundError as exc:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
-        except (ValueError, DomainError) as exc:
+        except DomainError as exc:
+            token_iterator = await _resolve_assistant_stream_fallback(
+                conversation_id=conversation_id,
+                error=exc,
+                stream_recovery_service=stream_recovery_service,
+                unit_of_work=unit_of_work,
+            )
+        except ValueError as exc:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
         return StreamingResponse(

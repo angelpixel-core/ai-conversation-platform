@@ -50,7 +50,11 @@ test-file:
 	fi
 	.venv/bin/python -m pytest $(FILE)
 
-.PHONY: install install-dev test test-file coverage lint format format-check typecheck security audit check-all docs-build run-api run-worker db/upgrade db/downgrade stack/up stack/up-build stack/down stack/status
+# Ejecutar test integral Happy Path del Walkthrough Guide (Steps 1-10)
+test-happy-path:
+	.venv/bin/python -m pytest tests/integration/test_walkthrough_happy_path.py -v
+
+.PHONY: install install-dev test test-file test-happy-path coverage lint format format-check typecheck security audit check-all docs-build run-api run-worker db/upgrade db/downgrade stack/up stack/up-build stack/down stack/status
 
 # Ejecutar todas las comprobaciones de calidad, tipado, seguridad y tests
 check-all: format-check lint typecheck security test

@@ -1,6 +1,7 @@
 """Multi-Agent State Graph and Workflow HTTP Router."""
 
 from collections.abc import AsyncIterator
+from typing import Any
 from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, status
@@ -31,19 +32,36 @@ from src.interfaces.http.agents_schemas import (
 )
 
 
-class _NoopSubAgentExecutor(SubAgentExecutorPort):
-    async def execute_node(self, node_id: str, role: AgentRole, current_state: dict) -> dict:
-        return {}
+class _DefaultSubAgentExecutor(SubAgentExecutorPort):
+    async def execute_node(
+        self,
+        node_id: str,
+        role: AgentRole,
+        current_state: dict[str, Any],
+    ) -> dict[str, Any]:
+        if (
+            node_id == "auditor"
+            and not current_state.get("supervisor_override")
+            and not current_state.get("is_approved")
+        ):
+            return {
+                "requires_approval": True,
+                "approval_id": f"appr-{uuid4().hex[:8]}",
+                "tool_name": "security_audit_override",
+            }
+        return {f"{node_id}_status": "completed", "final_output": "Workflow completed successfully"}
 
 
 def _create_default_engine() -> GraphExecutionEngine:
     graph = WorkflowGraph(entry_node="supervisor", end_nodes={"end"})
     graph.add_node("supervisor", AgentRole.SUPERVISOR)
+    graph.add_node("auditor", AgentRole.SPECIALIST)
     graph.add_node("end", AgentRole.SPECIALIST)
-    graph.add_edge("supervisor", "end")
+    graph.add_edge("supervisor", "auditor")
+    graph.add_edge("auditor", "end")
     return GraphExecutionEngine(
         graph=graph,
-        executor=_NoopSubAgentExecutor(),
+        executor=_DefaultSubAgentExecutor(),
         state_reducer=StateReducerService(),
     )
 

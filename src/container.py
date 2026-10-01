@@ -294,6 +294,7 @@ def _wire_app_persistence(
         resolved_incident_repo = (
             incident_repo or getattr(uow, "incidents", None) or InMemoryIncidentRepositoryAdapter()
         )
+        _seed_default_demo_tenant(uow)
 
     if read_repo is None:
         read_repo = uow.conversations
