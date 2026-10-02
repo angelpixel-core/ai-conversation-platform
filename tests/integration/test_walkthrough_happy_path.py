@@ -15,9 +15,6 @@ from src.application.conversations.commands.append_assistant_message import (
 )
 from src.container import create_app_container
 from src.domain.conversations.value_objects.stream_chunk import StreamChunk
-from src.domain.tenants.value_objects.tenant_id import TenantId
-from src.domain.tools.entities.tool_approval_request import ToolApprovalRequest
-from src.domain.tools.value_objects.tool_call import ToolCall
 from src.infrastructure.shared.config.settings import MessagingDriver, PersistenceDriver, Settings
 
 
@@ -227,30 +224,40 @@ async def test_walkthrough_guide_full_happy_path() -> None:
     # -------------------------------------------------------------------------
     # Step 8: Secure Tool Calling & Human-in-the-Loop Approval (Slice 8)
     # -------------------------------------------------------------------------
-    # 8.1 List pending approvals
+    # 8.1 Submit tool execution requiring approval
+    resp_create_appr = client.post(
+        "/tenants/corp-acme/approvals",
+        headers={"X-Tenant-ID": "corp-acme"},
+        json={
+            "conversation_id": str(conv_id),
+            "tool_name": "refund_payment",
+            "arguments": {"amount": 500},
+        },
+    )
+    assert resp_create_appr.status_code == 201
+    approval_id = resp_create_appr.json()["approval_id"]
+
+    # 8.2 List pending approvals awaiting supervisor sign-off
     resp_pending = client.get(
         "/tenants/corp-acme/approvals/pending",
         headers={"X-Tenant-ID": "corp-acme"},
     )
     assert resp_pending.status_code == 200
+    pending_items = resp_pending.json()
+    assert len(pending_items) >= 1
+    assert any(item["approval_id"] == approval_id for item in pending_items)
 
-    # Seed an approval request to verify decision endpoint
-    approval_req = ToolApprovalRequest.create(
-        approval_id="appr-demo-1",
-        tenant_id=TenantId("corp-acme"),
-        conversation_id=str(conv_id),
-        tool_call=ToolCall(
-            call_id="call-demo-1",
-            tool_name="refund_payment",
-            arguments={"amount": 500},
-        ),
+    # 8.3 Stream conversation to observe real-time tool lifecycle events
+    resp_tool_stream = client.get(
+        f"/conversations/{conv_id}/stream",
+        headers={"X-Tenant-ID": "corp-acme"},
     )
-    assert container.tool_approval_repo is not None
-    container.tool_approval_repo.save(approval_req)
+    assert resp_tool_stream.status_code == 200
+    assert "event: tool_approval_required" in resp_tool_stream.text
 
-    # 8.2 Approve a pending tool execution
+    # 8.4 Approve the pending tool execution
     resp_decision = client.post(
-        f"/tenants/corp-acme/approvals/{approval_req.id}/decision",
+        f"/tenants/corp-acme/approvals/{approval_id}/decision",
         headers={"X-Tenant-ID": "corp-acme"},
         json={
             "decision": "approve",

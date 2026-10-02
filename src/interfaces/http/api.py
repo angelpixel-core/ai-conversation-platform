@@ -299,19 +299,48 @@ async def _sse_event_stream(
         yield f"data: [ERROR] {str(exc)}\n\n"
 
 
+def _fetch_persisted_assistant_tokens(
+    unit_of_work: UnitOfWork | None,
+    conversation_id: UUID,
+) -> AsyncIterator[str] | None:
+    if unit_of_work is None:
+        return None
+    with unit_of_work as uow:
+        conv = uow.conversations.get(conversation_id)
+        if not conv or not conv.messages or conv.messages[-1].role != MessageRole.ASSISTANT:
+            return None
+        content = conv.messages[-1].content
+
+        async def _content_tokens() -> AsyncIterator[str]:
+            words = content.split(" ")
+            for i, word in enumerate(words):
+                yield word if i == len(words) - 1 else f"{word} "
+
+        return _content_tokens()
+
+
 async def _resolve_assistant_stream_fallback(
     conversation_id: UUID,
     error: DomainError,
     stream_recovery_service: StreamRecoveryService | None = None,
     unit_of_work: UnitOfWork | None = None,
+    has_metadata_events: bool = False,
 ) -> AsyncIterator[str]:
-    if "last message is not from user" not in str(error).lower():
+    error_str = str(error).lower()
+
+    if "no messages" in error_str and has_metadata_events:
+
+        async def _empty_tokens() -> AsyncIterator[str]:
+            if False:
+                yield ""
+
+        return _empty_tokens()
+
+    if "last message is not from user" not in error_str:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
 
-    stream_id = str(conversation_id)
-
     if stream_recovery_service is not None:
-        tokens = await stream_recovery_service.get_buffered_tokens(stream_id)
+        tokens = await stream_recovery_service.get_buffered_tokens(str(conversation_id))
         if tokens:
 
             async def _buffered_tokens() -> AsyncIterator[str]:
@@ -320,18 +349,9 @@ async def _resolve_assistant_stream_fallback(
 
             return _buffered_tokens()
 
-    if unit_of_work is not None:
-        with unit_of_work as uow:
-            conv = uow.conversations.get(conversation_id)
-            if conv and conv.messages and conv.messages[-1].role == MessageRole.ASSISTANT:
-                content = conv.messages[-1].content
-
-                async def _content_tokens() -> AsyncIterator[str]:
-                    words = content.split(" ")
-                    for i, word in enumerate(words):
-                        yield word if i == len(words) - 1 else f"{word} "
-
-                return _content_tokens()
+    persisted = _fetch_persisted_assistant_tokens(unit_of_work, conversation_id)
+    if persisted is not None:
+        return persisted
 
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
 
@@ -393,6 +413,7 @@ def _register_streaming_routes(
                 error=exc,
                 stream_recovery_service=stream_recovery_service,
                 unit_of_work=unit_of_work,
+                has_metadata_events=bool(citations or tool_events),
             )
         except ValueError as exc:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc

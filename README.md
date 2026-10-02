@@ -206,6 +206,7 @@ The system strictly follows the Dependency Rule of Clean Architecture:
 You can run the application locally in one of two modes:
 
 #### Option A: In-Memory Mode (Fastest, zero external dependencies)
+
 This mode runs entirely in-memory with pre-seeded demonstration tenants and mock LLM adapters. No external services or database migrations are required.
 
 ```bash
@@ -228,6 +229,7 @@ make run-worker
 ```
 
 #### Option B: Local Development with SQL Server & RabbitMQ
+
 When developing against persistent infrastructure, start the database service container first before running database migrations:
 
 ```bash
@@ -481,7 +483,7 @@ curl -s -w "\nHTTP Status: %{http_code}\n" \
   -X POST http://localhost:8000/admin/tenants/corp-acme/reserve \
   -H "Content-Type: application/json" \
   -H "X-Tenant-ID: corp-acme" \
-  -d '{"estimated_cost": "99999.00", "model_id": "gpt-4o"}' | jq
+  -d '{"estimated_cost": "99999.00", "model_id": "gpt-4o"}'
 ```
 
 ```json
@@ -521,6 +523,7 @@ curl -s -X POST "http://localhost:8000/conversations/${CONV_ID}/messages" \
 > When Message 1 was sent in Step 3, the `OutboxRelayService` in the worker process transactionally polled `outbox_messages`, dispatched the `MessageAppendedDomainEvent` to RabbitMQ, and the worker consumed the event to persist the AI assistant response. This completes the turn, allowing Step 6 to append the next user message without domain violation.
 
 In the worker terminal (`docker logs -f chatbot_worker`), observe:
+
 1. Event consumption from RabbitMQ queue `conversation.llm_processing.queue`
 2. Dynamic Model Router selecting appropriate LLM provider
 3. Stream buffer chunks saved to MSSQL
@@ -563,24 +566,35 @@ curl -N -H "X-Tenant-ID: corp-acme" \
 Demonstrate sandboxed tool execution, human review gating, and streaming tool events:
 
 ```bash
-# 8.1 List pending tool approvals awaiting supervisor sign-off
+# 8.1 Submit a high-privilege tool execution request requiring Human-in-the-Loop review
+APPROVAL_RESP=$(curl -s -X POST "http://localhost:8000/tenants/corp-acme/approvals" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "conversation_id": "'"${CONV_ID}"'",
+    "tool_name": "refund_payment",
+    "arguments": {"amount": 500, "currency": "USD"}
+  }')
+echo $APPROVAL_RESP | jq
+APPROVAL_ID=$(echo $APPROVAL_RESP | jq -r .approval_id)
+
+# 8.2 List pending tool approvals awaiting supervisor sign-off
 curl -s http://localhost:8000/tenants/corp-acme/approvals/pending | jq
 
-# 8.2 Approve a pending tool execution (or pass "decision": "reject" to abort)
-curl -s -X POST http://localhost:8000/tenants/corp-acme/approvals/{approval_id}/decision \
+# 8.3 Stream conversation to observe real-time tool lifecycle events (emits tool_approval_required)
+curl -N -H "X-Tenant-ID: corp-acme" \
+  "http://localhost:8000/conversations/${CONV_ID}/stream"
+# Output includes:
+# event: tool_approval_required
+# data: {"approval_id": "...", "tool_name": "refund_payment", "call_id": "...", "arguments": {"amount": 500, "currency": "USD"}}
+
+# 8.4 Approve the pending tool execution (or pass "decision": "reject" to abort)
+curl -s -X POST "http://localhost:8000/tenants/corp-acme/approvals/${APPROVAL_ID}/decision" \
   -H "Content-Type: application/json" \
   -d '{
     "decision": "approve",
     "resolved_by": "sec-officer@corp.com",
     "reason": "Verified operational credentials"
   }' | jq
-
-# 8.3 Stream conversation to observe real-time tool lifecycle events
-curl -N -H "X-Tenant-ID: corp-acme" \
-  "http://localhost:8000/conversations/${CONV_ID}/stream"
-# Output includes:
-# event: tool_approval_required
-# data: {"approval_id": "...", "tool_name": "...", "arguments": {...}}
 ```
 
 ---
