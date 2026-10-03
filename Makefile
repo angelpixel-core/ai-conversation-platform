@@ -32,9 +32,17 @@ security:
 audit:
 	.venv/bin/python -m pip_audit --local --skip-editable
 
-# Ejecutar todos los tests
+# Ejecutar todos los tests (pausando temporalmente el worker si el stack está activo para evitar contención de locks en ChatbotDB)
 test:
-	.venv/bin/python -m pytest
+	@if docker ps --format '{{.Names}}' | grep -q '^chatbot_worker$$'; then \
+		docker compose pause worker > /dev/null 2>&1 || true; \
+		.venv/bin/python -m pytest; \
+		STATUS=$$?; \
+		docker compose unpause worker > /dev/null 2>&1 || true; \
+		exit $$STATUS; \
+	else \
+		.venv/bin/python -m pytest; \
+	fi
 
 # Ejecutar cobertura de código (reporte en consola y generación de HTML)
 coverage:
@@ -50,7 +58,11 @@ test-file:
 	fi
 	.venv/bin/python -m pytest $(FILE)
 
-.PHONY: install install-dev test test-file coverage lint format format-check typecheck security audit check-all docs-build run-api run-worker db/upgrade db/downgrade stack/up stack/up-build stack/down stack/status
+# Ejecutar test integral Happy Path del Walkthrough Guide (Steps 1-10)
+test-happy-path:
+	.venv/bin/python -m pytest tests/integration/test_walkthrough_happy_path.py -v
+
+.PHONY: install install-dev test test-file test-happy-path coverage lint format format-check typecheck security audit check-all docs-build run-api run-worker db/upgrade db/downgrade stack/up stack/up-build stack/down stack/status
 
 # Ejecutar todas las comprobaciones de calidad, tipado, seguridad y tests
 check-all: format-check lint typecheck security test

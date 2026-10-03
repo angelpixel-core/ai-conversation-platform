@@ -27,23 +27,25 @@ async def run_worker(container: WorkerContainer) -> None:
         container: Wired worker dependency container.
     """
     logger.info("Initializing worker container...")
-    await container.start()
-    logger.info("Worker container running and listening for messages.")
+    async with anyio.create_task_group() as tg:
+        await container.start(task_group=tg)
+        logger.info("Worker container running and listening for messages.")
 
-    try:
-        with anyio.open_signal_receiver(signal.SIGINT, signal.SIGTERM) as signals:
-            async for sig in signals:
-                logger.info(
-                    "Received termination signal %s (%s). Starting graceful shutdown...",
-                    sig.name,
-                    sig.value,
-                )
-                break
-    finally:
-        logger.info("Stopping worker container...")
-        with anyio.CancelScope(shield=True):
-            await container.stop()
-        logger.info("Worker container cleanly stopped.")
+        try:
+            with anyio.open_signal_receiver(signal.SIGINT, signal.SIGTERM) as signals:
+                async for sig in signals:
+                    logger.info(
+                        "Received termination signal %s (%s). Starting graceful shutdown...",
+                        sig.name,
+                        sig.value,
+                    )
+                    break
+        finally:
+            logger.info("Stopping worker container...")
+            with anyio.CancelScope(shield=True):
+                await container.stop()
+                tg.cancel_scope.cancel()
+            logger.info("Worker container cleanly stopped.")
 
 
 def main() -> None:

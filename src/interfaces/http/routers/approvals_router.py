@@ -1,4 +1,4 @@
-"""Human-in-the-Loop (HITL) Tool Approval HTTP Router."""
+from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, status
 
@@ -13,8 +13,10 @@ from src.application.tools.commands.reject_tool_execution import (
     RejectToolExecutionHandler,
 )
 from src.domain.tenants.value_objects.tenant_id import TenantId
-from src.domain.tools.entities.tool_approval_request import ApprovalStatus
+from src.domain.tools.entities.tool_approval_request import ApprovalStatus, ToolApprovalRequest
+from src.domain.tools.value_objects.tool_call import ToolCall
 from src.interfaces.http.tools_schemas import (
+    CreateToolApprovalRequest,
     PendingApprovalResponse,
     ToolApprovalDecisionRequest,
 )
@@ -26,6 +28,50 @@ def create_approvals_router(
 ) -> APIRouter:
     """Factory creating APIRouter for Human-in-the-Loop tool approvals."""
     router = APIRouter(tags=["Approvals"])
+
+    @router.post(
+        "/tenants/{tenant_id}/approvals",
+        response_model=PendingApprovalResponse,
+        status_code=status.HTTP_201_CREATED,
+        summary="Create a tool execution approval request",
+        description=(
+            "Submits a tool call requiring Human-in-the-Loop review under tenant governance."
+        ),
+    )
+    def create_tool_approval(
+        tenant_id: str,
+        request: CreateToolApprovalRequest,
+    ) -> PendingApprovalResponse:
+        tid = TenantId(tenant_id)
+        approval_id = f"appr-{uuid4().hex[:8]}"
+        call_id = request.call_id or f"call-{uuid4().hex[:8]}"
+        tool_call = ToolCall(
+            call_id=call_id,
+            tool_name=request.tool_name,
+            arguments=request.arguments,
+        )
+        approval = ToolApprovalRequest.create(
+            approval_id=approval_id,
+            tenant_id=tid,
+            conversation_id=request.conversation_id,
+            tool_call=tool_call,
+        )
+        with unit_of_work as uow:
+            uow.tool_approvals.save(approval)
+            uow.commit()
+
+        return PendingApprovalResponse(
+            approval_id=approval.id,
+            tenant_id=str(approval.tenant_id),
+            conversation_id=approval.conversation_id,
+            tool_name=approval.tool_call.tool_name,
+            arguments=approval.tool_call.arguments,
+            status=approval.status.value,
+            created_at=approval.created_at,
+            resolved_at=approval.resolved_at,
+            resolved_by=approval.operator_id,
+            rejection_reason=None,
+        )
 
     @router.get(
         "/tenants/{tenant_id}/approvals/pending",
@@ -71,6 +117,12 @@ def create_approvals_router(
         tid = TenantId(tenant_id)
         decision = request.decision.strip().lower()
 
+        if decision not in ("approve", "approved", "reject", "rejected"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid decision '{request.decision}'. Must be 'approve' or 'reject'.",
+            )
+
         with unit_of_work as uow:
             existing = uow.tool_approvals.get(tid, approval_id)
             if existing is None:
@@ -79,18 +131,17 @@ def create_approvals_router(
                     detail=f"Approval request '{approval_id}' not found for tenant '{tenant_id}'.",
                 )
 
-        if decision in ("approve", "approved"):
-            handler = ApproveToolExecutionHandler(
-                tool_approval_repo=unit_of_work.tool_approvals,
-                event_publisher=event_publisher,
-            )
-            cmd = ApproveToolExecutionCommand(
-                approval_id=approval_id,
-                tenant_id=tenant_id,
-                operator_id=request.resolved_by,
-                justification=request.reason,
-            )
-            with unit_of_work as uow:
+            if decision in ("approve", "approved"):
+                handler = ApproveToolExecutionHandler(
+                    tool_approval_repo=uow.tool_approvals,
+                    event_publisher=event_publisher,
+                )
+                cmd = ApproveToolExecutionCommand(
+                    approval_id=approval_id,
+                    tenant_id=tenant_id,
+                    operator_id=request.resolved_by,
+                    justification=request.reason,
+                )
                 try:
                     handler.handle(cmd)
                     uow.commit()
@@ -98,18 +149,17 @@ def create_approvals_router(
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
                     ) from exc
-        elif decision in ("reject", "rejected"):
-            reject_handler = RejectToolExecutionHandler(
-                tool_approval_repo=unit_of_work.tool_approvals,
-                event_publisher=event_publisher,
-            )
-            reject_cmd = RejectToolExecutionCommand(
-                approval_id=approval_id,
-                tenant_id=tenant_id,
-                operator_id=request.resolved_by,
-                reason=request.reason or "Rejected by operator",
-            )
-            with unit_of_work as uow:
+            else:
+                reject_handler = RejectToolExecutionHandler(
+                    tool_approval_repo=uow.tool_approvals,
+                    event_publisher=event_publisher,
+                )
+                reject_cmd = RejectToolExecutionCommand(
+                    approval_id=approval_id,
+                    tenant_id=tenant_id,
+                    operator_id=request.resolved_by,
+                    reason=request.reason or "Rejected by operator",
+                )
                 try:
                     reject_handler.handle(reject_cmd)
                     uow.commit()
@@ -117,13 +167,7 @@ def create_approvals_router(
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
                     ) from exc
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid decision '{request.decision}'. Must be 'approve' or 'reject'.",
-            )
 
-        with unit_of_work as uow:
             updated = uow.tool_approvals.get(tid, approval_id)
             if updated is None:
                 raise HTTPException(

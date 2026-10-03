@@ -41,13 +41,18 @@ def upgrade() -> None:
         sa.Column("created_at", sqlmodel.sql.sqltypes.UTCDateTime(), nullable=False),
         sa.Column("resolved_at", sqlmodel.sql.sqltypes.UTCDateTime(), nullable=True),
         sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["conversation_id"], ["conversations.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
         op.f("ix_tool_approvals_tenant_id"),
         "tool_approvals",
         ["tenant_id"],
+        unique=False,
+    )
+    op.create_index(
+        op.f("ix_tool_approvals_conversation_id"),
+        "tool_approvals",
+        ["conversation_id"],
         unique=False,
     )
     op.create_index(
@@ -71,13 +76,18 @@ def upgrade() -> None:
         sa.Column("execution_time_ms", sa.Float(), server_default="0.0", nullable=False),
         sa.Column("created_at", sqlmodel.sql.sqltypes.UTCDateTime(), nullable=False),
         sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["conversation_id"], ["conversations.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
         op.f("ix_tool_execution_audits_tenant_id"),
         "tool_execution_audits",
         ["tenant_id"],
+        unique=False,
+    )
+    op.create_index(
+        op.f("ix_tool_execution_audits_conversation_id"),
+        "tool_execution_audits",
+        ["conversation_id"],
         unique=False,
     )
     op.create_index(

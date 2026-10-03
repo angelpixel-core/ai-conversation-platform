@@ -236,7 +236,7 @@ class LlmMessageProcessingWorker:
                     reserved_cost = (
                         Decimal(str(reserved_cost_raw))
                         if reserved_cost_raw is not None
-                        else actual_cost
+                        else Decimal("0.0000")
                     )
                     self._settle_handler.handle(
                         SettleQuotaCommand(

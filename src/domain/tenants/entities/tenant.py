@@ -5,7 +5,7 @@ from decimal import Decimal
 from enum import StrEnum
 
 from src.domain.shared.aggregate_root import AggregateRoot
-from src.domain.tenants.entities.tenant_policy import TenantPolicy
+from src.domain.tenants.entities.tenant_policy import TenantPolicy, TenantTier
 from src.domain.tenants.events.tenant_events import (
     TenantBudgetReservedDomainEvent,
     TenantBudgetSettledDomainEvent,
@@ -48,6 +48,39 @@ class Tenant(AggregateRoot):
         now = datetime.now(UTC)
         self._created_at = created_at or now
         self._updated_at = updated_at or now
+
+    @classmethod
+    def create_demo(
+        cls,
+        tenant_id: TenantId | str = "corp-acme",
+        name: str | None = None,
+    ) -> "Tenant":
+        tid = TenantId(str(tenant_id))
+        display_name = name or (
+            "ACME Corporation" if str(tid) == "corp-acme" else "Default System Tenant"
+        )
+        return cls(
+            tenant_id=tid,
+            name=display_name,
+            budget=MonetaryBudget(
+                balance=Decimal("1000.00"),
+                reserved_amount=Decimal("0.00"),
+                currency="USD",
+            ),
+            policy=TenantPolicy(
+                tier=TenantTier.STANDARD,
+                max_tokens_per_request=4096,
+                monthly_budget_usd=Decimal("500.00"),
+                allowed_models=frozenset(
+                    {
+                        "gpt-4o",
+                        "gpt-4o-mini",
+                        "claude-3-5-sonnet",
+                        "gemini-1.5-flash",
+                    }
+                ),
+            ),
+        )
 
     @property
     def id(self) -> TenantId:

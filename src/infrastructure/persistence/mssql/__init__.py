@@ -7,6 +7,7 @@ from src.infrastructure.persistence.mssql.connection import (
     create_mssql_engine,
     create_session_factory,
 )
+from src.infrastructure.persistence.mssql.governance_mapper import GovernanceMapper
 from src.infrastructure.persistence.mssql.idempotency_repository import (
     MssqlIdempotencyRepository,
 )
@@ -20,11 +21,16 @@ from src.infrastructure.persistence.mssql.models import (
     IdempotencyRecordModel,
     MessageModel,
     OutboxMessageModel,
+    PiiAuditLogModel,
+    SecurityIncidentModel,
     StreamBufferChunkModel,
     TenantModel,
     TenantPolicyModel,
     WorkflowCheckpointModel,
     WorkflowInstanceModel,
+)
+from src.infrastructure.persistence.mssql.mssql_incident_repository import (
+    MssqlIncidentRepository,
 )
 from src.infrastructure.persistence.mssql.mssql_knowledge_repository import (
     MssqlKnowledgeRepository,
@@ -49,12 +55,14 @@ __all__ = [
     "AuditLogModel",
     "ConversationDataMapper",
     "ConversationModel",
+    "GovernanceMapper",
     "IdempotencyRecordModel",
     "InMemoryWorkflowCheckpointRepositoryAdapter",
     "MessageModel",
     "MssqlAuditRepository",
     "MssqlConversationRepository",
     "MssqlIdempotencyRepository",
+    "MssqlIncidentRepository",
     "MssqlKnowledgeRepository",
     "MssqlOutboxRepository",
     "MssqlStreamBufferRepository",
@@ -63,6 +71,8 @@ __all__ = [
     "MssqlUnitOfWork",
     "MssqlWorkflowCheckpointRepository",
     "OutboxMessageModel",
+    "PiiAuditLogModel",
+    "SecurityIncidentModel",
     "StreamBufferChunkModel",
     "TenantDataMapper",
     "TenantModel",
