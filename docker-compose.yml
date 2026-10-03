@@ -91,3 +91,5 @@ volumes:
 networks:
   default:
     name: chatbot_net
+    driver: bridge
+    attachable: true

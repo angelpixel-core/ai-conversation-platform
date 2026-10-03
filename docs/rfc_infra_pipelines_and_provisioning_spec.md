@@ -34,7 +34,7 @@ Sin embargo, existe una disparidad histórica entre el directorio raíz del mono
   - `apps/chatbot/service/api/docker-compose.yml` definía `mssql_db` (MSSQL 2022), `rabbitmq_broker` (RabbitMQ 3.13), `chatbot_api` y `chatbot_worker`.
 - **Estandarización Implementada (ver [ADR 0010](file:///.agent/architecture/decisions/0010-monorepo-compose-and-local-infrastructure-standardization.md)):**
   - **Servicios Unificados:** 5 componentes coordinados por capacidad arquitectónica: `api` (FastAPI / Uvicorn), `worker` (Python Inferencia & Outbox Relay), `portal` (Next.js 14+), `db` (contenedor `chatbot_db`, MSSQL 2022) y `broker` (contenedor `chatbot_broker`, RabbitMQ 3.13 Management).
-  - **Red Bridge Común:** `chatbot_net` compartida para comunicación entre servicios y el portal.
+  - **Red Bridge Común:** `chatbot_net` (`driver: bridge`, `attachable: true`) para comunicación inter-servicio transparente y acoplamiento de contenedores independientes o de pruebas.
   - **Puertos Estándar de Host:**
     - `api`: `8000:8000` (FastAPI / Swagger UI en `/docs`).
     - `portal`: `3000:3000` (Next.js Web Portal).
