@@ -3,7 +3,7 @@
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 
-from sqlmodel import Session, select
+from sqlmodel import Session, col, delete, select
 
 from src.application.shared.ports.stream_buffer_repository_port import (
     StreamBufferRepositoryPort,
@@ -36,6 +36,12 @@ class MssqlStreamBufferRepository(StreamBufferRepositoryPort):
             created_at=chunk.created_at,
         )
         with self._get_session() as session:
+            if chunk.sequence_number == 1:
+                session.exec(  # pyright: ignore[reportCallIssue]
+                    delete(StreamBufferChunkModel).where(
+                        col(StreamBufferChunkModel.stream_id) == stream_id
+                    )
+                )
             session.add(model)
             session.commit()
 

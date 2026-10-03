@@ -50,6 +50,7 @@ async def test_worker_persists_streaming_buffer_and_audit_log_in_mssql(
     uow = MssqlUnitOfWork(session_factory=mssql_session_factory)
     conversation = Conversation.create(title="Streaming Buffer Worker Integration")
     conversation.append_user_message("Stream to buffer test")
+    conversation.pull_events()  # Clear events to avoid outbox dispatch to external running worker
     with uow:
         uow.conversations.add(conversation)
         uow.commit()

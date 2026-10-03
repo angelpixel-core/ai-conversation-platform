@@ -94,7 +94,20 @@ class TenancySettings(BaseSettings):
     )
 
 
-class Settings(DatabaseSettings, MessagingSettings, TenancySettings):
+class GovernanceSettings(BaseSettings):
+    """Enterprise AI Governance and Distributed Observability configuration."""
+
+    ENABLE_OPENTELEMETRY: bool = False
+    OTEL_SERVICE_NAME: str = "chatbot-api"
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+
+class Settings(DatabaseSettings, MessagingSettings, TenancySettings, GovernanceSettings):
     """Unified application settings."""
 
 

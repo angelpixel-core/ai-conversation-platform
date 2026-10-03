@@ -2,6 +2,7 @@
 
 from uuid import UUID
 
+from src.application.shared.tenancy.tenant_context import get_current_tenant_id
 from src.domain.conversations.entities.conversation import Conversation
 from src.domain.conversations.value_objects.message import Message, MessageRole
 from src.infrastructure.persistence.mssql.models import ConversationModel, MessageModel
@@ -34,8 +35,10 @@ class ConversationDataMapper:
     @staticmethod
     def to_model(entity: Conversation) -> ConversationModel:
         """Map Conversation aggregate root to SQLModel database model."""
+        current_tenant = get_current_tenant_id() or "default-tenant"
         model = ConversationModel(
             id=entity.id,
+            tenant_id=current_tenant,
             title=entity.title,
             created_at=entity.created_at,
             updated_at=entity.created_at,

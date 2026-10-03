@@ -77,6 +77,22 @@ class RabbitMQConsumerAdapter(EventConsumerPort):
         try:
             body_dict = json.loads(message.body.decode("utf-8"))
             envelope = EventEnvelope.from_dict(body_dict)
+            if hasattr(message, "headers") and message.headers:
+                trace_keys = {
+                    "traceparent",
+                    "tracestate",
+                    "x-trace-id",
+                    "x-span-id",
+                    "x_trace_id",
+                    "x_span_id",
+                }
+                for k in trace_keys:
+                    if (
+                        k in message.headers
+                        and isinstance(envelope.payload, dict)
+                        and k not in envelope.payload
+                    ):
+                        envelope.payload[k] = message.headers[k]
         except Exception:
             logger.exception("Failed to deserialize RabbitMQ message. Rejecting to DLQ.")
             await message.reject(requeue=False)

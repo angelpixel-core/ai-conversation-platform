@@ -24,7 +24,10 @@ def parse_last_event_id(raw_header: str | None) -> int:
     if not raw_header:
         return -1
     try:
-        seq = int(raw_header.strip())
+        val = raw_header.strip()
+        if val.lower().startswith("chunk-"):
+            val = val[6:]
+        seq = int(val)
         if seq < 0:
             raise ValueError
         return seq

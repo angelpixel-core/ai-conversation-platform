@@ -32,6 +32,19 @@ class StreamRecoveryService:
         self._poll_interval = poll_interval_seconds
         self._max_wait = max_wait_seconds
 
+    @property
+    def buffer_repo(self) -> StreamBufferRepositoryPort:
+        """Expose the underlying StreamBufferRepositoryPort."""
+        return self._buffer_repo
+
+    async def get_buffered_tokens(self, stream_id: str) -> list[str]:
+        """Retrieve already-buffered token chunks for a given stream."""
+        chunks = await self._buffer_repo.get_chunks_since(
+            stream_id=stream_id,
+            since_sequence=-1,
+        )
+        return [c.content for c in chunks if c.content]
+
     async def recover_stream(
         self,
         stream_id: str,
