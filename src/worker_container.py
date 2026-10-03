@@ -392,7 +392,7 @@ def create_worker_container(
     elif current_settings.PERSISTENCE_DRIVER == PersistenceDriver.MSSQL:
         engine = create_mssql_engine(current_settings.get_database_url())
         session_factory = create_session_factory(engine)
-        resolved_workflow_repo = MssqlWorkflowCheckpointRepository(session=session_factory())
+        resolved_workflow_repo = MssqlWorkflowCheckpointRepository(session=session_factory)
     else:
         resolved_workflow_repo = InMemoryWorkflowCheckpointRepositoryAdapter()
 

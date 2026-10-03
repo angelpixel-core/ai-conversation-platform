@@ -231,7 +231,7 @@ def _wire_app_persistence(
             if session_factory is not None:
                 read_tool_approval_repo = MssqlToolApprovalRepository(session=session_factory())
         resolved_workflow_repo = workflow_checkpoint_repo or (
-            MssqlWorkflowCheckpointRepository(session=session_factory())
+            MssqlWorkflowCheckpointRepository(session=session_factory)
             if session_factory is not None
             else InMemoryWorkflowCheckpointRepositoryAdapter()
         )
@@ -254,7 +254,7 @@ def _wire_app_persistence(
         read_knowledge_repo = MssqlKnowledgeRepository(session=session_factory())
         read_tool_approval_repo = MssqlToolApprovalRepository(session=session_factory())
         resolved_workflow_repo = workflow_checkpoint_repo or MssqlWorkflowCheckpointRepository(
-            session=session_factory()
+            session=session_factory
         )
         resolved_incident_repo = incident_repo or MssqlIncidentRepository(session=session_factory)
         _seed_default_demo_tenant(uow)

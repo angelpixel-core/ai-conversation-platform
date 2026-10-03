@@ -43,7 +43,7 @@ async def test_concurrent_outbox_relays_compete_without_duplicates(
         for i in range(total_messages):
             msg = OutboxMessageModel(
                 id=uuid4(),
-                event_type="MessageAppendedDomainEvent",
+                event_type="ConcurrencyTestDomainEvent",
                 payload=f'{{"index": {i}, "content": "concurrency test"}}',
                 status=OutboxStatus.PENDING.value,
                 created_at=datetime.now(UTC),
@@ -59,18 +59,21 @@ async def test_concurrent_outbox_relays_compete_without_duplicates(
         message_broker=broker,
         batch_size=5,
         poll_interval=0.01,
+        event_types=["ConcurrencyTestDomainEvent"],
     )
     relay_2 = OutboxRelayService(
         session_factory=session_factory,
         message_broker=broker,
         batch_size=5,
         poll_interval=0.01,
+        event_types=["ConcurrencyTestDomainEvent"],
     )
     relay_3 = OutboxRelayService(
         session_factory=session_factory,
         message_broker=broker,
         batch_size=5,
         poll_interval=0.01,
+        event_types=["ConcurrencyTestDomainEvent"],
     )
 
     async def run_relay(relay: OutboxRelayService) -> None:
