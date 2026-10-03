@@ -123,17 +123,26 @@ Se estructuran y ejecutan 5 jobs modulares y paralelos en `.github/workflows/ci.
 
 ---
 
-## 5. Matriz de Requerimientos de Infraestructura Cloud (`infra/provisioning/aws`)
+## 5. Matriz de Requerimientos de Infraestructura Cloud (Resuelto en [ADR 0013](file:///.agent/architecture/decisions/0013-cloud-infrastructure-requirements-and-provisioning-matrix.md))
 
-Para la arquitectura en AWS gestionada con Terraform y ArgoCD, se define la siguiente especificación comparativa:
+Para la arquitectura en AWS gestionada con Terraform (`infra/provisioning/aws`) y GitOps con ArgoCD, se define y formaliza en **[ADR 0013](file:///.agent/architecture/decisions/0013-cloud-infrastructure-requirements-and-provisioning-matrix.md)** y en [`infra/provisioning/aws/README.md`](file:///../../../../infra/provisioning/aws/README.md) la siguiente especificación comparativa:
 
 ### 5.1. Comparativa de Componentes: Mínimos vs. Ideales
 
+- [x] **Topología de Red 3-Tier en AWS:** Aislamiento en 3 capas de subredes (`public`, `private_app`, `private_data`) a lo largo de 3 AZs.
+- [x] **Paridad Estricta de RDBMS:** **Amazon RDS for SQL Server 2022** (Multi-AZ Always On en Producción; Single-AZ en Non-Prod).
+- [x] **Paridad Estricta de Message Broker:** **Amazon MQ for RabbitMQ 3.13** (Cluster Multi-AZ con Quorum Queues en Producción; Single-Broker en Non-Prod).
+- [x] **Almacenamiento de Documentos RAG:** **Amazon S3 Enterprise** con SSE-KMS, Versionado y Object Lock para cumplimiento.
+- [x] **Gestión de Secretos:** **AWS Secrets Manager** con rotación y sincronización hacia EKS vía **External Secrets Operator (ESO)**.
+- [x] **Seguridad Perimetral:** **AWS WAF v2** con OWASP Core Rule Set y Rate Limiting.
+- [x] **Observabilidad y Telemetría:** **OpenTelemetry Collector DaemonSet** en EKS, AMP/AMG y CloudWatch Logs (retención 90 días + S3 Glacier).
+- [x] **SLA y Resiliencia:** 99.95% de disponibilidad, RTO < 15 min, RPO < 5 min en Producción.
+
 | Componente | Requerimientos Mínimos (Staging / Non-Prod) | Requerimientos Ideales (Producción Enterprise) |
 | :--- | :--- | :--- |
-| **Cómputo (K8s / Containers)** | **Amazon EKS** con 1 Managed Node Group:<br>- 2 nodos `t3.xlarge` o `t3a.xlarge`<br>- Auto-recovery estándar<br>- Single AZ o Multi-AZ básica | **Amazon EKS** con arquitectura Multi-AZ:<br>- Karpenter para autoscaling inteligente de pods<br>- Nodos `m6i.xlarge` / `c6i.xlarge` distribuidos en 3 AZs<br>- Pod Disruption Budgets y Topology Spread Constraints |
-| **Base de Datos (RDBMS)** | **Amazon RDS for SQL Server** (Web Edition o Standard):<br>- Instancia `db.t3.xlarge`<br>- Single-AZ con Storage GP3 (50 GB)<br>- Backups automáticos retención 7 días<br>- Cifrado KMS en reposo | **Amazon RDS for SQL Server** (Enterprise / Standard):<br>- Despliegue **Multi-AZ con Always On Availability Groups**<br>- Instancia `db.r6i.2xlarge` (memoria optimizada)<br>- Storage GP3/IO2 provisionado con auto-scaling<br>- Read Replicas para queries de reportes y auditoría<br>- Backups continuos point-in-time (PITR) a 35 días |
-| **Message Broker** | **Amazon MQ for RabbitMQ**:<br>- Despliegue Single-Broker `mq.m5.large`<br>- Durabilidad en disco estándar | **Amazon MQ for RabbitMQ**:<br>- **Cluster Multi-AZ (Active/Standby o 3-node quórum)**<br>- Quorum queues habilitadas para tolerancia a particiones de red<br>- Instancia `mq.m5.xlarge` con almacenamiento EBS optimizado |
+| **Cómputo (K8s / Containers)** | **Amazon EKS 1.31** con 1 Managed Node Group:<br>- 2 nodos `t3.xlarge` o `t3a.xlarge`<br>- Auto-recovery estándar<br>- Single AZ o Multi-AZ básica | **Amazon EKS 1.31** con arquitectura Multi-AZ:<br>- Karpenter para autoscaling inteligente de pods<br>- Nodos `m6i.xlarge` / `c6i.xlarge` distribuidos en 3 AZs<br>- Pod Disruption Budgets y Topology Spread Constraints |
+| **Base de Datos (RDBMS)** | **Amazon RDS for SQL Server 2022** (Web Edition o Standard):<br>- Instancia `db.t3.xlarge`<br>- Single-AZ con Storage GP3 (50 GB)<br>- Backups automáticos retención 7 días<br>- Cifrado KMS en reposo | **Amazon RDS for SQL Server 2022** (Enterprise / Standard):<br>- Despliegue **Multi-AZ con Always On Availability Groups**<br>- Instancia `db.r6i.2xlarge` (memoria optimizada)<br>- Storage GP3/IO2 provisionado con auto-scaling<br>- Read Replicas para queries de reportes y auditoría<br>- Backups continuos point-in-time (PITR) a 35 días |
+| **Message Broker** | **Amazon MQ for RabbitMQ 3.13**:<br>- Despliegue Single-Broker `mq.m5.large`<br>- Durabilidad en disco estándar | **Amazon MQ for RabbitMQ 3.13**:<br>- **Cluster Multi-AZ (Active/Standby o 3-node quórum)**<br>- Quorum queues habilitadas para tolerancia a particiones de red<br>- Instancia `mq.m5.xlarge` con almacenamiento EBS optimizado |
 | **Almacenamiento de Documentos (RAG)** | **Amazon S3 Standard**:<br>- Bucket para documentos y artefactos de conocimiento<br>- Cifrado SSE-S3 o SSE-KMS | **Amazon S3 con Lifecycle & Versioning**:<br>- Versionado inmutable y Object Lock (compliance audit)<br>- Cifrado obligatorio SSE-KMS con rotación anual de clave<br>- Intelligent-Tiering para reducir costos de almacenamiento |
 | **Gestión de Secretos** | **AWS Systems Manager Parameter Store** (SecureString con KMS) para parámetros y secrets básicos. | **AWS Secrets Manager** con rotación automática de credenciales de base de datos y llaves de proveedores LLM. Integración con External Secrets Operator (ESO) en EKS. |
 | **Red y Seguridad Perimetral** | - VPC con subnets públicas y privadas en 2 AZs<br>- 1 NAT Gateway (para contención de costos en staging)<br>- Security Groups estrictos con principio de mínimo privilegio | - VPC con subnets públicas, privadas y aisladas (Data Layer) en 3 AZs<br>- 3 NAT Gateways (alta disponibilidad por zona)<br>- **AWS WAF v2** en Application Load Balancer con reglas OWASP Core Rule Set y Rate Limiting agresivo |

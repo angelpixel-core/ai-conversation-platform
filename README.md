@@ -723,3 +723,6 @@ make check-all     # Run full quality barrier (format + lint + types + security 
   - 📄 Architecture Decision: [ADR 0011: Standardized Environment Variables, Secrets & Pydantic Settings](.agent/architecture/decisions/0011-standardized-environment-variables-and-secrets-management.md)
 - [x] [**CI/CD Pipeline Standardization:** GitHub Actions Modular Jobs, Service Containers & Docker Buildx](.agent/architecture/decisions/0012-github-actions-ci-cd-standardization-and-service-containers.md)
   - 📄 Architecture Decision: [ADR 0012: GitHub Actions CI/CD Standardization & Service Containers](.agent/architecture/decisions/0012-github-actions-ci-cd-standardization-and-service-containers.md)
+- [x] [**Cloud Infrastructure Matrix:** AWS 3-Tier VPC, EKS 1.31, RDS SQL Server 2022 & Amazon MQ](.agent/architecture/decisions/0013-cloud-infrastructure-requirements-and-provisioning-matrix.md)
+  - 📄 Architecture Decision: [ADR 0013: Cloud Infrastructure Requirements & Provisioning Matrix](.agent/architecture/decisions/0013-cloud-infrastructure-requirements-and-provisioning-matrix.md)
+
