@@ -39,7 +39,7 @@ Se adopta una política de configuración basada en **4 Niveles Jerárquicos**, 
 - [x] Se introduce el archivo canónico [`.env.template`](file:///apps/chatbot/service/api/.env.template) estructurado en 6 secciones funcionales:
   1. *Application & Core Server*: `APP_NAME`, `ENVIRONMENT`, `DEBUG`, `LOG_LEVEL`, `API_HOST`, `API_PORT`.
   2. *Database Persistence*: `PERSISTENCE_DRIVER`, `DB_SERVER`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DATABASE_URL`.
-  3. *Asynchronous Messaging Broker*: `MESSAGING_DRIVER`, `BROKER_URL`, `RABBITMQ_HOST`, `RABBITMQ_PORT`, `RABBITMQ_USER`, `RABBITMQ_PASSWORD`, topología de colas/exchanges.
+  3. *Asynchronous Messaging Broker*: `MESSAGING_DRIVER`, `BROKER_URL`, `BROKER_HOST`, `BROKER_PORT`, `BROKER_USER`, `BROKER_PASSWORD`, topología canónica `BROKER_*` (con alias `RABBITMQ_*` para retrocompatibilidad).
   4. *Multi-Tenancy & Policy Engine*: `ENABLE_TENANT_MIDDLEWARE`, `DEFAULT_TENANT_ID`.
   5. *Enterprise AI Governance & Observability*: `ENABLE_OPENTELEMETRY`, `OTEL_SERVICE_NAME`, `OTEL_EXPORTER_OTLP_ENDPOINT`.
   6. *LLM Inference Gateway*: `LLM_PROVIDER`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `LLM_TIMEOUT_SECONDS`.
@@ -50,7 +50,7 @@ Se adopta una política de configuración basada en **4 Niveles Jerárquicos**, 
 - [x] Se formalizan modelos modulares en [settings.py](file:///src/infrastructure/shared/config/settings.py):
   - `AppSettings`: Controles de ciclo de vida HTTP y logging con validador de niveles estándar (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`) y rango de puertos (1-65535).
   - `DatabaseSettings`: Validador de puerto MSSQL y método seguro `get_database_url()`.
-  - `MessagingSettings`: Validador de puerto AMQP y métodos `get_broker_url()` / `get_rabbitmq_url()`.
+  - `MessagingSettings`: Estandarización canónica a `BROKER_*` (con `validation_alias=AliasChoices(...)` y properties para retrocompatibilidad transparente), validador de puerto AMQP y métodos `get_broker_url()` / `get_rabbitmq_url()`.
   - `GovernanceSettings`: Parámetros de telemetría y OTLP endpoint.
   - `LlmSettings`: Configuración de proveedores LLM y timeouts.
 - [x] **Fail-Fast Driver Validation:** Validador de modelo (`@model_validator(mode="after")`) que asegura que si `PERSISTENCE_DRIVER == "mssql"` o `MESSAGING_DRIVER == "rabbitmq"`, los parámetros esenciales de conexión no estén vacíos antes de inicializar el composition root.

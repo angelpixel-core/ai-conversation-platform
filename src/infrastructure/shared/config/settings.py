@@ -4,7 +4,7 @@ from enum import StrEnum
 from functools import lru_cache
 from urllib.parse import quote_plus
 
-from pydantic import field_validator, model_validator
+from pydantic import AliasChoices, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -108,30 +108,61 @@ class MessagingSettings(BaseSettings):
     """Message broker and event streaming configuration."""
 
     MESSAGING_DRIVER: MessagingDriver = MessagingDriver.IN_MEMORY
-    RABBITMQ_HOST: str = "localhost"
-    RABBITMQ_PORT: int = 5672
-    RABBITMQ_USER: str = "guest"
-    RABBITMQ_PASSWORD: str = "guest"  # noqa: S105 # nosec S105
+    BROKER_HOST: str = Field(
+        default="localhost",
+        validation_alias=AliasChoices("BROKER_HOST", "RABBITMQ_HOST"),
+    )
+    BROKER_PORT: int = Field(
+        default=5672,
+        validation_alias=AliasChoices("BROKER_PORT", "RABBITMQ_PORT"),
+    )
+    BROKER_USER: str = Field(
+        default="guest",
+        validation_alias=AliasChoices("BROKER_USER", "RABBITMQ_USER"),
+    )
+    BROKER_PASSWORD: str = Field(
+        default="guest",  # noqa: S105 # nosec S105
+        validation_alias=AliasChoices("BROKER_PASSWORD", "RABBITMQ_PASSWORD"),
+    )
     BROKER_URL: str | None = None
-    RABBITMQ_PREFETCH_COUNT: int = 10
-    RABBITMQ_EXCHANGE: str = "ai_platform.events"
-    RABBITMQ_QUEUE: str = "conversation.llm_processing.queue"
-    RABBITMQ_DLX_EXCHANGE: str = "ai_platform.events.dlx"
-    RABBITMQ_DLQ: str = "conversation.llm_processing.dlq"
-    RABBITMQ_ROUTING_KEY: str = "conversation.message.appended"
+    BROKER_PREFETCH_COUNT: int = Field(
+        default=10,
+        validation_alias=AliasChoices("BROKER_PREFETCH_COUNT", "RABBITMQ_PREFETCH_COUNT"),
+    )
+    BROKER_EXCHANGE: str = Field(
+        default="ai_platform.events",
+        validation_alias=AliasChoices("BROKER_EXCHANGE", "RABBITMQ_EXCHANGE"),
+    )
+    BROKER_QUEUE: str = Field(
+        default="conversation.llm_processing.queue",
+        validation_alias=AliasChoices("BROKER_QUEUE", "RABBITMQ_QUEUE"),
+    )
+    BROKER_DLX_EXCHANGE: str = Field(
+        default="ai_platform.events.dlx",
+        validation_alias=AliasChoices("BROKER_DLX_EXCHANGE", "RABBITMQ_DLX_EXCHANGE"),
+    )
+    BROKER_DLQ: str = Field(
+        default="conversation.llm_processing.dlq",
+        validation_alias=AliasChoices("BROKER_DLQ", "RABBITMQ_DLQ"),
+    )
+    BROKER_ROUTING_KEY: str = Field(
+        default="conversation.message.appended",
+        validation_alias=AliasChoices("BROKER_ROUTING_KEY", "RABBITMQ_ROUTING_KEY"),
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
+        populate_by_name=True,
     )
 
-    @field_validator("RABBITMQ_PORT", mode="after")
+    @field_validator("BROKER_PORT", mode="after")
     @classmethod
-    def validate_rabbitmq_port(cls, v: int) -> int:
-        """Validate RabbitMQ port range."""
+    def validate_broker_port(cls, v: int) -> int:
+        """Validate broker port range."""
         if not (1 <= v <= 65535):
-            raise ValueError(f"RABBITMQ_PORT must be between 1 and 65535, got {v}")
+            raise ValueError(f"BROKER_PORT must be between 1 and 65535, got {v}")
         return v
 
     def get_broker_url(self) -> str:
@@ -139,12 +170,53 @@ class MessagingSettings(BaseSettings):
         if self.BROKER_URL:
             return self.BROKER_URL
 
-        safe_pass = quote_plus(self.RABBITMQ_PASSWORD)
-        return f"amqp://{self.RABBITMQ_USER}:{safe_pass}@{self.RABBITMQ_HOST}:{self.RABBITMQ_PORT}/"
+        safe_pass = quote_plus(self.BROKER_PASSWORD)
+        return f"amqp://{self.BROKER_USER}:{safe_pass}@{self.BROKER_HOST}:{self.BROKER_PORT}/"
 
     def get_rabbitmq_url(self) -> str:
-        """Return canonical broker URL."""
+        """Return canonical broker URL (backward compatibility alias)."""
         return self.get_broker_url()
+
+    # Backwards-compatibility properties for legacy RABBITMQ_* access
+    @property
+    def RABBITMQ_HOST(self) -> str:
+        return self.BROKER_HOST
+
+    @property
+    def RABBITMQ_PORT(self) -> int:
+        return self.BROKER_PORT
+
+    @property
+    def RABBITMQ_USER(self) -> str:
+        return self.BROKER_USER
+
+    @property
+    def RABBITMQ_PASSWORD(self) -> str:
+        return self.BROKER_PASSWORD
+
+    @property
+    def RABBITMQ_PREFETCH_COUNT(self) -> int:
+        return self.BROKER_PREFETCH_COUNT
+
+    @property
+    def RABBITMQ_EXCHANGE(self) -> str:
+        return self.BROKER_EXCHANGE
+
+    @property
+    def RABBITMQ_QUEUE(self) -> str:
+        return self.BROKER_QUEUE
+
+    @property
+    def RABBITMQ_DLX_EXCHANGE(self) -> str:
+        return self.BROKER_DLX_EXCHANGE
+
+    @property
+    def RABBITMQ_DLQ(self) -> str:
+        return self.BROKER_DLQ
+
+    @property
+    def RABBITMQ_ROUTING_KEY(self) -> str:
+        return self.BROKER_ROUTING_KEY
 
 
 class TenancySettings(BaseSettings):
@@ -199,6 +271,13 @@ class Settings(
 ):
     """Unified application settings with fail-fast validation for drivers."""
 
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        populate_by_name=True,
+    )
+
     @model_validator(mode="after")
     def validate_fail_fast_drivers(self) -> "Settings":
         """Fail-fast validation ensuring required driver configuration is complete."""
@@ -210,10 +289,10 @@ class Settings(
                     )
         if self.MESSAGING_DRIVER == MessagingDriver.RABBITMQ:
             if not self.BROKER_URL:
-                if not self.RABBITMQ_HOST or not self.RABBITMQ_USER:
+                if not self.BROKER_HOST or not self.BROKER_USER:
                     raise ValueError(
                         "MESSAGING_DRIVER='rabbitmq' requires "
-                        "non-empty RABBITMQ_HOST and RABBITMQ_USER"
+                        "non-empty BROKER_HOST/RABBITMQ_HOST and BROKER_USER/RABBITMQ_USER"
                     )
         return self
 

@@ -92,7 +92,7 @@ Se establece una matriz de 4 niveles para la configuración:
 - [x] Toda variable se encuentra declarada y tipada en [`src/infrastructure/shared/config/settings.py`](file:///src/infrastructure/shared/config/settings.py) utilizando `pydantic-settings`.
 - [x] Modelos modulares especializados: `AppSettings`, `DatabaseSettings`, `MessagingSettings`, `TenancySettings`, `GovernanceSettings`, `LlmSettings`.
 - [x] Validadores estrictos (`@field_validator`):
-  - Rango de puertos válidos (`1 <= port <= 65535`) para `API_PORT`, `DB_PORT` y `RABBITMQ_PORT`.
+  - Rango de puertos válidos (`1 <= port <= 65535`) para `API_PORT`, `DB_PORT` y `BROKER_PORT` (con alias `RABBITMQ_PORT`).
   - Nivel de log (`LOG_LEVEL`) validado contra niveles estándar de Python (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`).
 - [x] Principio **Fail-Fast** en arranque: `@model_validator(mode="after")` que comprueba que si se configuran drivers externos (`mssql` o `rabbitmq`), los parámetros requeridos no sean cadenas vacías.
 - [x] Principio de Aislamiento Hexagonal: Queda terminantemente prohibido hacer `os.environ.get()` ad-hoc dentro de capas de Dominio o Aplicación; toda configuración se inyecta desde el Composition Root (`src/container.py` y `src/worker_container.py`).

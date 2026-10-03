@@ -1,5 +1,7 @@
 """Unit tests for infrastructure settings and configuration."""
 
+from typing import Any
+
 import pytest
 from pydantic import ValidationError
 
@@ -69,15 +71,35 @@ def test_default_messaging_driver_is_in_memory() -> None:
     assert settings.MESSAGING_DRIVER == MessagingDriver.IN_MEMORY
 
 
-def test_messaging_settings_rabbitmq_url_construction() -> None:
+def test_messaging_settings_canonical_broker_url_construction() -> None:
     msg_settings = MessagingSettings(
-        RABBITMQ_HOST="rabbit.example.com",
-        RABBITMQ_PORT=5672,
-        RABBITMQ_USER="guest",
-        RABBITMQ_PASSWORD="p@ssword#123",  # noqa: S106
+        BROKER_HOST="broker.example.com",
+        BROKER_PORT=5672,
+        BROKER_USER="app_user",
+        BROKER_PASSWORD="p@ssword#123",  # noqa: S106
     )
+    url = msg_settings.get_broker_url()
+    assert "amqp://app_user:p%40ssword%23123@broker.example.com:5672/" == url
+    assert msg_settings.get_rabbitmq_url() == url
+    # Verify backwards compatibility properties
+    assert msg_settings.RABBITMQ_HOST == "broker.example.com"
+    assert msg_settings.RABBITMQ_PORT == 5672
+    assert msg_settings.RABBITMQ_USER == "app_user"
+    assert msg_settings.RABBITMQ_PASSWORD == "p@ssword#123"  # noqa: S105
+
+
+def test_messaging_settings_rabbitmq_url_construction() -> None:
+    legacy_kwargs: dict[str, Any] = {
+        "RABBITMQ_HOST": "rabbit.example.com",
+        "RABBITMQ_PORT": 5672,
+        "RABBITMQ_USER": "guest",
+        "RABBITMQ_PASSWORD": "p@ssword#123",  # noqa: S106
+    }
+    msg_settings = MessagingSettings(**legacy_kwargs)
     url = msg_settings.get_rabbitmq_url()
     assert "amqp://guest:p%40ssword%23123@rabbit.example.com:5672/" == url
+    assert msg_settings.get_broker_url() == url
+    assert msg_settings.BROKER_HOST == "rabbit.example.com"
 
 
 def test_messaging_settings_broker_url_override() -> None:
@@ -117,7 +139,10 @@ def test_database_settings_invalid_port_raises_validation_error() -> None:
 
 def test_messaging_settings_invalid_port_raises_validation_error() -> None:
     with pytest.raises(ValidationError):
-        MessagingSettings(RABBITMQ_PORT=-1)
+        MessagingSettings(BROKER_PORT=-1)
+    legacy_invalid_kwargs: dict[str, Any] = {"RABBITMQ_PORT": -1}
+    with pytest.raises(ValidationError):
+        MessagingSettings(**legacy_invalid_kwargs)
 
 
 def test_llm_settings_defaults() -> None:
@@ -140,6 +165,13 @@ def test_fail_fast_driver_validation_rabbitmq_empty_host() -> None:
     with pytest.raises(ValidationError, match="MESSAGING_DRIVER='rabbitmq' requires non-empty"):
         Settings(
             MESSAGING_DRIVER=MessagingDriver.RABBITMQ,
-            RABBITMQ_HOST="",
+            BROKER_HOST="",
             BROKER_URL=None,
         )
+    legacy_empty_kwargs: dict[str, Any] = {
+        "MESSAGING_DRIVER": MessagingDriver.RABBITMQ,
+        "RABBITMQ_HOST": "",
+        "BROKER_URL": None,
+    }
+    with pytest.raises(ValidationError, match="MESSAGING_DRIVER='rabbitmq' requires non-empty"):
+        Settings(**legacy_empty_kwargs)
