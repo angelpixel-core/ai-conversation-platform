@@ -3,17 +3,30 @@
 from datetime import UTC, datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class StartWorkflowRequest(BaseModel):
     """Payload to launch a multi-agent state graph execution."""
 
-    name: str = Field(..., description="Descriptive name of the workflow execution")
+    name: str = Field(
+        default="research_and_audit_pipeline",
+        description="Descriptive name of the workflow execution",
+    )
     initial_node: str = Field(default="supervisor", description="Entry node in graph")
     initial_state: dict[str, Any] = Field(
         default_factory=dict, description="Initial global state data"
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def handle_aliases(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "name" not in data and "graph_name" in data:
+                data["name"] = data["graph_name"]
+            if "initial_state" not in data and "initial_context" in data:
+                data["initial_state"] = data["initial_context"]
+        return data
 
 
 class ResumeWorkflowRequest(BaseModel):
@@ -22,6 +35,17 @@ class ResumeWorkflowRequest(BaseModel):
     resumed_state_updates: dict[str, Any] = Field(
         default_factory=dict, description="Operator inputs or resolved tool output updates"
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def handle_aliases(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "resumed_state_updates" not in data:
+                if "updated_context" in data:
+                    data["resumed_state_updates"] = data["updated_context"]
+                elif "initial_state" in data:
+                    data["resumed_state_updates"] = data["initial_state"]
+        return data
 
 
 class WorkflowStateResponse(BaseModel):

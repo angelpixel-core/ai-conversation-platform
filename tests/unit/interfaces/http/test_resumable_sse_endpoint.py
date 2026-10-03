@@ -34,6 +34,7 @@ def test_parse_last_event_id_valid() -> None:
     assert parse_last_event_id(None) == -1
     assert parse_last_event_id("0") == 0
     assert parse_last_event_id("42") == 42
+    assert parse_last_event_id("chunk-2") == 2
 
 
 def test_parse_last_event_id_invalid() -> None:

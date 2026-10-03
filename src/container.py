@@ -20,11 +20,17 @@ from src.application.conversations.queries.stream_conversation import (
 from src.application.conversations.services.stream_recovery_service import (
     StreamRecoveryService,
 )
+from src.application.governance.services.guardrail_pipeline_service import (
+    SafetyGuardrailPipelineService,
+)
 from src.application.knowledge.services.hybrid_retriever_service import (
     HybridRetrieverService,
 )
 from src.application.routing.services.model_router_service import (
     ModelRouterService,
+)
+from src.application.shared.governance.guarded_command_executor import (
+    GuardedCommandExecutor,
 )
 from src.application.shared.idempotency.idempotent_command_executor import (
     IdempotentCommandExecutor,
@@ -53,11 +59,20 @@ from src.domain.audit.ports.audit_repository_port import AuditRepositoryPort
 from src.domain.conversations.ports.conversation_repository import (
     ConversationRepository,
 )
+from src.domain.governance.ports.incident_repository_port import (
+    IncidentRepositoryPort,
+)
+from src.domain.governance.ports.pii_scanner_port import PiiScannerPort
+from src.domain.governance.ports.safety_guardrail_port import (
+    SafetyGuardrailPort,
+)
 from src.domain.knowledge.ports.embedding_client_port import EmbeddingClientPort
 from src.domain.knowledge.ports.knowledge_repository_port import (
     KnowledgeRepositoryPort,
 )
 from src.domain.routing.ports.model_catalog_port import ModelCatalogPort
+from src.domain.tenants.entities.tenant import Tenant
+from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.domain.tools.ports.sandboxed_tool_runner_port import (
     SandboxedToolRunnerPort,
 )
@@ -67,13 +82,25 @@ from src.domain.tools.ports.tool_approval_repository_port import (
 from src.infrastructure.embeddings.fake_embedding_client import (
     FakeEmbeddingClientAdapter,
 )
+from src.infrastructure.governance.heuristic_injection_detector_adapter import (
+    HeuristicInjectionDetectorAdapter,
+)
+from src.infrastructure.governance.regex_pii_scanner_adapter import (
+    RegexPiiScannerAdapter,
+)
 from src.infrastructure.llm.fake_llm_client import FakeLlmClientAdapter
+from src.infrastructure.messaging.rabbitmq.anyio_document_indexer_worker import (
+    AnyioDocumentIndexerWorker,
+)
 from src.infrastructure.persistence.in_memory import (
     InMemoryAuditRepositoryAdapter,
     InMemoryIdempotencyRepositoryAdapter,
     InMemoryStreamBufferRepositoryAdapter,
     InMemoryToolApprovalRepositoryAdapter,
     InMemoryUnitOfWork,
+)
+from src.infrastructure.persistence.in_memory.in_memory_incident_repository import (
+    InMemoryIncidentRepositoryAdapter,
 )
 from src.infrastructure.persistence.mssql import (
     InMemoryWorkflowCheckpointRepositoryAdapter,
@@ -88,6 +115,9 @@ from src.infrastructure.persistence.mssql import (
     create_mssql_engine,
     create_session_factory,
 )
+from src.infrastructure.persistence.mssql.mssql_incident_repository import (
+    MssqlIncidentRepository,
+)
 from src.infrastructure.routing.in_memory_model_catalog import (
     InMemoryModelCatalogAdapter,
 )
@@ -96,6 +126,7 @@ from src.infrastructure.shared.config.settings import (
     Settings,
     get_settings,
 )
+from src.infrastructure.telemetry.opentelemetry_config import setup_opentelemetry
 from src.infrastructure.tools.anyio_sandboxed_tool_runner import (
     AnyioSandboxedToolRunner,
 )
@@ -130,12 +161,35 @@ class AppContainer:
     tool_policy_evaluator: ToolPolicyEvaluatorService | None = None
     workflow_checkpoint_repo: WorkflowCheckpointRepositoryPort | None = None
     graph_execution_engine: GraphExecutionEngine | None = None
+    incident_repo: IncidentRepositoryPort | None = None
+    pii_scanner: PiiScannerPort | None = None
+    safety_guardrail: SafetyGuardrailPort | None = None
+    guardrail_pipeline: SafetyGuardrailPipelineService | None = None
+    guarded_executor: GuardedCommandExecutor | None = None
+    indexer_worker: AnyioDocumentIndexerWorker | None = None
+
+
+def _seed_default_demo_tenant(uow: UnitOfWork) -> None:
+    """Auto-seed default demonstration tenants ('corp-acme' and 'default-tenant') if absent."""
+    demo_tenants = [
+        ("corp-acme", "ACME Corporation"),
+        ("default-tenant", "Default System Tenant"),
+    ]
+    try:
+        with uow:
+            for tid, tname in demo_tenants:
+                if uow.tenants.get(TenantId(tid)) is None:
+                    uow.tenants.add(Tenant.create_demo(tid, tname))
+            uow.commit()
+    except Exception as exc:
+        logger.debug("Demo tenant auto-seed skipped: %s", exc)
 
 
 def _wire_app_persistence(
     settings: Settings,
     unit_of_work: UnitOfWork | None,
     workflow_checkpoint_repo: WorkflowCheckpointRepositoryPort | None,
+    incident_repo: IncidentRepositoryPort | None = None,
 ) -> tuple[
     UnitOfWork,
     ConversationRepository,
@@ -145,6 +199,7 @@ def _wire_app_persistence(
     KnowledgeRepositoryPort | None,
     ToolApprovalRepositoryPort | None,
     WorkflowCheckpointRepositoryPort,
+    IncidentRepositoryPort,
 ]:
     read_repo: ConversationRepository | None = None
     read_knowledge_repo: KnowledgeRepositoryPort | None = None
@@ -176,9 +231,17 @@ def _wire_app_persistence(
             if session_factory is not None:
                 read_tool_approval_repo = MssqlToolApprovalRepository(session=session_factory())
         resolved_workflow_repo = workflow_checkpoint_repo or (
-            MssqlWorkflowCheckpointRepository(session=session_factory())
+            MssqlWorkflowCheckpointRepository(session=session_factory)
             if session_factory is not None
             else InMemoryWorkflowCheckpointRepositoryAdapter()
+        )
+        resolved_incident_repo = incident_repo or (
+            getattr(uow, "incidents", None)
+            or (
+                MssqlIncidentRepository(session=session_factory)
+                if session_factory is not None
+                else InMemoryIncidentRepositoryAdapter()
+            )
         )
     elif settings.PERSISTENCE_DRIVER == PersistenceDriver.MSSQL:
         engine = create_mssql_engine(settings.get_database_url())
@@ -191,8 +254,11 @@ def _wire_app_persistence(
         read_knowledge_repo = MssqlKnowledgeRepository(session=session_factory())
         read_tool_approval_repo = MssqlToolApprovalRepository(session=session_factory())
         resolved_workflow_repo = workflow_checkpoint_repo or MssqlWorkflowCheckpointRepository(
-            session=session_factory()
+            session=session_factory
         )
+        resolved_incident_repo = incident_repo or MssqlIncidentRepository(session=session_factory)
+        _seed_default_demo_tenant(uow)
+
     else:
         uow = InMemoryUnitOfWork()
         read_repo = uow.conversations
@@ -204,6 +270,10 @@ def _wire_app_persistence(
         resolved_workflow_repo = (
             workflow_checkpoint_repo or InMemoryWorkflowCheckpointRepositoryAdapter()
         )
+        resolved_incident_repo = (
+            incident_repo or getattr(uow, "incidents", None) or InMemoryIncidentRepositoryAdapter()
+        )
+        _seed_default_demo_tenant(uow)
 
     if read_repo is None:
         read_repo = uow.conversations
@@ -217,6 +287,7 @@ def _wire_app_persistence(
         read_knowledge_repo,
         read_tool_approval_repo,
         resolved_workflow_repo,
+        resolved_incident_repo,
     )
 
 
@@ -226,8 +297,12 @@ def create_app_container(
     llm_client: LlmClientPort | None = None,
     model_catalog: ModelCatalogPort | None = None,
     embedding_client: EmbeddingClientPort | None = None,
+    incident_repo: IncidentRepositoryPort | None = None,
+    pii_scanner: PiiScannerPort | None = None,
+    safety_guardrail: SafetyGuardrailPort | None = None,
     *,
     enable_tenant_middleware: bool | None = None,
+    enable_opentelemetry: bool | None = None,
     workflow_checkpoint_repo: WorkflowCheckpointRepositoryPort | None = None,
     graph_execution_engine: GraphExecutionEngine | None = None,
 ) -> AppContainer:
@@ -243,7 +318,10 @@ def create_app_container(
         read_knowledge_repo,
         read_tool_approval_repo,
         resolved_workflow_repo,
-    ) = _wire_app_persistence(current_settings, unit_of_work, workflow_checkpoint_repo)
+        resolved_incident_repo,
+    ) = _wire_app_persistence(
+        current_settings, unit_of_work, workflow_checkpoint_repo, incident_repo
+    )
 
     client = llm_client if llm_client is not None else FakeLlmClientAdapter()
 
@@ -283,6 +361,30 @@ def create_app_container(
         else current_settings.ENABLE_TENANT_MIDDLEWARE
     )
 
+    use_otel = (
+        enable_opentelemetry
+        if enable_opentelemetry is not None
+        else current_settings.ENABLE_OPENTELEMETRY
+    )
+    if use_otel:
+        setup_opentelemetry(service_name=current_settings.OTEL_SERVICE_NAME)
+
+    pii_scanner_adapter = pii_scanner or RegexPiiScannerAdapter()
+    safety_guardrail_adapter = safety_guardrail or HeuristicInjectionDetectorAdapter()
+    guardrail_pipeline = SafetyGuardrailPipelineService(
+        safety_guardrail=safety_guardrail_adapter,
+        pii_scanner=pii_scanner_adapter,
+    )
+    guarded_executor = GuardedCommandExecutor(
+        pipeline=guardrail_pipeline,
+        incident_repo=resolved_incident_repo,
+    )
+
+    indexer_worker = AnyioDocumentIndexerWorker(
+        unit_of_work=uow,
+        embedding_client=emb_client,
+    )
+
     fastapi_app = build_api(
         create_conversation_handler=create_handler,
         send_message_handler=send_handler,
@@ -290,8 +392,12 @@ def create_app_container(
         idempotent_executor=idempotent_executor,
         stream_recovery_service=stream_recovery_service,
         unit_of_work=uow,
+        guarded_executor=guarded_executor,
+        incident_repo=resolved_incident_repo,
         enable_tenant_middleware=use_tenant_middleware,
+        enable_opentelemetry_middleware=use_otel,
         retriever_service=retriever_service,
+        indexer_worker=indexer_worker,
         workflow_checkpoint_repo=resolved_workflow_repo,
         graph_execution_engine=graph_execution_engine,
     )
@@ -319,6 +425,12 @@ def create_app_container(
         tool_policy_evaluator=tool_policy_evaluator,
         workflow_checkpoint_repo=resolved_workflow_repo,
         graph_execution_engine=graph_execution_engine,
+        incident_repo=resolved_incident_repo,
+        pii_scanner=pii_scanner_adapter,
+        safety_guardrail=safety_guardrail_adapter,
+        guardrail_pipeline=guardrail_pipeline,
+        guarded_executor=guarded_executor,
+        indexer_worker=indexer_worker,
     )
 
 

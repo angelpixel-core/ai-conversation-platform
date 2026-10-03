@@ -40,10 +40,18 @@ def clean_db(mssql_engine: Engine) -> Generator[None, None, None]:
 
     def _truncate_tables() -> None:
         with Session(mssql_engine) as session:
+            session.execute(text("DELETE FROM pii_audit_logs"))
+            session.execute(text("DELETE FROM security_incidents"))
+            session.execute(text("DELETE FROM workflow_checkpoints"))
+            session.execute(text("DELETE FROM workflow_instances"))
+            session.execute(text("DELETE FROM tool_execution_audits"))
+            session.execute(text("DELETE FROM tool_approvals"))
+            session.execute(text("DELETE FROM knowledge_document_chunks"))
+            session.execute(text("DELETE FROM knowledge_documents"))
+            session.execute(text("DELETE FROM stream_buffer_chunks"))
             session.execute(text("DELETE FROM messages"))
             session.execute(text("DELETE FROM outbox_messages"))
             session.execute(text("DELETE FROM conversations"))
-            session.execute(text("DELETE FROM stream_buffer_chunks"))
             session.execute(text("DELETE FROM audit_logs"))
             session.execute(text("DELETE FROM idempotency_keys"))
             session.execute(text("DELETE FROM tenant_policies"))

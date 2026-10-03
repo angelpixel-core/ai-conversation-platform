@@ -21,6 +21,8 @@ class InMemoryStreamBufferRepositoryAdapter(StreamBufferRepositoryPort):
         self._buffers: dict[str, list[StreamChunk]] = defaultdict(list)
 
     async def append_chunk(self, stream_id: str, chunk: StreamChunk) -> None:
+        if chunk.sequence_number == 1:
+            self._buffers[stream_id].clear()
         self._buffers[stream_id].append(chunk)
 
     async def get_chunks_since(self, stream_id: str, since_sequence: int) -> list[StreamChunk]:

@@ -69,7 +69,7 @@ def upgrade() -> None:
         sa.Column("embedding_json", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column("page_number", sa.Integer(), nullable=True),
         sa.Column("created_at", sqlmodel.sql.sqltypes.UTCDateTime(), nullable=False),
-        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="NO ACTION"),
         sa.ForeignKeyConstraint(["document_id"], ["knowledge_documents.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )

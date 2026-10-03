@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import anyio
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from src.application.shared.ports.message_broker_port import MessageBrokerPort
 from src.domain.shared.events.event_envelope import EventEnvelope
@@ -50,12 +50,14 @@ class OutboxRelayService:
         batch_size: int = 10,
         poll_interval: float = 0.5,
         topic_mapper: Callable[[str], str] | None = None,
+        event_types: list[str] | None = None,
     ) -> None:
         self.session_factory = session_factory
         self.message_broker = message_broker
         self.batch_size = batch_size
         self.poll_interval = poll_interval
         self.topic_mapper = topic_mapper or default_topic_mapper
+        self.event_types = event_types
         self._is_running: bool = False
 
     async def poll_and_publish_once(self) -> int:
@@ -71,11 +73,15 @@ class OutboxRelayService:
                 select(OutboxMessageModel)
                 .with_hint(OutboxMessageModel, "WITH (UPDLOCK, READPAST)", "mssql")
                 .where(OutboxMessageModel.status == OutboxStatus.PENDING.value)
-                .order_by(OutboxMessageModel.created_at, OutboxMessageModel.id)  # type: ignore[arg-type]
-                .limit(self.batch_size)
+            )
+            if self.event_types is not None:
+                stmt = stmt.where(col(OutboxMessageModel.event_type).in_(self.event_types))
+            stmt = stmt.order_by(OutboxMessageModel.created_at, OutboxMessageModel.id).limit(  # type: ignore[arg-type]
+                self.batch_size
             )
             messages = session.exec(stmt).all()
             if not messages:
+                session.rollback()
                 return 0
 
             dispatched_count = 0
@@ -129,8 +135,14 @@ class OutboxRelayService:
         """Run the polling loop continuously until stopped."""
         self._is_running = True
         while self._is_running:
-            count = await self.poll_and_publish_once()
-            if count == 0:
+            try:
+                count = await self.poll_and_publish_once()
+                if count == 0:
+                    await anyio.sleep(self.poll_interval)
+            except anyio.get_cancelled_exc_class():
+                break
+            except Exception as exc:
+                logger.warning("Outbox relay polling encountered transient error: %s", exc)
                 await anyio.sleep(self.poll_interval)
 
     def stop(self) -> None:

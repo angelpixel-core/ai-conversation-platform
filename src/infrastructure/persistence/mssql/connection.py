@@ -36,6 +36,9 @@ def create_mssql_engine(
         # SQLite in-memory or file databases do not use standard QueuePool arguments
         return create_engine(url, **engine_kwargs)
 
+    if "mssql" in url:
+        engine_kwargs.setdefault("connect_args", {"login_timeout": 5, "timeout": 15})
+
     engine_kwargs.update(
         {
             "pool_size": pool_size,

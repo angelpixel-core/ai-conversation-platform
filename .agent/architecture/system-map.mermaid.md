@@ -23,7 +23,12 @@ graph TD
         WorkflowsRouterNode["WorkflowsRouter (/tenants/{tenant_id}/workflows)"]
         AgentsSchemasNode["AgentsSchemas (DTOs)"]
         WorkflowSSENode["Streaming Workflow Events (SSE: agent_handoff, subagent_completed, checkpoint_saved)"]
+        OpenTelemetryMiddlewareNode["OpenTelemetryMiddleware (W3C trace context, X-Trace-ID, X-Span-ID)"]
+        GovernanceRouterNode["GovernanceRouter (/admin/tenants/{tenant_id}/incidents, /admin/governance/metrics)"]
+        GovernanceSchemasNode["GovernanceSchemas (IncidentResponse, GovernanceMetricsResponse)"]
+        SafetyViolationHandlerNode["SafetyPolicyViolation Handler (HTTP 400 Bad Request)"]
     end
+
 
     subgraph Application ["Application Layer (CQRS & Ports)"]
         CreateConvCmd["CreateConversationCommand"]
@@ -49,6 +54,8 @@ graph TD
         ResumeStreamHandlerNode["ResumeStreamQueryHandler"]
         TenantContextNode["TenantContext (src/application/shared/tenancy)"]
         ModelRouterServiceNode["ModelRouterService"]
+        ProvisionTenantCmd["ProvisionTenantCommand"]
+        ProvisionTenantHandler["ProvisionTenantCommandHandler"]
         ReserveQuotaCmd["ReserveQuotaCommand"]
         ReserveQuotaHandler["ReserveQuotaCommandHandler"]
         SettleQuotaCmd["SettleQuotaCommand"]
@@ -72,6 +79,15 @@ graph TD
         StartWorkflowHandlerNode["StartWorkflowCommandHandler"]
         ResumeWorkflowCmd["ResumeWorkflowCommand"]
         ResumeWorkflowHandlerNode["ResumeWorkflowCommandHandler"]
+        SafetyGuardrailPipelineServiceNode["SafetyGuardrailPipelineService"]
+        GuardedCommandExecutorNode["GuardedCommandExecutor"]
+        TraceContextCarrierNode["TraceContextCarrier"]
+        RecordSecurityIncidentCmd["RecordSecurityIncidentCommand"]
+        RecordSecurityIncidentHandlerNode["RecordSecurityIncidentHandler"]
+        ListIncidentsQueryNode["ListIncidentsQuery"]
+        ListIncidentsQueryHandlerNode["ListIncidentsQueryHandler"]
+        GetGovernanceMetricsQueryNode["GetGovernanceMetricsQuery"]
+        GetGovernanceMetricsQueryHandlerNode["GetGovernanceMetricsQueryHandler"]
     end
 
     subgraph Domain ["Domain Layer (Core Business)"]
@@ -142,6 +158,20 @@ graph TD
         WorkflowNotFoundErr["WorkflowNotFoundError"]
         InvalidGraphTransitionErr["InvalidGraphTransitionError"]
         GraphCycleDetectedErr["GraphCycleDetectedError"]
+        SafetyVerdictVO["SafetyVerdict (ValueObject)"]
+        PiiEntityMatchVO["PiiEntityMatch (ValueObject)"]
+        TraceContextVO["TraceContext (ValueObject)"]
+        IncidentSeverityVO["IncidentSeverity (ValueObject)"]
+        SecurityIncidentAggregate["SecurityIncident (AggregateRoot)"]
+        SafetyViolationBlockedEvent["SafetyViolationBlockedDomainEvent"]
+        PromptInjectionDetectedEvent["PromptInjectionDetectedDomainEvent"]
+        PiiRedactionAppliedEvent["PiiRedactionAppliedDomainEvent"]
+        SafetyGuardrailPortNode["SafetyGuardrailPort (Port)"]
+        PiiScannerPortNode["PiiScannerPort (Port)"]
+        IncidentRepoPortNode["IncidentRepositoryPort (Port)"]
+        SafetyPolicyViolationErr["SafetyPolicyViolationError"]
+        PiiMaskingErr["PiiMaskingError"]
+        IncidentNotFoundErr["IncidentNotFoundError"]
     end
 
     subgraph Infrastructure ["Infrastructure (Driven Adapters)"]
@@ -191,6 +221,13 @@ graph TD
         InMemoryWorkflowCheckpointRepoNode["InMemoryWorkflowCheckpointRepositoryAdapter"]
         MultiAgentTopologyNode["MultiAgentTopologyConfig"]
         AnyioSubagentWorkerNode["AnyioSubagentWorker"]
+        GovernanceMapperNode["GovernanceMapper"]
+        MssqlIncidentRepoNode["MssqlIncidentRepository"]
+        InMemoryIncidentRepoNode["InMemoryIncidentRepositoryAdapter"]
+        RegexPiiScannerAdapterNode["RegexPiiScannerAdapter"]
+        HeuristicInjectionDetectorAdapterNode["HeuristicInjectionDetectorAdapter"]
+        AnyioStreamGuardrailFilterNode["AnyioStreamGuardrailFilter"]
+        OpenTelemetryConfigNode["OpenTelemetryConfig (W3C Propagator)"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 
@@ -217,6 +254,7 @@ graph TD
     TenantContextMiddlewareNode --> TenantContextNode
     TenantDependencyNode --> TenantContextNode
     TenantAdminRouterNode --> UOWPort
+    TenantAdminRouterNode --> ProvisionTenantHandler
     TenantAdminRouterNode --> ReserveQuotaHandler
 
     %% Application orchestration
@@ -461,4 +499,49 @@ graph TD
     AnyioSubagentWorkerNode --> SubAgentExecutorPortNode
     AnyioSubagentWorkerNode --> EventPubPort
     AnyioSubagentWorkerNode --> MultiAgentTopologyNode
+    SecurityIncidentAggregate -.-> SafetyViolationBlockedEvent
+    SecurityIncidentAggregate -.-> PromptInjectionDetectedEvent
+    SecurityIncidentAggregate --> IncidentSeverityVO
+    SecurityIncidentAggregate --> TenantIdVO
+    SafetyGuardrailPipelineServiceNode --> SafetyGuardrailPortNode
+    SafetyGuardrailPipelineServiceNode --> PiiScannerPortNode
+    GuardedCommandExecutorNode --> SafetyGuardrailPipelineServiceNode
+    GuardedCommandExecutorNode --> IncidentRepoPortNode
+    GuardedCommandExecutorNode -.-> SafetyPolicyViolationErr
+    RecordSecurityIncidentHandlerNode --> IncidentRepoPortNode
+    RecordSecurityIncidentHandlerNode --> EventPubPort
+    RecordSecurityIncidentHandlerNode --> SecurityIncidentAggregate
+    ListIncidentsQueryHandlerNode --> IncidentRepoPortNode
+    GetGovernanceMetricsQueryHandlerNode --> IncidentRepoPortNode
+    TraceContextCarrierNode --> TraceContextVO
+    MssqlIncidentRepoNode -- Implementa --> IncidentRepoPortNode
+    InMemoryIncidentRepoNode -- Implementa --> IncidentRepoPortNode
+    MssqlIncidentRepoNode --> GovernanceMapperNode
+    MssqlIncidentRepoNode --> MssqlModels
+    GovernanceMapperNode --> SecurityIncidentAggregate
+    GovernanceMapperNode --> MssqlModels
+    RegexPiiScannerAdapterNode -- Implementa --> PiiScannerPortNode
+    HeuristicInjectionDetectorAdapterNode -- Implementa --> SafetyGuardrailPortNode
+    AnyioStreamGuardrailFilterNode --> SafetyGuardrailPortNode
+    AnyioStreamGuardrailFilterNode -.-> SafetyPolicyViolationErr
+    RabbitMQPub --> TraceContextCarrierNode
+    RabbitMQConsumer --> TraceContextCarrierNode
+    RouterFastAPI --> OpenTelemetryMiddlewareNode
+    RouterFastAPI --> SafetyViolationHandlerNode
+    SafetyViolationHandlerNode -.-> SafetyPolicyViolationErr
+    RouterFastAPI --> GuardedCommandExecutorNode
+    RouterFastAPI --> GovernanceRouterNode
+    GovernanceRouterNode --> GovernanceSchemasNode
+    GovernanceRouterNode --> ListIncidentsQueryHandlerNode
+    GovernanceRouterNode --> GetGovernanceMetricsQueryHandlerNode
+    AppContainerNode --> IncidentRepoPortNode
+    AppContainerNode --> SafetyGuardrailPortNode
+    AppContainerNode --> PiiScannerPortNode
+    AppContainerNode --> SafetyGuardrailPipelineServiceNode
+    AppContainerNode --> GuardedCommandExecutorNode
+    WorkerContainerNode --> IncidentRepoPortNode
+    WorkerContainerNode --> SafetyGuardrailPortNode
+    WorkerContainerNode --> PiiScannerPortNode
+    WorkerContainerNode --> SafetyGuardrailPipelineServiceNode
 ```
+

@@ -6,6 +6,15 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 
+class CreateToolApprovalRequest(BaseModel):
+    """Request payload to submit a tool execution for approval."""
+
+    conversation_id: str = Field(..., description="ID of conversation triggering the tool call")
+    tool_name: str = Field(..., description="Name of the high-privilege tool")
+    arguments: dict[str, Any] = Field(default_factory=dict, description="Arguments for tool call")
+    call_id: str | None = Field(default=None, description="Optional tool call ID")
+
+
 class ToolApprovalDecisionRequest(BaseModel):
     """Request payload for approving or rejecting a pending tool execution."""
 

@@ -1,6 +1,7 @@
 """RabbitMQ message publisher adapter implementing MessageBrokerPort."""
 
 import json
+from typing import Any
 
 import aio_pika
 from aio_pika import DeliveryMode
@@ -42,6 +43,20 @@ class RabbitMQPublisherAdapter(MessageBrokerPort):
                 durable=True,
             )
 
+        headers: dict[str, Any] = {"event_type": envelope.event_type}
+        if isinstance(envelope.payload, dict):
+            trace_keys = {
+                "traceparent",
+                "tracestate",
+                "x-trace-id",
+                "x-span-id",
+                "x_trace_id",
+                "x_span_id",
+            }
+            for k in trace_keys:
+                if k in envelope.payload:
+                    headers[k] = str(envelope.payload[k])
+
         body_bytes = json.dumps(envelope.to_dict()).encode("utf-8")
         message = aio_pika.Message(
             body=body_bytes,
@@ -49,7 +64,7 @@ class RabbitMQPublisherAdapter(MessageBrokerPort):
             delivery_mode=DeliveryMode.PERSISTENT,
             message_id=str(envelope.id),
             correlation_id=str(envelope.correlation_id) if envelope.correlation_id else None,
-            headers={"event_type": envelope.event_type},
+            headers=headers,
         )
 
         await exchange.publish(message, routing_key=topic)

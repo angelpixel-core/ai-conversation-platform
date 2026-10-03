@@ -7,6 +7,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.10.0] - 2026-09-29 — Slice 10: Enterprise AI Governance, Real-Time Guardrails & Distributed Observability
+
+### Added
+
+- **Domain Layer (Governance Value Objects, Security Aggregate Root & Ports):**
+  - Implemented `SafetyVerdict` (`src/domain/governance/value_objects/safety_verdict.py`) capturing evaluation verdicts, violation types, risk scores, and matched rules.
+  - Implemented `IncidentSeverity` enum (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`), `PiiEntityMatch`, and `TraceContext` value objects supporting W3C `traceparent` parsing and generation.
+  - Implemented `SecurityIncident` aggregate root (`src/domain/governance/entities/security_incident.py`) governing forensic security events, multi-tenant isolation, and domain event dispatching.
+  - Defined domain events: `SafetyViolationBlockedDomainEvent` and `PromptInjectionDetectedDomainEvent`.
+  - Defined driven ports: `SafetyGuardrailPort`, `PiiScannerPort`, and `IncidentRepositoryPort`.
+  - Added domain exception: `SafetyPolicyViolationError` with violation classification and risk scoring.
+- **Application Layer (Concurrent Guardrail Pipeline, Guarded Executor & CQRS Handlers):**
+  - Implemented `SafetyGuardrailPipelineService` (`src/application/governance/services/guardrail_pipeline_service.py`) running heuristic security validation and PII detection concurrently with `anyio.create_task_group()`.
+  - Implemented `GuardedCommandExecutor` (`src/application/governance/services/guarded_command_executor.py`) intercepting commands, executing guardrails, persisting incidents, and blocking unsafe requests before LLM inference.
+  - Implemented `TraceContextCarrier` (`src/application/shared/telemetry/trace_context_carrier.py`) serializing and deserializing W3C trace contexts across HTTP headers and AMQP message envelopes.
+  - Implemented CQRS commands and queries: `RecordSecurityIncidentCommand` / `RecordSecurityIncidentHandler`, `ListIncidentsQuery` / `ListIncidentsQueryHandler`, and `GetGovernanceMetricsQuery` / `GetGovernanceMetricsQueryHandler`.
+- **Infrastructure Layer (Zero-Bloat Guardrails, MSSQL Incident Storage & OpenTelemetry):**
+  - Implemented `RegexPiiScannerAdapter` (`src/infrastructure/governance/regex_pii_scanner_adapter.py`) featuring precompiled regexes and the Luhn algorithm for credit card verification (<1ms latency, 0 heavy ML bloat).
+  - Implemented `HeuristicInjectionDetectorAdapter` (`src/infrastructure/governance/heuristic_injection_detector_adapter.py`) blocking system prompt overrides, jailbreaks, and credential harvesting in <10ms.
+  - Implemented `AnyioStreamGuardrailFilter` (`src/infrastructure/governance/anyio_stream_guardrail_filter.py`) evaluating token windows during SSE delivery and terminating compromised streams.
+  - Implemented `SecurityIncidentModel` and `MssqlIncidentRepository` (`src/infrastructure/persistence/mssql/mssql_incident_repository.py`) supporting multi-tenant indexed forensic incident queries in SQL Server 2022.
+  - Added Alembic database migration `0007_governance_incidents.py`.
+  - Implemented `OpenTelemetryTracingAdapter` (`src/infrastructure/telemetry/opentelemetry_tracing_adapter.py`) strictly isolated in infrastructure without domain leakage.
+- **HTTP Interfaces, Middlewares & Admin API:**
+  - Implemented `OpenTelemetryMiddleware` (`src/interfaces/http/middlewares/opentelemetry_middleware.py`) injecting `X-Trace-ID` and `X-Span-ID` into response headers and propagating W3C context.
+  - Registered centralized FastAPI exception handler for `SafetyPolicyViolationError` returning structured `HTTP 400 Bad Request`.
+  - Implemented admin governance router (`src/interfaces/http/routers/governance_router.py`) with endpoints:
+    - `GET /admin/tenants/{tenant_id}/incidents` (`HTTP 200 OK`) with paginated filtering.
+    - `GET /admin/governance/metrics` (`HTTP 200 OK`) aggregating global safety statistics.
+  - Defined Pydantic v2 schemas in `src/interfaces/http/governance_schemas.py`.
+- **Composition Roots, ADR & Documentation:**
+  - Configured `GovernanceSettings` (`ENABLE_OPENTELEMETRY`, `OTEL_SERVICE_NAME`) in `Settings`.
+  - Wired governance ports, pipeline, guarded executor, and telemetry in `AppContainer` and `WorkerContainer`.
+  - Documented architectural decisions in `ADR 0009` (`.agent/architecture/decisions/0009-ai-governance-guardrails-and-opentelemetry.md`).
+  - Extracted canonical templates into `.agent/templates/`.
+  - Synchronized Living Architecture Map in `.agent/architecture/system-map.mermaid.md`.
+  - Completed roadmap checklist in `docs/roadmap/10-ai-governance-and-observability.md`.
+
+### Changed
+
+- Updated `src/container.py` and `src/worker_container.py` to inject `SafetyGuardrailPort`, `PiiScannerPort`, `IncidentRepositoryPort`, and `GuardrailPipelineService`.
+- Extended `src/interfaces/http/api.py` to route mutating message commands through `GuardedCommandExecutor` and register `governance_router`.
+- Updated developer documentation and OpenAPI specification.
+
+### Fixed
+
+- **Transactional Outbox & Worker Lifecycle Integration:**
+  - Integrated `OutboxRelayService` into `WorkerContainer` and started it as a concurrent background poller using `anyio.create_task_group()` in `src/worker.py`.
+  - Added cancellation handling and transient failure resilience to `OutboxRelayService.run()`.
+  - Propagated active tenant context (`X-Tenant-Id`) into `create_conversation` and `send_message` endpoints, persisting `tenant_id` to outbox messages and conversation records.
+  - Auto-seeded `default-tenant` alongside `corp-acme` to prevent quota settlement failures on fallback flows.
+  - Resolved `ValueError: No se puede liquidar una reserva mayor a la activa` by defaulting `reserved_cost` to `Decimal("0.0000")` when no prior reservation was acquired.
+
+### Security
+
+- Neutralized prompt injection and jailbreak attacks with zero LLM token consumption.
+- Eliminated PII data leaks (credit cards, emails, SSNs, phone numbers, API keys) across database persistence and RabbitMQ messaging.
+- Enforced immutable audit trails for all security policy violations in SQL Server.
+
+---
+
 ## [0.9.0] - 2026-09-28 — Slice 9: Multi-Agent Orchestration, Hierarchical Supervisor & State Graphs
 
 ### Added

@@ -75,7 +75,7 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column("created_at", sqlmodel.sql.sqltypes.UTCDateTime(), nullable=False),
-        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="NO ACTION"),
         sa.ForeignKeyConstraint(["workflow_id"], ["workflow_instances.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
