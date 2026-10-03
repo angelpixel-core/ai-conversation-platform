@@ -15,7 +15,6 @@ services:
       - DB_USER=sa
       - DB_PASSWORD=YourStrong@Password123
       - BROKER_URL=amqp://guest:guest@broker:5672/
-      - RABBITMQ_URL=amqp://guest:guest@broker:5672/
     depends_on:
       db:
         condition: service_healthy
@@ -38,7 +37,6 @@ services:
       - DB_USER=sa
       - DB_PASSWORD=YourStrong@Password123
       - BROKER_URL=amqp://guest:guest@broker:5672/
-      - RABBITMQ_URL=amqp://guest:guest@broker:5672/
     depends_on:
       db:
         condition: service_healthy

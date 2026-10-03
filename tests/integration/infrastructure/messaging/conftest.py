@@ -11,7 +11,7 @@ from src.infrastructure.messaging.rabbitmq.rabbitmq_connection_manager import (
 )
 
 RABBITMQ_TEST_URL = os.getenv(
-    "RABBITMQ_URL",
+    "BROKER_URL",
     "amqp://guest:guest@localhost:5672/",
 )
 

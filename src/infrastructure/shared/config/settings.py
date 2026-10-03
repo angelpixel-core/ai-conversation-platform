@@ -58,7 +58,6 @@ class MessagingSettings(BaseSettings):
     RABBITMQ_PORT: int = 5672
     RABBITMQ_USER: str = "guest"
     RABBITMQ_PASSWORD: str = "guest"  # noqa: S105 # nosec S105
-    RABBITMQ_URL: str | None = None
     BROKER_URL: str | None = None
     RABBITMQ_PREFETCH_COUNT: int = 10
     RABBITMQ_EXCHANGE: str = "ai_platform.events"
@@ -73,15 +72,17 @@ class MessagingSettings(BaseSettings):
         extra="ignore",
     )
 
-    def get_rabbitmq_url(self) -> str:
-        """Return explicit BROKER_URL, RABBITMQ_URL or construct one with credentials."""
+    def get_broker_url(self) -> str:
+        """Return explicit BROKER_URL or construct one with credentials."""
         if self.BROKER_URL:
             return self.BROKER_URL
-        if self.RABBITMQ_URL:
-            return self.RABBITMQ_URL
 
         safe_pass = quote_plus(self.RABBITMQ_PASSWORD)
         return f"amqp://{self.RABBITMQ_USER}:{safe_pass}@{self.RABBITMQ_HOST}:{self.RABBITMQ_PORT}/"
+
+    def get_rabbitmq_url(self) -> str:
+        """Return canonical broker URL."""
+        return self.get_broker_url()
 
 
 class TenancySettings(BaseSettings):
