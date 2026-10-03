@@ -74,7 +74,7 @@ Sin embargo, existe una disparidad histórica entre el directorio raíz del mono
 
 ---
 
-## 3. Estándar de Variables de Entorno y Gestión de Secretos
+## 3. Estándar de Variables de Entorno y Gestión de Secretos (Resuelto en [ADR 0011](file:///.agent/architecture/decisions/0011-standardized-environment-variables-and-secrets-management.md))
 
 ### 3.1. Niveles de Configuración
 
@@ -82,17 +82,20 @@ Se establece una matriz de 4 niveles para la configuración:
 
 | Nivel | Ubicación | Control de Versiones | Propósito |
 | :--- | :--- | :---: | :--- |
-| **Plantilla Canónica** | `.env.template` / `config/examples/local.env` | **Sí (Git)** | Documentación exhaustiva con valores por defecto seguros, descripciones y tipos. |
-| **Entorno Local** | `.env` / `infra/environments/.local/project.env` | **No (.gitignore)** | Secretos locales del desarrollador, tokens de prueba y credenciales de contenedores locales. |
-| **CI/CD** | GitHub Actions Secrets / Environment Secrets | **No (Cifrado)** | Credenciales de registry, tokens de análisis y claves de API de testing. |
-| **Cloud (AWS)** | AWS Secrets Manager & SSM Parameter Store | **No (KMS)** | Secretos de producción con rotación automática (DB passwords, API keys de LLM, certificados). |
+| **1. Plantilla Canónica** | [`.env.template`](file:///.env.template) / `config/examples/local.env` | **Sí (Git)** | Documentación exhaustiva con valores por defecto seguros, descripciones y tipos. |
+| **2. Entorno Local** | `.env` / `.env.local` / `infra/environments/.local/project.env` | **No (.gitignore)** | Secretos locales del desarrollador, tokens de prueba y credenciales de contenedores locales. |
+| **3. CI/CD** | GitHub Actions Secrets / Environment Secrets | **No (Cifrado)** | Credenciales de registry, tokens de análisis y claves de API de testing. |
+| **4. Cloud (AWS)** | AWS Secrets Manager & SSM Parameter Store | **No (KMS)** | Secretos de producción con rotación automática (DB passwords, API keys de LLM, certificados). |
 
 ### 3.2. Reglas de Validación con Pydantic Settings
 
-- Toda variable debe estar declarada en `src/infrastructure/config/settings.py` (o módulo de configuración) utilizando `pydantic-settings`.
-- Valores numéricos, URLs y booleanos fuertemente tipados.
-- Si una variable crítica falta o tiene formato inválido, el proceso debe fallar inmediatamente al arrancar (*Fail-Fast Principle*).
-- Queda terminantemente prohibido hacer `os.environ.get()` ad-hoc dentro de capas de Dominio o Aplicación.
+- [x] Toda variable se encuentra declarada y tipada en [`src/infrastructure/shared/config/settings.py`](file:///src/infrastructure/shared/config/settings.py) utilizando `pydantic-settings`.
+- [x] Modelos modulares especializados: `AppSettings`, `DatabaseSettings`, `MessagingSettings`, `TenancySettings`, `GovernanceSettings`, `LlmSettings`.
+- [x] Validadores estrictos (`@field_validator`):
+  - Rango de puertos válidos (`1 <= port <= 65535`) para `API_PORT`, `DB_PORT` y `RABBITMQ_PORT`.
+  - Nivel de log (`LOG_LEVEL`) validado contra niveles estándar de Python (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`).
+- [x] Principio **Fail-Fast** en arranque: `@model_validator(mode="after")` que comprueba que si se configuran drivers externos (`mssql` o `rabbitmq`), los parámetros requeridos no sean cadenas vacías.
+- [x] Principio de Aislamiento Hexagonal: Queda terminantemente prohibido hacer `os.environ.get()` ad-hoc dentro de capas de Dominio o Aplicación; toda configuración se inyecta desde el Composition Root (`src/container.py` y `src/worker_container.py`).
 
 ---
 

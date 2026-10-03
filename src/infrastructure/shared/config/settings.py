@@ -4,7 +4,53 @@ from enum import StrEnum
 from functools import lru_cache
 from urllib.parse import quote_plus
 
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class EnvironmentMode(StrEnum):
+    """Execution environment mode."""
+
+    LOCAL = "local"
+    TEST = "test"
+    DEV = "dev"
+    STAGING = "staging"
+    PRODUCTION = "production"
+
+
+class AppSettings(BaseSettings):
+    """Core application and web server settings."""
+
+    APP_NAME: str = "ai-conversation-platform"
+    ENVIRONMENT: EnvironmentMode = EnvironmentMode.LOCAL
+    DEBUG: bool = False
+    LOG_LEVEL: str = "INFO"
+    API_HOST: str = "0.0.0.0"  # noqa: S104 # nosec B104
+    API_PORT: int = 8000
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    @field_validator("API_PORT", mode="after")
+    @classmethod
+    def validate_api_port(cls, v: int) -> int:
+        """Validate API port range."""
+        if not (1 <= v <= 65535):
+            raise ValueError(f"API_PORT must be between 1 and 65535, got {v}")
+        return v
+
+    @field_validator("LOG_LEVEL", mode="after")
+    @classmethod
+    def validate_log_level(cls, v: str) -> str:
+        """Validate log level against standard Python logging levels."""
+        valid = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+        upper_v = v.upper()
+        if upper_v not in valid:
+            raise ValueError(f"LOG_LEVEL must be one of {valid}, got '{v}'")
+        return upper_v
 
 
 class PersistenceDriver(StrEnum):
@@ -30,6 +76,14 @@ class DatabaseSettings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    @field_validator("DB_PORT", mode="after")
+    @classmethod
+    def validate_db_port(cls, v: int) -> int:
+        """Validate database port range."""
+        if not (1 <= v <= 65535):
+            raise ValueError(f"DB_PORT must be between 1 and 65535, got {v}")
+        return v
 
     def get_database_url(self) -> str:
         """Return the database URL or construct one for MSSQL with URL-safe credentials."""
@@ -72,6 +126,14 @@ class MessagingSettings(BaseSettings):
         extra="ignore",
     )
 
+    @field_validator("RABBITMQ_PORT", mode="after")
+    @classmethod
+    def validate_rabbitmq_port(cls, v: int) -> int:
+        """Validate RabbitMQ port range."""
+        if not (1 <= v <= 65535):
+            raise ValueError(f"RABBITMQ_PORT must be between 1 and 65535, got {v}")
+        return v
+
     def get_broker_url(self) -> str:
         """Return explicit BROKER_URL or construct one with credentials."""
         if self.BROKER_URL:
@@ -103,6 +165,7 @@ class GovernanceSettings(BaseSettings):
 
     ENABLE_OPENTELEMETRY: bool = False
     OTEL_SERVICE_NAME: str = "chatbot-api"
+    OTEL_EXPORTER_OTLP_ENDPOINT: str = "http://localhost:4317"
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -111,8 +174,48 @@ class GovernanceSettings(BaseSettings):
     )
 
 
-class Settings(DatabaseSettings, MessagingSettings, TenancySettings, GovernanceSettings):
-    """Unified application settings."""
+class LlmSettings(BaseSettings):
+    """Large Language Model inference and provider settings."""
+
+    LLM_PROVIDER: str = "fake"
+    OPENAI_API_KEY: str | None = None  # noqa: S105 # nosec S105
+    OPENAI_BASE_URL: str | None = None
+    LLM_TIMEOUT_SECONDS: float = 30.0
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+
+class Settings(
+    AppSettings,
+    DatabaseSettings,
+    MessagingSettings,
+    TenancySettings,
+    GovernanceSettings,
+    LlmSettings,
+):
+    """Unified application settings with fail-fast validation for drivers."""
+
+    @model_validator(mode="after")
+    def validate_fail_fast_drivers(self) -> "Settings":
+        """Fail-fast validation ensuring required driver configuration is complete."""
+        if self.PERSISTENCE_DRIVER == PersistenceDriver.MSSQL:
+            if not self.DATABASE_URL:
+                if not self.DB_SERVER or not self.DB_USER:
+                    raise ValueError(
+                        "PERSISTENCE_DRIVER='mssql' requires non-empty DB_SERVER and DB_USER"
+                    )
+        if self.MESSAGING_DRIVER == MessagingDriver.RABBITMQ:
+            if not self.BROKER_URL:
+                if not self.RABBITMQ_HOST or not self.RABBITMQ_USER:
+                    raise ValueError(
+                        "MESSAGING_DRIVER='rabbitmq' requires "
+                        "non-empty RABBITMQ_HOST and RABBITMQ_USER"
+                    )
+        return self
 
 
 @lru_cache(maxsize=1)

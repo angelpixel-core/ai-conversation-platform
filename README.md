@@ -675,7 +675,7 @@ curl -s "http://localhost:8000/admin/governance/metrics" | jq
 A comprehensive `Makefile` provides one-command access to all quality barriers:
 
 ```bash
-make test          # Run all 611 unit & integration tests
+make test          # Run all 619 unit & integration tests
 make coverage      # Generate detailed test coverage report (>= 90%)
 make lint          # Run static code analysis with Ruff
 make format-check  # Verify code formatting conformance with Ruff
@@ -719,3 +719,5 @@ make check-all     # Run full quality barrier (format + lint + types + security 
   - 📄 Architecture Decision: [ADR 0009: Enterprise AI Governance, Guardrails & OpenTelemetry](.agent/architecture/decisions/0009-ai-governance-guardrails-and-opentelemetry.md)
 - [x] [**Infrastructure Standardization:** Monorepo Compose, Unified Attachable Network & Vendor Neutrality](.agent/architecture/decisions/0010-monorepo-compose-and-local-infrastructure-standardization.md)
   - 📄 Architecture Decision: [ADR 0010: Monorepo Compose and Local Infrastructure Standardization](.agent/architecture/decisions/0010-monorepo-compose-and-local-infrastructure-standardization.md)
+- [x] [**Configuration Standardization:** Canonical Environment Variables, Secrets & Pydantic Fail-Fast](.agent/architecture/decisions/0011-standardized-environment-variables-and-secrets-management.md)
+  - 📄 Architecture Decision: [ADR 0011: Standardized Environment Variables, Secrets & Pydantic Settings](.agent/architecture/decisions/0011-standardized-environment-variables-and-secrets-management.md)
