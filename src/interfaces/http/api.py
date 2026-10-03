@@ -430,6 +430,71 @@ def _register_streaming_routes(
         )
 
 
+TAGS_METADATA = [
+    {
+        "name": "Health",
+        "description": (
+            "Liveness and readiness probes verifying API, database, and broker connectivity."
+        ),
+    },
+    {
+        "name": "Tenant Administration",
+        "description": (
+            "Multi-tenant organization provisioning, policy governance, tier enforcement, "
+            "and token budget management."
+        ),
+    },
+    {
+        "name": "Conversations",
+        "description": (
+            "Core conversational aggregates, session creation, and lifecycle management."
+        ),
+    },
+    {
+        "name": "Messages",
+        "description": (
+            "User and assistant message dispatching with idempotent deduplication "
+            "and real-time security guardrails."
+        ),
+    },
+    {
+        "name": "Streaming",
+        "description": (
+            "Real-time Server-Sent Events (SSE) token generation with sequence replay "
+            "and connection recovery."
+        ),
+    },
+    {
+        "name": "Knowledge",
+        "description": (
+            "Enterprise knowledge base ingestion, chunking, and hybrid vector/lexical retrieval "
+            "(RAG)."
+        ),
+    },
+    {
+        "name": "Approvals",
+        "description": (
+            "Human-in-the-Loop (HITL) approval workflows gating critical and high-risk "
+            "tool executions."
+        ),
+    },
+    {
+        "name": "Multi-Agent Workflows",
+        "description": (
+            "Multi-agent collaborative graph workflows with state snapshots "
+            "and immutable checkpointing."
+        ),
+    },
+    {
+        "name": "Governance",
+        "description": (
+            "Audit-grade security guardrails, prompt injection detection, "
+            "and PII redaction compliance metrics."
+        ),
+    },
+]
+
+
 def build_api(
     create_conversation_handler: CreateConversationHandler | None = None,
     send_message_handler: SendMessageHandler | None = None,
@@ -455,9 +520,25 @@ def build_api(
     app = FastAPI(
         title="AI Conversation Platform API",
         description=(
-            "Core API service for managing AI-driven conversations, messages, and RAG contexts."
+            "### Enterprise AI Conversation Platform\n\n"
+            "Production-grade, multi-tenant conversational AI platform built with "
+            "Clean Architecture, DDD, CQRS, and Ports & Adapters.\n\n"
+            "#### Key Capabilities:\n"
+            "- **Multi-Tenancy & Isolation:** Context propagation via `X-Tenant-Id` header.\n"
+            "- **Idempotency Guarantees:** Zero-duplicate message delivery via "
+            "`Idempotency-Key` (UUIDv4).\n"
+            "- **Real-Time Streaming:** Resilient SSE streaming with sequence recovery "
+            "(`Last-Event-ID`).\n"
+            "- **Human-in-the-Loop:** Sensitive tool execution gated by administrative "
+            "approval workflows.\n"
+            "- **Hybrid RAG:** Dense vector embeddings + lexical search with source citations.\n"
+            "- **Multi-Agent Systems:** State graph orchestrations with versioned "
+            "state checkpoints.\n"
+            "- **AI Governance:** Real-time prompt injection blocking, PII masking, "
+            "and distributed tracing."
         ),
-        version="0.1.0",
+        version="1.0.0",
+        openapi_tags=TAGS_METADATA,
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",

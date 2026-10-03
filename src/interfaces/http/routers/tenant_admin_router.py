@@ -186,6 +186,10 @@ def create_tenant_admin_router(unit_of_work: UnitOfWork) -> APIRouter:
         response_model=TenantBudgetResponse,
         status_code=status.HTTP_201_CREATED,
         summary="Provision a new tenant organization",
+        description=(
+            "Provisions a new tenant with initial allocated token budget, tier, "
+            "model access control, and policy limits."
+        ),
     )
     def create_tenant(request: CreateTenantRequest) -> TenantBudgetResponse:
         handler = ProvisionTenantCommandHandler(unit_of_work=unit_of_work)
@@ -216,6 +220,9 @@ def create_tenant_admin_router(unit_of_work: UnitOfWork) -> APIRouter:
         "",
         response_model=list[TenantSummaryResponse],
         summary="List all registered tenants",
+        description=(
+            "Lists all registered tenants with their status, tier, and current budget balance."
+        ),
     )
     def list_tenants() -> list[TenantSummaryResponse]:
         with unit_of_work as uow:
@@ -237,6 +244,9 @@ def create_tenant_admin_router(unit_of_work: UnitOfWork) -> APIRouter:
         "/{id}/budget",
         response_model=TenantBudgetResponse,
         summary="Get tenant budget status",
+        description=(
+            "Retrieves current token budget, reserved quota, and available balance for a tenant."
+        ),
     )
     def get_tenant_budget(id: str) -> TenantBudgetResponse:
         with unit_of_work as uow:
@@ -253,6 +263,10 @@ def create_tenant_admin_router(unit_of_work: UnitOfWork) -> APIRouter:
         "/{id}/policy",
         response_model=TenantPolicyResponse,
         summary="Update tenant governance policy",
+        description=(
+            "Updates governance policy for a tenant including tier, max tokens per request, "
+            "and allowed models."
+        ),
     )
     def update_tenant_policy(id: str, request: UpdateTenantPolicyRequest) -> TenantPolicyResponse:
         with unit_of_work as uow:
@@ -274,6 +288,9 @@ def create_tenant_admin_router(unit_of_work: UnitOfWork) -> APIRouter:
         "/{id}/reserve",
         response_model=ReserveQuotaResponse,
         summary="Reserve inference quota for tenant",
+        description=(
+            "Atomically reserves token quota for an upcoming inference or chat completion request."
+        ),
     )
     def reserve_quota(id: str, request: ReserveQuotaRequest) -> ReserveQuotaResponse:
         handler = ReserveQuotaCommandHandler(unit_of_work=unit_of_work)
