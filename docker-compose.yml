@@ -14,11 +14,12 @@ services:
       - DB_NAME=ChatbotDB
       - DB_USER=sa
       - DB_PASSWORD=YourStrong@Password123
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - BROKER_URL=amqp://guest:guest@broker:5672/
+      - RABBITMQ_URL=amqp://guest:guest@broker:5672/
     depends_on:
       db:
         condition: service_healthy
-      rabbitmq:
+      broker:
         condition: service_healthy
     restart: unless-stopped
 
@@ -27,7 +28,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: chatbot_worker
-    command: ["python", "-m", "src.worker"]
+    command: [ "python", "-m", "src.worker" ]
     environment:
       - PERSISTENCE_DRIVER=mssql
       - MESSAGING_DRIVER=rabbitmq
@@ -36,17 +37,18 @@ services:
       - DB_NAME=ChatbotDB
       - DB_USER=sa
       - DB_PASSWORD=YourStrong@Password123
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - BROKER_URL=amqp://guest:guest@broker:5672/
+      - RABBITMQ_URL=amqp://guest:guest@broker:5672/
     depends_on:
       db:
         condition: service_healthy
-      rabbitmq:
+      broker:
         condition: service_healthy
     restart: unless-stopped
 
   db:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: mssql_db
+    container_name: chatbot_db
     user: root
     ports:
       - "1433:1433"
@@ -54,18 +56,18 @@ services:
       - ACCEPT_EULA=Y
       - MSSQL_SA_PASSWORD=YourStrong@Password123
     volumes:
-      - mssql_data:/var/opt/mssql/data
+      - db_data:/var/opt/mssql/data
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourStrong@Password123' -C -Q 'SELECT 1' || exit 1"]
+      test: [ "CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourStrong@Password123' -C -Q 'SELECT 1' || exit 1" ]
       interval: 5s
       timeout: 5s
       retries: 10
       start_period: 10s
     restart: unless-stopped
 
-  rabbitmq:
+  broker:
     image: rabbitmq:3-management-alpine
-    container_name: rabbitmq_broker
+    container_name: chatbot_broker
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -73,9 +75,9 @@ services:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
     volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+      - broker_data:/var/lib/rabbitmq
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -83,12 +85,11 @@ services:
     restart: unless-stopped
 
 volumes:
-  mssql_data:
-    name: chatbot_mssql_data
-  rabbitmq_data:
-    name: chatbot_rabbitmq_data
+  db_data:
+    name: chatbot_db_data
+  broker_data:
+    name: chatbot_broker_data
 
 networks:
   default:
     name: chatbot_net
-

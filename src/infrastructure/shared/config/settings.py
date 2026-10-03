@@ -59,6 +59,7 @@ class MessagingSettings(BaseSettings):
     RABBITMQ_USER: str = "guest"
     RABBITMQ_PASSWORD: str = "guest"  # noqa: S105 # nosec S105
     RABBITMQ_URL: str | None = None
+    BROKER_URL: str | None = None
     RABBITMQ_PREFETCH_COUNT: int = 10
     RABBITMQ_EXCHANGE: str = "ai_platform.events"
     RABBITMQ_QUEUE: str = "conversation.llm_processing.queue"
@@ -73,7 +74,9 @@ class MessagingSettings(BaseSettings):
     )
 
     def get_rabbitmq_url(self) -> str:
-        """Return explicit RABBITMQ_URL or construct one with URL-safe credentials."""
+        """Return explicit BROKER_URL, RABBITMQ_URL or construct one with credentials."""
+        if self.BROKER_URL:
+            return self.BROKER_URL
         if self.RABBITMQ_URL:
             return self.RABBITMQ_URL
 

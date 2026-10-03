@@ -81,3 +81,11 @@ def test_messaging_settings_rabbitmq_url_override() -> None:
         RABBITMQ_URL="amqp://custom:secret@cluster:5672/vhost",
     )
     assert msg_settings.get_rabbitmq_url() == "amqp://custom:secret@cluster:5672/vhost"
+
+
+def test_messaging_settings_broker_url_canonical_override() -> None:
+    msg_settings = MessagingSettings(
+        BROKER_URL="amqp://canonical:pass@broker:5672/vhost",
+        RABBITMQ_URL="amqp://fallback:pass@fallback:5672/vhost",
+    )
+    assert msg_settings.get_rabbitmq_url() == "amqp://canonical:pass@broker:5672/vhost"

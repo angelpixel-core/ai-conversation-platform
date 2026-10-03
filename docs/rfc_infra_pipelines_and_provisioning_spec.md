@@ -33,15 +33,15 @@ Sin embargo, existe una disparidad histórica entre el directorio raíz del mono
   - `infra/local/compose/compose.yaml` definía un contenedor `db` con PostgreSQL 16 y un comando Django inexistente (`manage.py runserver`).
   - `apps/chatbot/service/api/docker-compose.yml` definía `mssql_db` (MSSQL 2022), `rabbitmq_broker` (RabbitMQ 3.13), `chatbot_api` y `chatbot_worker`.
 - **Estandarización Implementada (ver [ADR 0010](file:///.agent/architecture/decisions/0010-monorepo-compose-and-local-infrastructure-standardization.md)):**
-  - **Servicios Unificados:** 5 componentes coordinados: `api` (FastAPI / Uvicorn), `worker` (Python Inferencia & Outbox Relay), `portal` (Next.js 14+), `db` (Microsoft SQL Server 2022) y `rabbitmq` (RabbitMQ 3.13 Management).
+  - **Servicios Unificados:** 5 componentes coordinados por capacidad arquitectónica: `api` (FastAPI / Uvicorn), `worker` (Python Inferencia & Outbox Relay), `portal` (Next.js 14+), `db` (contenedor `chatbot_db`, MSSQL 2022) y `broker` (contenedor `chatbot_broker`, RabbitMQ 3.13 Management).
   - **Red Bridge Común:** `chatbot_net` compartida para comunicación entre servicios y el portal.
   - **Puertos Estándar de Host:**
     - `api`: `8000:8000` (FastAPI / Swagger UI en `/docs`).
     - `portal`: `3000:3000` (Next.js Web Portal).
-    - `db`: `1433:1433` (MSSQL Server).
-    - `rabbitmq`: `5672:5672` (AMQP) y `15672:15672` (Management Dashboard).
-  - **Volúmenes Persistentes Nombrados:** `chatbot_mssql_data` y `chatbot_rabbitmq_data`.
-  - **Healthchecks Nativos:** `sqlcmd` para SQL Server, `rabbitmq-diagnostics ping` para RabbitMQ, y verificación HTTP en `/health` para la API.
+    - `db`: `1433:1433` (Microsoft SQL Server).
+    - `broker`: `5672:5672` (AMQP) y `15672:15672` (Management Dashboard).
+  - **Volúmenes Persistentes Nombrados:** `chatbot_db_data` y `chatbot_broker_data`.
+  - **Healthchecks Nativos:** `sqlcmd` para la base de datos, `rabbitmq-diagnostics ping` para el broker, y verificación HTTP en `/health` para la API.
 
 ### 2.2. Makefiles: Jerarquía y Nomenclatura
 

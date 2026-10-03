@@ -29,31 +29,37 @@ Sin embargo, el directorio de orquestación de nivel monorepo (`infra/local/comp
 
 Se adopta una unificación arquitectónica estricta para garantizar paridad total entre la ejecución global del monorepo y el servicio local:
 
-### 2.1. Servicios Canónicos del Stack Local
+### 2.1. Principio de Neutralidad Tecnológica y Servicios Canónicos
 
-Tanto `infra/local/compose/compose.yaml` como `apps/chatbot/service/api/docker-compose.yml` quedan alineados bajo los siguientes 5 servicios:
+En coherencia con los principios de **Clean Architecture y Ports & Adapters**, los nombres de los servicios y contenedores en la topología de red de Docker Compose deben representar su **rol o capacidad arquitectónica**, evitando acoplarse al nombre comercial del software o proveedor:
 
-1. **`db` (`mssql_db`):**
-   - Imagen: `mcr.microsoft.com/mssql/server:2022-latest`.
+1. **`db` (`chatbot_db`):**
+   - Rol: Almacenamiento persistente relacional y transaccional ACID.
+   - Imagen: `mcr.microsoft.com/mssql/server:2022-latest` (adaptador concreto MSSQL 2022).
    - Puerto host: `1433:1433`.
    - Healthcheck: `/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P '${DB_PASSWORD}' -C -Q 'SELECT 1'`.
-   - Persistencia: Volumen `chatbot_mssql_data`.
-2. **`rabbitmq` (`rabbitmq_broker`):**
-   - Imagen: `rabbitmq:3-management-alpine`.
+   - Persistencia: Volumen canónico `chatbot_db_data`.
+2. **`broker` (`chatbot_broker`):**
+   - Rol: Intermediario de mensajería asíncrona, colas y eventos de dominio (Message / Event Broker).
+   - Imagen: `rabbitmq:3-management-alpine` (adaptador concreto RabbitMQ 3.13).
+   - Hostname de red interna: `broker`.
    - Puertos: `5672:5672` (AMQP) y `15672:15672` (Management Console).
    - Healthcheck: `rabbitmq-diagnostics -q ping`.
-   - Persistencia: Volumen `chatbot_rabbitmq_data`.
+   - Persistencia: Volumen canónico `chatbot_broker_data`.
 3. **`api` (`chatbot_api`):**
+   - Rol: Servidor HTTP REST & SSE streaming principal.
    - Build: `apps/chatbot/service/api/Dockerfile` (Python 3.12-slim).
    - Comando: `uvicorn src.main:app --host 0.0.0.0 --port 8000`.
    - Puerto host: `8000:8000` (configurable vía `${SERVICES_PORT:-8000}`).
    - Healthcheck: `python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"`.
-   - Dependencias de salud: `db` y `rabbitmq` en condición `service_healthy`.
+   - Dependencias de salud: `db` y `broker` en condición `service_healthy`.
 4. **`worker` (`chatbot_worker`):**
+   - Rol: Procesamiento en segundo plano, inferencia asíncrona y Outbox Relay.
    - Build: `apps/chatbot/service/api/Dockerfile`.
    - Comando: `python -m src.worker`.
-   - Dependencias de salud: `db` y `rabbitmq` en condición `service_healthy`.
+   - Dependencias de salud: `db` y `broker` en condición `service_healthy`.
 5. **`portal` (`chatbot_portal`):**
+   - Rol: Interfaz de usuario web para operadores y usuarios finales.
    - Build: `apps/chatbot/web/portal/Dockerfile` (Node 22-alpine).
    - Puerto host: `3000:3000` (configurable vía `${WEB_PORT:-3000}`).
    - Variable de enlace: `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000`.
