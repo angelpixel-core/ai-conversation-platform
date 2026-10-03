@@ -57,7 +57,20 @@ Sin embargo, existe una disparidad histórica entre el directorio raíz del mono
     - `make check-all`: Pipeline local rápido (`format-check`, `lint`, `typecheck`, `security`, `test`).
     - `make test`: Ejecución de pytest con pausa temporal controlada del worker para evitar contención de locks en MSSQL.
     - `make db/upgrade`: Migraciones de Alembic.
+    - `make db/downgrade`: Reversión de migraciones de Alembic.
+    - `make db/shell`: Consola interactiva SQLCMD conectada a `ChatbotDB`.
+    - `make stack/status`: Diagnóstico de salud de los servicios Docker Compose.
     - `make docs-build`: Generación estática de OpenAPI y ReDoc.
+
+### 2.3. Scripts de Soporte y Diagnóstico (`infra/tooling/scripts/`)
+
+- **`db.sh` (`infra/tooling/scripts/db.sh`):**
+  - Estandarizado para soporte nativo de Microsoft SQL Server 2022:
+    - Comando `shell`: Invoca `/opt/mssql-tools18/bin/sqlcmd -S localhost -U "${MSSQL_USER:-sa}" -P "${MSSQL_SA_PASSWORD:-YourStrong!Passw0rd}" -C -d "${MSSQL_DB:-ChatbotDB}"`.
+    - Comando `logs`: `run_compose logs -f db`.
+- **`stack.sh` (`infra/tooling/scripts/stack.sh`):**
+  - Incorpora subcomando `status`: Ejecuta `run_compose ps` para diagnosticar el estado del stack unificado en tiempo real.
+  - Soporta parametrización de `STACK_COMPOSE_FILE` para interoperabilidad con compose local o monorepo.
 
 ---
 

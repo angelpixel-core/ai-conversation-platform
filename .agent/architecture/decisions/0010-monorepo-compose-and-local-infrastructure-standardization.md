@@ -68,10 +68,11 @@ En coherencia con los principios de **Clean Architecture y Ports & Adapters**, l
 
 - [x] Todos los servicios se interconectan mediante una red bridge compartida denominada `chatbot_net` con soporte `attachable: true`, permitiendo comunicación inter-contenedor por nombre canónico (`api:8000`, `db:1433`, `broker:5672`, `portal:3000`) y adjunción transparente de contenedores independientes o efímeros.
 
-### 2.3. Herramientas y Scripts de Soporte (`infra/tooling/scripts/`)
+### 2.3. Herramientas y Scripts de Soporte (`infra/tooling/scripts/` y `Makefile`)
 
-- [ ] `db.sh shell`: Actualizado para invocar `/opt/mssql-tools18/bin/sqlcmd` interactivo en el contenedor `db`.
-- [ ] `stack.sh status`: Permite inspeccionar la salud de los 5 contenedores en tiempo real.
+- [x] `db.sh shell`: Actualizado para invocar `/opt/mssql-tools18/bin/sqlcmd` interactivo en el contenedor `db` con credenciales configurables y flag `-C` (*Trust Server Certificate*).
+- [x] `stack.sh status`: Incorporado subcomando `status` que invoca `run_compose ps` para inspeccionar la salud de todos los contenedores en tiempo real.
+- [x] `Makefile` (`apps/chatbot/service/api/Makefile`): Incorporado target `db/shell` para acceso interactivo directo a `ChatbotDB`.
 
 ---
 
