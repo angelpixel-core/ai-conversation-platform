@@ -84,4 +84,11 @@ services:
 
 volumes:
   mssql_data:
+    name: chatbot_mssql_data
   rabbitmq_data:
+    name: chatbot_rabbitmq_data
+
+networks:
+  default:
+    name: chatbot_net
+
