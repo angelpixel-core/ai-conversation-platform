@@ -220,6 +220,17 @@ async def test_walkthrough_guide_full_happy_path() -> None:
         headers={"X-Tenant-ID": "corp-acme"},
     )
     assert resp_doc_status.status_code == 200
+    assert resp_doc_status.json()["status"] == "INDEXED"
+
+    # 7.3 Stream conversation response with contextual grounded citations
+    resp_rag_stream = client.get(
+        f"/conversations/{conv_id}/stream",
+        headers={"X-Tenant-ID": "corp-acme"},
+    )
+    assert resp_rag_stream.status_code == 200
+    assert "event: citation" in resp_rag_stream.text
+    # Ensure tokens are clean and not multiplied across turns
+    assert resp_rag_stream.text.count("data: Background ") == 1
 
     # -------------------------------------------------------------------------
     # Step 8: Secure Tool Calling & Human-in-the-Loop Approval (Slice 8)

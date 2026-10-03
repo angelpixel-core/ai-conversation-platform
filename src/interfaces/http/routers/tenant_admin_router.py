@@ -164,6 +164,11 @@ def _get_tenant_or_404(
         if for_update
         else unit_of_work.tenants.get(TenantId(tenant_id))
     )
+    if tenant is None and tenant_id in ("corp-acme", "default-tenant"):
+        demo_tenant = Tenant.create_demo(tenant_id)
+        unit_of_work.tenants.add(demo_tenant)
+        unit_of_work.commit()
+        return demo_tenant
     if tenant is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

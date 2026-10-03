@@ -244,11 +244,12 @@ async def _fetch_streaming_citations(
         conv = unit_of_work.conversations.get(conversation_id)
         if conv is None or not conv.messages:
             return []
-        last_msg = conv.messages[-1]
+        user_msg = next((m for m in reversed(conv.messages) if m.role == MessageRole.USER), None)
+        query = user_msg.content if user_msg is not None else conv.messages[-1].content
         tid = TenantId(tenant_id_str or "default-tenant")
         return await retriever_service.retrieve_context(
             tenant_id=tid,
-            query=last_msg.content,
+            query=query,
             top_k=3,
             min_score=0.1,
         )
@@ -339,6 +340,10 @@ async def _resolve_assistant_stream_fallback(
     if "last message is not from user" not in error_str:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
 
+    persisted = _fetch_persisted_assistant_tokens(unit_of_work, conversation_id)
+    if persisted is not None:
+        return persisted
+
     if stream_recovery_service is not None:
         tokens = await stream_recovery_service.get_buffered_tokens(str(conversation_id))
         if tokens:
@@ -348,10 +353,6 @@ async def _resolve_assistant_stream_fallback(
                     yield t
 
             return _buffered_tokens()
-
-    persisted = _fetch_persisted_assistant_tokens(unit_of_work, conversation_id)
-    if persisted is not None:
-        return persisted
 
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
 

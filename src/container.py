@@ -2,7 +2,6 @@
 
 import logging
 from dataclasses import dataclass
-from decimal import Decimal
 
 from fastapi import FastAPI
 
@@ -73,8 +72,6 @@ from src.domain.knowledge.ports.knowledge_repository_port import (
 )
 from src.domain.routing.ports.model_catalog_port import ModelCatalogPort
 from src.domain.tenants.entities.tenant import Tenant
-from src.domain.tenants.entities.tenant_policy import TenantPolicy, TenantTier
-from src.domain.tenants.value_objects.monetary_budget import MonetaryBudget
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.domain.tools.ports.sandboxed_tool_runner_port import (
     SandboxedToolRunnerPort,
@@ -92,6 +89,9 @@ from src.infrastructure.governance.regex_pii_scanner_adapter import (
     RegexPiiScannerAdapter,
 )
 from src.infrastructure.llm.fake_llm_client import FakeLlmClientAdapter
+from src.infrastructure.messaging.rabbitmq.anyio_document_indexer_worker import (
+    AnyioDocumentIndexerWorker,
+)
 from src.infrastructure.persistence.in_memory import (
     InMemoryAuditRepositoryAdapter,
     InMemoryIdempotencyRepositoryAdapter,
@@ -166,6 +166,7 @@ class AppContainer:
     safety_guardrail: SafetyGuardrailPort | None = None
     guardrail_pipeline: SafetyGuardrailPipelineService | None = None
     guarded_executor: GuardedCommandExecutor | None = None
+    indexer_worker: AnyioDocumentIndexerWorker | None = None
 
 
 def _seed_default_demo_tenant(uow: UnitOfWork) -> None:
@@ -178,29 +179,7 @@ def _seed_default_demo_tenant(uow: UnitOfWork) -> None:
         with uow:
             for tid, tname in demo_tenants:
                 if uow.tenants.get(TenantId(tid)) is None:
-                    demo_tenant = Tenant(
-                        tenant_id=TenantId(tid),
-                        name=tname,
-                        budget=MonetaryBudget(
-                            balance=Decimal("1000.00"),
-                            reserved_amount=Decimal("0.00"),
-                            currency="USD",
-                        ),
-                        policy=TenantPolicy(
-                            tier=TenantTier.STANDARD,
-                            max_tokens_per_request=4096,
-                            monthly_budget_usd=Decimal("500.00"),
-                            allowed_models=frozenset(
-                                {
-                                    "gpt-4o",
-                                    "gpt-4o-mini",
-                                    "claude-3-5-sonnet",
-                                    "gemini-1.5-flash",
-                                }
-                            ),
-                        ),
-                    )
-                    uow.tenants.add(demo_tenant)
+                    uow.tenants.add(Tenant.create_demo(tid, tname))
             uow.commit()
     except Exception as exc:
         logger.debug("Demo tenant auto-seed skipped: %s", exc)
@@ -401,6 +380,11 @@ def create_app_container(
         incident_repo=resolved_incident_repo,
     )
 
+    indexer_worker = AnyioDocumentIndexerWorker(
+        unit_of_work=uow,
+        embedding_client=emb_client,
+    )
+
     fastapi_app = build_api(
         create_conversation_handler=create_handler,
         send_message_handler=send_handler,
@@ -413,6 +397,7 @@ def create_app_container(
         enable_tenant_middleware=use_tenant_middleware,
         enable_opentelemetry_middleware=use_otel,
         retriever_service=retriever_service,
+        indexer_worker=indexer_worker,
         workflow_checkpoint_repo=resolved_workflow_repo,
         graph_execution_engine=graph_execution_engine,
     )
@@ -445,6 +430,7 @@ def create_app_container(
         safety_guardrail=safety_guardrail_adapter,
         guardrail_pipeline=guardrail_pipeline,
         guarded_executor=guarded_executor,
+        indexer_worker=indexer_worker,
     )
 
 
