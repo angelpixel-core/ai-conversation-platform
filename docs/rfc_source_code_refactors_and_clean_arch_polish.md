@@ -10,6 +10,7 @@
 ## 1. Contexto y Diagnóstico
 
 Tras la culminación exitosa de los 10 Slices del Roadmap, la base de código de `ai-conversation-platform` cuenta con:
+
 - Más de **11.750 líneas de código Python**.
 - **445 archivos** fuente y de tests.
 - **611 pruebas automatizadas** pasando al 100%.
@@ -38,6 +39,7 @@ Siguiendo las directivas de `.agent/rules/00-core-philosophy.md`:
 ```
 
 ### 2.1. Capa de Dominio (`src/domain/`)
+
 - **Regla Inquebrantable:** Cero dependencias de librerías externas o frameworks (FastAPI, SQLModel, SQLAlchemy, Pydantic no-puro, AnyIO).
 - **Value Objects:**
   - Deben ser inmutables utilizando `@dataclass(frozen=True)` o clases inmutables con validación estricta en `__post_init__`.
@@ -53,6 +55,7 @@ Siguiendo las directivas de `.agent/rules/00-core-philosophy.md`:
   - Jerarquía clara heredando de una clase base común `DomainException` o `DomainError`.
 
 ### 2.2. Capa de Aplicación (`src/application/`)
+
 - **Separación CQRS:**
   - **Commands:** Mutan estado, retornan DTOs de resultado o `None`. Nomenclatura: `<Action>Command` y `<Action>CommandHandler`.
   - **Queries:** Solo lectura, no generan efectos secundarios. Nomenclatura: `<Entity>Query` y `<Entity>QueryHandler`.
@@ -63,6 +66,7 @@ Siguiendo las directivas de `.agent/rules/00-core-philosophy.md`:
   - Context manager explícito (`with unit_of_work as uow:`) que agrupa repositorios bajo una misma transacción y confirma con `uow.commit()`.
 
 ### 2.3. Capa de Infraestructura (`src/infrastructure/`)
+
 - **Adaptadores:**
   - Nomenclatura explícita: `<Technology><Port>Adapter` (ej. `MssqlIncidentRepository`, `RabbitMqEventPublisherAdapter`, `RegexPiiScannerAdapter`).
 - **Persistencia y Modelos ORM:**
@@ -72,6 +76,7 @@ Siguiendo las directivas de `.agent/rules/00-core-philosophy.md`:
   - Políticas de timeout, retries exponenciales y manejo de desconexión transitoria en operaciones de I/O.
 
 ### 2.4. Capa de Interfaces (`src/interfaces/`)
+
 - **Controladores y Routers:**
   - Nomenclatura de routers: `<entity>_router.py`.
   - Los endpoints HTTP deben delegar inmediatamente en Application Handlers o Servicios coordinadores; prohibido escribir lógica de negocio en routers.
@@ -80,6 +85,7 @@ Siguiendo las directivas de `.agent/rules/00-core-philosophy.md`:
   - Decoradores y validaciones con `Field(...)`, `minLength`, `maxLength`, `description` y `examples`.
 - **Estandarización de Errores HTTP:**
   - Respuestas de error uniformes basadas en **RFC 7807 (Problem Details)**:
+
     ```json
     {
       "type": "urn:problem:safety-policy-violation",
@@ -95,12 +101,14 @@ Siguiendo las directivas de `.agent/rules/00-core-philosophy.md`:
 ## 3. Estándar de Tipado Estricto y Docstrings
 
 ### 3.1. Tipado Estático (Python 3.12+ / Pyright)
+
 - **Uniones Modernas:** Utilizar siempre el operador `|` en lugar de `Union[A, B]` u `Optional[A]`.
 - **Colecciones Built-in:** Utilizar `list[T]`, `dict[K, V]`, `set[T]`, `tuple[T, ...]` en lugar de las clases deprecadas de `typing`.
 - **Generadores y Streams:** Tipado explícito con `AsyncIterator[str]` o `Iterator[DomainEvent]`.
 - **Evitar `Any`:** Restringir el uso de `Any` al mínimo indispensable (ej. argumentos dinámicos de herramientas de IA). Usar `object` o `TypeVar` cuando sea posible.
 
 ### 3.2. Formato de Docstrings (Google Style)
+
 Todas las clases públicas, métodos de negocio y endpoints deben incluir docstrings con estructura canónica:
 
 ```python
@@ -127,6 +135,7 @@ def reserve_quota(
 ## 4. Estructura y Estandarización de la Suite de Pruebas (`tests/`)
 
 ### 4.1. Jerarquía de Pruebas
+
 1. **`tests/unit/`**:
    - Pruebas rápidas (< 1s en total), aisladas, sin I/O, sin base de datos ni broker.
    - Uso de dobles de prueba puros (InMemory Repositories, Fakes).
@@ -136,6 +145,7 @@ def reserve_quota(
    - Pruebas de extremo a extremo cubriendo flujos completos de casos de uso (Walkthrough Happy Path, HITL approvals, streaming con reconexión).
 
 ### 4.2. Convención de Nombres de Casos de Prueba
+
 - Estilo BDD descriptivo:
   `test_should_<expected_outcome>_when_<condition>()`
   - Ejemplo: `test_should_raise_insufficient_budget_error_when_balance_is_depleted()`

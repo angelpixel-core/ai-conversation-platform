@@ -10,12 +10,14 @@
 ## 1. Contexto y Objetivos
 
 A lo largo del desarrollo de los Slices 1 al 10, la aplicación backend en `apps/chatbot/service/api` ha evolucionado hacia una arquitectura enterprise basada en **Clean Architecture**, **DDD**, **CQRS** y **Event-Driven Architecture**, requiriendo componentes específicos:
+
 - **Base de Datos:** Microsoft SQL Server 2022 con transacciones ACID, aislamiento multi-tenant y migraciones vía Alembic.
 - **Message Broker:** RabbitMQ 3.13 con exchange topics para mensajería asíncrona y Outbox Relay.
 - **Observabilidad:** OpenTelemetry con contexto W3C distribuido (`traceparent`).
 - **Orquestación Local:** Un stack compuesto por `chatbot_api`, `chatbot_worker`, `mssql_db` y `rabbitmq_broker`.
 
 Sin embargo, existe una disparidad histórica entre el directorio raíz del monorepo (`./../../../../`) y la aplicación:
+
 1. `infra/local/compose/compose.yaml` (en la raíz) aún contiene definiciones legadas con PostgreSQL y configuraciones no alineadas con la arquitectura actual de MSSQL + RabbitMQ + FastAPI.
 2. Existen dos `Makefile` (`./../../../../Makefile` y `apps/chatbot/service/api/Makefile`) con comandos y variables de entorno que requieren sincronización y estandarización.
 3. La gestión de secretos y variables de entorno (`.env`, `.env.example`, `.env.template`) necesita un estándar canónico unificado con validación estricta.
@@ -26,6 +28,7 @@ Sin embargo, existe una disparidad histórica entre el directorio raíz del mono
 ## 2. Diagnóstico de Disparidades y Soluciones Propuestas
 
 ### 2.1. Docker Compose: Monorepo (`infra/local/compose`) vs Servicio Local
+
 - **Situación Actual:**
   - `infra/local/compose/compose.yaml` define un contenedor `db` con PostgreSQL 16 y una API legacy.
   - `apps/chatbot/service/api/docker-compose.yml` define `mssql_db` (MSSQL 2022), `rabbitmq_broker` (RabbitMQ 3.13), `chatbot_api` y `chatbot_worker`.
@@ -35,6 +38,7 @@ Sin embargo, existe una disparidad histórica entre el directorio raíz del mono
   - Mantener `apps/chatbot/service/api/docker-compose.yml` como referencia autónoma para desarrollo aislado del backend, o enlazarlo simbióticamente mediante includes de Compose v2.
 
 ### 2.2. Makefiles: Jerarquía y Nomenclatura
+
 - **Makefile Raíz (`./../../../../Makefile`):**
   - Actúa como la fachada principal para desarrolladores y operadores.
   - Comandos estandarizados:
@@ -54,6 +58,7 @@ Sin embargo, existe una disparidad histórica entre el directorio raíz del mono
 ## 3. Estándar de Variables de Entorno y Gestión de Secretos
 
 ### 3.1. Niveles de Configuración
+
 Se establece una matriz de 4 niveles para la configuración:
 
 | Nivel | Ubicación | Control de Versiones | Propósito |
@@ -64,6 +69,7 @@ Se establece una matriz de 4 niveles para la configuración:
 | **Cloud (AWS)** | AWS Secrets Manager & SSM Parameter Store | **No (KMS)** | Secretos de producción con rotación automática (DB passwords, API keys de LLM, certificados). |
 
 ### 3.2. Reglas de Validación con Pydantic Settings
+
 - Toda variable debe estar declarada en `src/infrastructure/config/settings.py` (o módulo de configuración) utilizando `pydantic-settings`.
 - Valores numéricos, URLs y booleanos fuertemente tipados.
 - Si una variable crítica falta o tiene formato inválido, el proceso debe fallar inmediatamente al arrancar (*Fail-Fast Principle*).
@@ -74,7 +80,9 @@ Se establece una matriz de 4 niveles para la configuración:
 ## 4. Estandarización de Pipelines de CI/CD
 
 ### 4.1. Workflows en GitHub Actions (`.github/workflows/`)
+
 Se estructuran los siguientes jobs modulares y paralelos:
+
 1. **`lint-and-format`**:
    - `ruff format --check src tests`
    - `ruff check src tests`
