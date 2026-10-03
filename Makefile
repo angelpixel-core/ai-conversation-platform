@@ -32,9 +32,17 @@ security:
 audit:
 	.venv/bin/python -m pip_audit --local --skip-editable
 
-# Ejecutar todos los tests
+# Ejecutar todos los tests (pausando temporalmente el worker si el stack está activo para evitar contención de locks en ChatbotDB)
 test:
-	.venv/bin/python -m pytest
+	@if docker ps --format '{{.Names}}' | grep -q '^chatbot_worker$$'; then \
+		docker compose pause worker > /dev/null 2>&1 || true; \
+		.venv/bin/python -m pytest; \
+		STATUS=$$?; \
+		docker compose unpause worker > /dev/null 2>&1 || true; \
+		exit $$STATUS; \
+	else \
+		.venv/bin/python -m pytest; \
+	fi
 
 # Ejecutar cobertura de código (reporte en consola y generación de HTML)
 coverage:
