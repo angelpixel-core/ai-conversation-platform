@@ -721,3 +721,5 @@ make check-all     # Run full quality barrier (format + lint + types + security 
   - 📄 Architecture Decision: [ADR 0010: Monorepo Compose and Local Infrastructure Standardization](.agent/architecture/decisions/0010-monorepo-compose-and-local-infrastructure-standardization.md)
 - [x] [**Configuration Standardization:** Canonical Environment Variables, Secrets & Pydantic Fail-Fast](.agent/architecture/decisions/0011-standardized-environment-variables-and-secrets-management.md)
   - 📄 Architecture Decision: [ADR 0011: Standardized Environment Variables, Secrets & Pydantic Settings](.agent/architecture/decisions/0011-standardized-environment-variables-and-secrets-management.md)
+- [x] [**CI/CD Pipeline Standardization:** GitHub Actions Modular Jobs, Service Containers & Docker Buildx](.agent/architecture/decisions/0012-github-actions-ci-cd-standardization-and-service-containers.md)
+  - 📄 Architecture Decision: [ADR 0012: GitHub Actions CI/CD Standardization & Service Containers](.agent/architecture/decisions/0012-github-actions-ci-cd-standardization-and-service-containers.md)

@@ -99,26 +99,27 @@ Se establece una matriz de 4 niveles para la configuración:
 
 ---
 
-## 4. Estandarización de Pipelines de CI/CD
+## 4. Estandarización de Pipelines de CI/CD (Resuelto en [ADR 0012](file:///.agent/architecture/decisions/0012-github-actions-ci-cd-standardization-and-service-containers.md))
 
 ### 4.1. Workflows en GitHub Actions (`.github/workflows/`)
 
-Se estructuran los siguientes jobs modulares y paralelos:
+Se estructuran y ejecutan 5 jobs modulares y paralelos en `.github/workflows/ci.yml`:
 
-1. **`lint-and-format`**:
-   - `ruff format --check src tests`
-   - `ruff check src tests`
-2. **`static-analysis`**:
-   - `pyright` (tipado estricto)
-   - `bandit -r src -s B101` (escaneo de seguridad AST)
-3. **`test-unit-and-integration`**:
-   - Servicios de soporte (Service Containers en GitHub Actions): `mcr.microsoft.com/mssql/server:2022-latest` y `rabbitmq:3.13-management-alpine`.
-   - Ejecución de migraciones Alembic.
-   - Ejecución de `pytest` con reporte de cobertura.
-4. **`docs-validation`**:
-   - Ejecución de `src.interfaces.cli.export_openapi` y validación de esquema OpenAPI 3.1.0 contra Swagger UI / ReDoc.
-5. **`docker-build-and-push` (solo en ramas principales y tags)**:
-   - Build multi-stage optimizado con buildx y cache en GitHub Actions.
+- [x] **`lint-and-format`**:
+  - `ruff format --check src tests`
+  - `ruff check src tests`
+- [x] **`static-analysis`**:
+  - `pyright` (tipado estricto sin errores)
+  - `bandit -r src -s B101` (escaneo de seguridad AST sin vulnerabilidades)
+- [x] **`test-unit-and-integration`**:
+  - **Service Containers oficiales:** `mcr.microsoft.com/mssql/server:2022-latest` (`1433`) y `rabbitmq:3-management-alpine` (`5672`/`15672`).
+  - Ejecución de migraciones Alembic (`alembic upgrade head`).
+  - Ejecución de la suite completa de pruebas (`pytest` con 619 tests y reporte XML de cobertura).
+- [x] **`docs-validation`**:
+  - Ejecución de `src.interfaces.cli.export_openapi`.
+  - Validación de esquema OpenAPI 3.1.0 (`public/openapi.json`) y standalone HTML de ReDoc (`public/index.html`).
+- [x] **`docker-build-and-push`**:
+  - Verificación de compilación del `Dockerfile` multi-stage con Docker Buildx y cache en GitHub Actions (`type=gha`).
 
 ---
 
