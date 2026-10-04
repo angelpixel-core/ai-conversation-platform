@@ -8,6 +8,10 @@ from src.domain.knowledge.events.knowledge_events import (
     DocumentIndexedDomainEvent,
     DocumentUploadedDomainEvent,
 )
+from src.domain.knowledge.exceptions import (
+    DocumentValidationError,
+    InvalidDocumentChunkError,
+)
 from src.domain.shared.aggregate_root import AggregateRoot
 from src.domain.tenants.value_objects.tenant_id import TenantId
 
@@ -37,7 +41,9 @@ class Document(AggregateRoot):
     ) -> None:
         super().__init__()
         if not filename.strip():
-            raise ValueError("El nombre de archivo del documento no puede estar vacío.")
+            raise DocumentValidationError(
+                "El nombre de archivo del documento no puede estar vacío."
+            )
 
         self._id = document_id.strip()
         self._tenant_id = tenant_id
@@ -120,7 +126,9 @@ class Document(AggregateRoot):
     def mark_indexed(self, total_chunks: int) -> None:
         """Transitions document status to INDEXED with total chunk count."""
         if total_chunks <= 0:
-            raise ValueError("El total de fragmentos indexados debe ser mayor a cero.")
+            raise InvalidDocumentChunkError(
+                "El total de fragmentos indexados debe ser mayor a cero."
+            )
         self._status = DocumentStatus.INDEXED
         self._total_chunks = total_chunks
         self._updated_at = datetime.now(UTC)

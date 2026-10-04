@@ -15,7 +15,7 @@ class ToolExecutionError(DomainError):
     pass
 
 
-class InvalidApprovalStateError(DomainError):
+class InvalidApprovalStateError(DomainError, ValueError):
     """Raised when an approval request transition is invalid."""
 
     pass

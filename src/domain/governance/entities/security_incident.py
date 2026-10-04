@@ -40,14 +40,54 @@ class SecurityIncident(AggregateRoot):
         if not clean_prompt:
             raise ValueError("El prompt_preview no puede estar vacío.")
 
-        self.id = clean_id
-        self.tenant_id = tenant_id
-        self.severity = severity
-        self.rule_name = clean_rule
-        self.description = description.strip() if description else ""
-        self.prompt_preview = clean_prompt
-        self.details: dict[str, Any] = dict(details) if details else {}
-        self.created_at = created_at or datetime.now(UTC)
+        self._id = clean_id
+        self._tenant_id = tenant_id
+        self._severity = severity
+        self._rule_name = clean_rule
+        self._description = description.strip() if description else ""
+        self._prompt_preview = clean_prompt
+        self._details: dict[str, Any] = dict(details) if details else {}
+        self._created_at = created_at or datetime.now(UTC)
+
+    @property
+    def id(self) -> str:
+        """Unique identifier of the incident."""
+        return self._id
+
+    @property
+    def tenant_id(self) -> TenantId:
+        """Tenant identifier associated with the incident."""
+        return self._tenant_id
+
+    @property
+    def severity(self) -> IncidentSeverity:
+        """Severity classification of the incident."""
+        return self._severity
+
+    @property
+    def rule_name(self) -> str:
+        """Name of the security/safety rule that triggered."""
+        return self._rule_name
+
+    @property
+    def description(self) -> str:
+        """Human-readable explanation of the violation."""
+        return self._description
+
+    @property
+    def prompt_preview(self) -> str:
+        """Sanitized preview snippet of the offending prompt."""
+        return self._prompt_preview
+
+    @property
+    def details(self) -> dict[str, Any]:
+        """Supplemental diagnostic metadata dictionary."""
+        return self._details
+
+    @property
+    def created_at(self) -> datetime:
+        """Creation timestamp of the incident."""
+        return self._created_at
 
     @classmethod
     def create(

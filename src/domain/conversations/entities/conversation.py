@@ -7,9 +7,14 @@ from src.domain.conversations.events.assistant_response_completed import (
 )
 from src.domain.conversations.events.conversation_created import ConversationCreatedDomainEvent
 from src.domain.conversations.events.message_appended import MessageAppendedDomainEvent
+from src.domain.conversations.exceptions import (
+    ConsecutiveAssistantMessageError,
+    ConsecutiveUserMessageError,
+    InvalidConversationTitleError,
+    MessageValidationError,
+)
 from src.domain.conversations.value_objects.message import Message, MessageRole
 from src.domain.shared.aggregate_root import AggregateRoot
-from src.domain.shared.domain_error import DomainError
 
 
 @dataclass(eq=False)
@@ -37,9 +42,9 @@ class Conversation(AggregateRoot):
     def create(cls, title: str) -> "Conversation":
         normalized = title.strip()
         if not normalized:
-            raise DomainError("Conversation title cannot be empty.")
+            raise InvalidConversationTitleError("Conversation title cannot be empty.")
         if len(normalized) > 200:
-            raise DomainError("Conversation title cannot exceed 200 characters.")
+            raise InvalidConversationTitleError("Conversation title cannot exceed 200 characters.")
 
         instance = cls(
             id=uuid4(),
@@ -69,12 +74,14 @@ class Conversation(AggregateRoot):
     def append_user_message(self, content: str) -> Message:
         """Append a user message to the conversation."""
         if self._messages and self._messages[-1].role == MessageRole.USER:
-            raise DomainError("Cannot append user message before assistant responds.")
+            raise ConsecutiveUserMessageError(
+                "Cannot append user message before assistant responds."
+            )
 
         try:
             msg = Message.create_user_message(content)
         except ValueError as exc:
-            raise DomainError(str(exc)) from exc
+            raise MessageValidationError(str(exc)) from exc
 
         if self._messages:
             min_next_time = self._messages[-1].created_at + timedelta(milliseconds=10)
@@ -92,12 +99,14 @@ class Conversation(AggregateRoot):
     def append_assistant_message(self, content: str) -> Message:
         """Append an assistant response message to the conversation."""
         if not self._messages or self._messages[-1].role != MessageRole.USER:
-            raise DomainError("Cannot append assistant message without a preceding user message.")
+            raise ConsecutiveAssistantMessageError(
+                "Cannot append assistant message without a preceding user message."
+            )
 
         try:
             msg = Message.create_assistant_message(content)
         except ValueError as exc:
-            raise DomainError(str(exc)) from exc
+            raise MessageValidationError(str(exc)) from exc
 
         if self._messages:
             min_next_time = self._messages[-1].created_at + timedelta(milliseconds=10)

@@ -12,6 +12,12 @@ from src.domain.tenants.events.tenant_events import (
     TenantQuotaExceededDomainEvent,
     TenantSuspendedDomainEvent,
 )
+from src.domain.tenants.exceptions import (
+    InsufficientBudgetError,
+    ModelNotAllowedError,
+    TenantSuspendedError,
+    TenantValidationError,
+)
 from src.domain.tenants.value_objects.monetary_budget import MonetaryBudget
 from src.domain.tenants.value_objects.tenant_id import TenantId
 
@@ -38,7 +44,7 @@ class Tenant(AggregateRoot):
     ) -> None:
         super().__init__()
         if not name.strip():
-            raise ValueError("El nombre del tenant no puede estar vacío.")
+            raise TenantValidationError("El nombre del tenant no puede estar vacío.")
 
         self._id = tenant_id
         self._name = name.strip()
@@ -121,10 +127,10 @@ class Tenant(AggregateRoot):
     def reserve_budget(self, estimated_cost: Decimal, model_id: str) -> None:
         """Attempts to reserve estimated budget for an inference request."""
         if not self.is_active:
-            raise ValueError(f"El tenant '{self._id}' se encuentra suspendido.")
+            raise TenantSuspendedError(f"El tenant '{self._id}' se encuentra suspendido.")
 
         if model_id not in self._policy.allowed_models:
-            raise ValueError(
+            raise ModelNotAllowedError(
                 f"El modelo '{model_id}' no está permitido para el tenant '{self._id}' "
                 f"con plan {self._policy.tier.value}."
             )
@@ -138,7 +144,7 @@ class Tenant(AggregateRoot):
                     occurred_at=datetime.now(UTC),
                 )
             )
-            raise ValueError(
+            raise InsufficientBudgetError(
                 f"Cuota excedida para tenant '{self._id}'. Solicitado: {estimated_cost}, "
                 f"Disponible: {self._budget.available_balance}"
             )

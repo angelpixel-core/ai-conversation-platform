@@ -38,21 +38,24 @@ Siguiendo las directivas de `.agent/rules/00-core-philosophy.md`:
              [ Infrastructure ] (MSSQL, RabbitMQ, LLM Adapters, OpenTelemetry)
 ```
 
-### 2.1. Capa de Dominio (`src/domain/`)
+### 2.1. Capa de Dominio (`src/domain/`) — [Completado / ADR 0014]
 
-- **Regla Inquebrantable:** Cero dependencias de librerías externas o frameworks (FastAPI, SQLModel, SQLAlchemy, Pydantic no-puro, AnyIO).
-- **Value Objects:**
+- [x] **Regla Inquebrantable:** Cero dependencias de librerías externas o frameworks (FastAPI, SQLModel, SQLAlchemy, Pydantic no-puro, AnyIO).
+- [x] **Value Objects:**
   - Deben ser inmutables utilizando `@dataclass(frozen=True)` o clases inmutables con validación estricta en `__post_init__`.
   - Deben proveer métodos factoría semánticos (`create()`, `from_raw()`, etc.) y métodos de comparación por valor.
-- **Entidades y Agregados (Aggregate Roots):**
+  - Deduplicación consolidada (ej. `CheckpointId` unificado en `checkpoint_id.py`).
+- [x] **Entidades y Agregados (Aggregate Roots):**
   - Identificador único tipado (ej. `TenantId`, `ConversationId`).
-  - Estado encapsulado: atributos privados protegidos (`_balance`, `_messages`) con propiedades públicas de solo lectura.
+  - Estado encapsulado: atributos privados protegidos (`_id`, `_status`, `_balance`, `_messages`) con propiedades públicas de solo lectura.
   - Mutación exclusiva a través de métodos de negocio que validen invariantes y emitan Domain Events (`record_event(...)`).
-- **Domain Events:**
+- [x] **Domain Events:**
   - Nomenclatura en pasado imperativo: `<Aggregate><Action>DomainEvent` (ej. `SafetyViolationBlockedDomainEvent`, `MessageAppendedDomainEvent`).
   - Carga útil (`payload`) inmutable y serializable.
-- **Excepciones de Dominio:**
-  - Jerarquía clara heredando de una clase base común `DomainException` o `DomainError`.
+- [x] **Excepciones de Dominio:**
+  - Jerarquía unificada en `src/domain/shared/exceptions.py` (`DomainError`, `DomainException`, `DomainValidationError`, `EntityNotFoundError`, `InvariantViolationError`).
+  - Dual-inheritance (`DomainError, ValueError`) para garantizar retrocompatibilidad total sin romper tests ni handlers existentes.
+  - Formalizado en [ADR 0014](.agent/architecture/decisions/0014-domain-layer-standardization-and-clean-arch-polish.md).
 
 ### 2.2. Capa de Aplicación (`src/application/`)
 
@@ -155,11 +158,11 @@ def reserve_quota(
 
 ## 5. Plan de Ejecución para la Rama de Refactor
 
-| Paso | Alcance | Tareas Principales |
-| :---: | :--- | :--- |
-| **1** | **Dominio & VO** | Congelar dataclasses de Value Objects, unificar excepciones en `src/domain/shared/exceptions.py`. |
-| **2** | **CQRS Handlers** | Homogeneizar firmas de handlers, inyección de dependencias y context managers de UoW. |
-| **3** | **Adaptadores & Mappers** | Revisar mapeo exhaustivo entre modelos SQLModel y entidades DDD. |
-| **4** | **Interfaces & Routers** | Unificar formato RFC 7807 en exception handlers, verificar decoradores OpenAPI. |
-| **5** | **Docstrings & Tipado** | Aplicar tipado estricto en Pyright con `reportUnknownMemberType` y docstrings estilo Google. |
-| **6** | **Quality Gate** | Ejecución completa de `make check-all` garantizando 0 regresiones. |
+| Paso | Alcance | Tareas Principales | Estado |
+| :---: | :--- | :--- | :---: |
+| **1** | **Dominio & VO** | Congelar dataclasses de Value Objects, unificar excepciones en `src/domain/shared/exceptions.py`, factorías semánticas y encapsulación. | ✅ **Completado ([ADR 0014](.agent/architecture/decisions/0014-domain-layer-standardization-and-clean-arch-polish.md))** |
+| **2** | **CQRS Handlers** | Homogeneizar firmas de handlers, inyección de dependencias y context managers de UoW. | ⏳ Pendiente |
+| **3** | **Adaptadores & Mappers** | Revisar mapeo exhaustivo entre modelos SQLModel y entidades DDD. | ⏳ Pendiente |
+| **4** | **Interfaces & Routers** | Unificar formato RFC 7807 en exception handlers, verificar decoradores OpenAPI. | ⏳ Pendiente |
+| **5** | **Docstrings & Tipado** | Aplicar tipado estricto en Pyright con `reportUnknownMemberType` y docstrings estilo Google. | ⏳ Pendiente |
+| **6** | **Quality Gate** | Ejecución completa de `make check-all` garantizando 0 regresiones. | ⏳ Pendiente |

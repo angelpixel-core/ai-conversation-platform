@@ -36,5 +36,15 @@ class IdempotencyKey:
         """Generate a random UUIDv4-based idempotency key."""
         return cls(value=str(uuid.uuid4()))
 
+    @classmethod
+    def from_raw(cls, raw: str) -> "IdempotencyKey":
+        """Semantic factory method creating IdempotencyKey from raw string."""
+        return cls(value=raw)
+
+    @classmethod
+    def create(cls, key: str) -> "IdempotencyKey":
+        """Semantic factory method creating IdempotencyKey."""
+        return cls(value=key)
+
     def __str__(self) -> str:
         return self.value
