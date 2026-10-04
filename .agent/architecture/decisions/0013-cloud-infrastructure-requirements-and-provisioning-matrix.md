@@ -3,7 +3,7 @@
 - **Estado:** Aceptado (Accepted)
 - **Fecha:** 2026-10-03
 - **Autores:** Core Architecture & Platform Engineering Team
-- **Contexto:** Rama `feat/infra-pipelines-and-repo-standardization` — Sección 5 de RFC 01 (`docs/rfc_infra_pipelines_and_provisioning_spec.md`) y provisión en `infra/provisioning/aws/`
+- **Contexto:** Rama `feat/infra-pipelines-and-repo-standardization` — Sección 5 de RFC 01 (`docs/roadmap/rfc/rfc_infra_pipelines_and_provisioning_spec.md`) y provisión en `infra/provisioning/aws/`
 
 ---
 

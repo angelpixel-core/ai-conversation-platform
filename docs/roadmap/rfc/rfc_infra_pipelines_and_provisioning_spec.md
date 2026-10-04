@@ -32,7 +32,7 @@ Sin embargo, existe una disparidad histórica entre el directorio raíz del mono
 - **Situación Previa:**
   - `infra/local/compose/compose.yaml` definía un contenedor `db` con PostgreSQL 16 y un comando Django inexistente (`manage.py runserver`).
   - `apps/chatbot/service/api/docker-compose.yml` definía `mssql_db` (MSSQL 2022), `rabbitmq_broker` (RabbitMQ 3.13), `chatbot_api` y `chatbot_worker`.
-- **Estandarización Implementada (ver [ADR 0010](file:///.agent/architecture/decisions/0010-monorepo-compose-and-local-infrastructure-standardization.md)):**
+- **Estandarización Implementada (ver [ADR 0010](../../../.agent/architecture/decisions/0010-monorepo-compose-and-local-infrastructure-standardization.md)):**
   - **Servicios Unificados:** 5 componentes coordinados por capacidad arquitectónica: `api` (FastAPI / Uvicorn), `worker` (Python Inferencia & Outbox Relay), `portal` (Next.js 14+), `db` (contenedor `chatbot_db`, MSSQL 2022) y `broker` (contenedor `chatbot_broker`, RabbitMQ 3.13 Management).
   - **Red Bridge Común:** `chatbot_net` (`driver: bridge`, `attachable: true`) para comunicación inter-servicio transparente y acoplamiento de contenedores independientes o de pruebas.
   - **Puertos Estándar de Host:**
@@ -74,7 +74,7 @@ Sin embargo, existe una disparidad histórica entre el directorio raíz del mono
 
 ---
 
-## 3. Estándar de Variables de Entorno y Gestión de Secretos (Resuelto en [ADR 0011](file:///.agent/architecture/decisions/0011-standardized-environment-variables-and-secrets-management.md))
+## 3. Estándar de Variables de Entorno y Gestión de Secretos (Resuelto en [ADR 0011](../../../.agent/architecture/decisions/0011-standardized-environment-variables-and-secrets-management.md))
 
 ### 3.1. Niveles de Configuración
 
@@ -82,14 +82,14 @@ Se establece una matriz de 4 niveles para la configuración:
 
 | Nivel | Ubicación | Control de Versiones | Propósito |
 | :--- | :--- | :---: | :--- |
-| **1. Plantilla Canónica** | [`.env.template`](file:///.env.template) / `config/examples/local.env` | **Sí (Git)** | Documentación exhaustiva con valores por defecto seguros, descripciones y tipos. |
+| **1. Plantilla Canónica** | [`.env.template`](../../../.env.template) / `config/examples/local.env` | **Sí (Git)** | Documentación exhaustiva con valores por defecto seguros, descripciones y tipos. |
 | **2. Entorno Local** | `.env` / `.env.local` / `infra/environments/.local/project.env` | **No (.gitignore)** | Secretos locales del desarrollador, tokens de prueba y credenciales de contenedores locales. |
 | **3. CI/CD** | GitHub Actions Secrets / Environment Secrets | **No (Cifrado)** | Credenciales de registry, tokens de análisis y claves de API de testing. |
 | **4. Cloud (AWS)** | AWS Secrets Manager & SSM Parameter Store | **No (KMS)** | Secretos de producción con rotación automática (DB passwords, API keys de LLM, certificados). |
 
 ### 3.2. Reglas de Validación con Pydantic Settings
 
-- [x] Toda variable se encuentra declarada y tipada en [`src/infrastructure/shared/config/settings.py`](file:///src/infrastructure/shared/config/settings.py) utilizando `pydantic-settings`.
+- [x] Toda variable se encuentra declarada y tipada en [`src/infrastructure/shared/config/settings.py`](../../../src/infrastructure/shared/config/settings.py) utilizando `pydantic-settings`.
 - [x] Modelos modulares especializados: `AppSettings`, `DatabaseSettings`, `MessagingSettings`, `TenancySettings`, `GovernanceSettings`, `LlmSettings`.
 - [x] Validadores estrictos (`@field_validator`):
   - Rango de puertos válidos (`1 <= port <= 65535`) para `API_PORT`, `DB_PORT` y `BROKER_PORT` (con alias `RABBITMQ_PORT`).
@@ -99,7 +99,7 @@ Se establece una matriz de 4 niveles para la configuración:
 
 ---
 
-## 4. Estandarización de Pipelines de CI/CD (Resuelto en [ADR 0012](file:///.agent/architecture/decisions/0012-github-actions-ci-cd-standardization-and-service-containers.md))
+## 4. Estandarización de Pipelines de CI/CD (Resuelto en [ADR 0012](../../../.agent/architecture/decisions/0012-github-actions-ci-cd-standardization-and-service-containers.md))
 
 ### 4.1. Workflows en GitHub Actions (`.github/workflows/`)
 
@@ -123,9 +123,9 @@ Se estructuran y ejecutan 5 jobs modulares y paralelos en `.github/workflows/ci.
 
 ---
 
-## 5. Matriz de Requerimientos de Infraestructura Cloud (Resuelto en [ADR 0013](file:///.agent/architecture/decisions/0013-cloud-infrastructure-requirements-and-provisioning-matrix.md))
+## 5. Matriz de Requerimientos de Infraestructura Cloud (Resuelto en [ADR 0013](../../../.agent/architecture/decisions/0013-cloud-infrastructure-requirements-and-provisioning-matrix.md))
 
-Para la arquitectura en AWS gestionada con Terraform (`infra/provisioning/aws`) y GitOps con ArgoCD, se define y formaliza en **[ADR 0013](file:///.agent/architecture/decisions/0013-cloud-infrastructure-requirements-and-provisioning-matrix.md)** y en [`infra/provisioning/aws/README.md`](file:///../../../../infra/provisioning/aws/README.md) la siguiente especificación comparativa:
+Para la arquitectura en AWS gestionada con Terraform (`infra/provisioning/aws`) y GitOps con ArgoCD, se define y formaliza en **[ADR 0013](../../../.agent/architecture/decisions/0013-cloud-infrastructure-requirements-and-provisioning-matrix.md)** y en [`infra/provisioning/aws/README.md`](../../../../../../infra/provisioning/aws/README.md) la siguiente especificación comparativa:
 
 ### 5.1. Comparativa de Componentes: Mínimos vs. Ideales
 
