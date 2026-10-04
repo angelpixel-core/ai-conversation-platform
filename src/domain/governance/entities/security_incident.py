@@ -27,6 +27,21 @@ class SecurityIncident(AggregateRoot):
         details: dict[str, Any] | None = None,
         created_at: datetime | None = None,
     ) -> None:
+        """Initialize a SecurityIncident aggregate.
+
+        Args:
+            incident_id: Unique string identifier for the incident.
+            tenant_id: TenantId owning or associated with the violation.
+            severity: Categorical severity (LOW, MEDIUM, HIGH, CRITICAL).
+            rule_name: Identifier of the triggered safety or governance rule.
+            description: Narrative summary of the incident.
+            prompt_preview: Redacted or truncated preview of triggering input.
+            details: Optional dictionary of forensic metadata and risk scores.
+            created_at: Optional UTC occurrence timestamp. Defaults to now.
+
+        Raises:
+            ValueError: If incident_id, rule_name, or prompt_preview is empty.
+        """
         super().__init__()
         clean_id = incident_id.strip() if incident_id else ""
         if not clean_id:
@@ -40,14 +55,54 @@ class SecurityIncident(AggregateRoot):
         if not clean_prompt:
             raise ValueError("El prompt_preview no puede estar vacío.")
 
-        self.id = clean_id
-        self.tenant_id = tenant_id
-        self.severity = severity
-        self.rule_name = clean_rule
-        self.description = description.strip() if description else ""
-        self.prompt_preview = clean_prompt
-        self.details: dict[str, Any] = dict(details) if details else {}
-        self.created_at = created_at or datetime.now(UTC)
+        self._id = clean_id
+        self._tenant_id = tenant_id
+        self._severity = severity
+        self._rule_name = clean_rule
+        self._description = description.strip() if description else ""
+        self._prompt_preview = clean_prompt
+        self._details: dict[str, Any] = dict(details) if details else {}
+        self._created_at = created_at or datetime.now(UTC)
+
+    @property
+    def id(self) -> str:
+        """str: Unique identifier of the incident."""
+        return self._id
+
+    @property
+    def tenant_id(self) -> TenantId:
+        """TenantId: Tenant identifier associated with the incident."""
+        return self._tenant_id
+
+    @property
+    def severity(self) -> IncidentSeverity:
+        """IncidentSeverity: Severity classification of the incident."""
+        return self._severity
+
+    @property
+    def rule_name(self) -> str:
+        """str: Name of the security/safety rule that triggered."""
+        return self._rule_name
+
+    @property
+    def description(self) -> str:
+        """str: Human-readable explanation of the violation."""
+        return self._description
+
+    @property
+    def prompt_preview(self) -> str:
+        """str: Sanitized preview snippet of the offending prompt."""
+        return self._prompt_preview
+
+    @property
+    def details(self) -> dict[str, Any]:
+        """dict[str, Any]: Supplemental diagnostic metadata dictionary."""
+        return self._details
+
+    @property
+    def created_at(self) -> datetime:
+        """datetime: Creation timestamp of the incident."""
+        return self._created_at
 
     @classmethod
     def create(
@@ -61,7 +116,21 @@ class SecurityIncident(AggregateRoot):
         details: dict[str, Any] | None = None,
         created_at: datetime | None = None,
     ) -> "SecurityIncident":
-        """Factory creating a security incident and recording associated domain events."""
+        """Factory creating a security incident and recording associated domain events.
+
+        Args:
+            incident_id: Unique incident identifier.
+            tenant_id: TenantId owning the incident.
+            severity: IncidentSeverity classification.
+            rule_name: Security rule name that matched.
+            description: Narrative description.
+            prompt_preview: Redacted prompt content snippet.
+            details: Supplemental audit metadata. Defaults to None.
+            created_at: Optional occurrence timestamp.
+
+        Returns:
+            Newly created SecurityIncident with SafetyViolationBlockedDomainEvent.
+        """
         incident = cls(
             incident_id=incident_id,
             tenant_id=tenant_id,
@@ -102,3 +171,6 @@ class SecurityIncident(AggregateRoot):
             )
 
         return incident
+
+
+__all__ = ["SecurityIncident"]

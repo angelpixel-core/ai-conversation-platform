@@ -3,21 +3,21 @@
 from .index_document_chunks import (
     ChunkInput,
     IndexDocumentChunksCommand,
-    IndexDocumentChunksHandler,
+    IndexDocumentChunksCommandHandler,
     IndexDocumentChunksResult,
 )
 from .upload_document import (
     UploadDocumentCommand,
-    UploadDocumentHandler,
+    UploadDocumentCommandHandler,
     UploadDocumentResult,
 )
 
 __all__ = [
     "ChunkInput",
     "IndexDocumentChunksCommand",
-    "IndexDocumentChunksHandler",
+    "IndexDocumentChunksCommandHandler",
     "IndexDocumentChunksResult",
     "UploadDocumentCommand",
-    "UploadDocumentHandler",
+    "UploadDocumentCommandHandler",
     "UploadDocumentResult",
 ]

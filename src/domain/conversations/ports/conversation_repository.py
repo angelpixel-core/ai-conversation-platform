@@ -4,7 +4,7 @@ from uuid import UUID
 from src.domain.conversations.entities.conversation import Conversation
 
 
-class ConversationRepository(ABC):
+class ConversationRepositoryPort(ABC):
     """Persistence port owned by the domain/application boundary."""
 
     @abstractmethod
@@ -18,3 +18,6 @@ class ConversationRepository(ABC):
     @abstractmethod
     def list(self) -> list[Conversation]:
         raise NotImplementedError
+
+
+__all__ = ["ConversationRepositoryPort"]

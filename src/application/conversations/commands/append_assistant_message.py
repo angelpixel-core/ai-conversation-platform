@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
-from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.shared.ports.unit_of_work import UnitOfWorkPort
 from src.domain.conversations.exceptions import ConversationNotFoundError
 
 
@@ -26,13 +26,29 @@ class AppendAssistantMessageResult:
     created_at: datetime
 
 
-class AppendAssistantMessageHandler:
+class AppendAssistantMessageCommandHandler:
     """Application use case for appending completed assistant responses."""
 
-    def __init__(self, unit_of_work: UnitOfWork) -> None:
+    def __init__(self, unit_of_work: UnitOfWorkPort) -> None:
+        """Initializes the handler with a transactional unit of work.
+
+        Args:
+            unit_of_work: Transactional boundary port managing repository state.
+        """
         self._unit_of_work = unit_of_work
 
     def handle(self, command: AppendAssistantMessageCommand) -> AppendAssistantMessageResult:
+        """Appends an assistant message to a conversation aggregate.
+
+        Args:
+            command: AppendAssistantMessageCommand payload.
+
+        Returns:
+            AppendAssistantMessageResult with persisted message data.
+
+        Raises:
+            ConversationNotFoundError: If target conversation does not exist.
+        """
         with self._unit_of_work as uow:
             conversation = uow.conversations.get(command.conversation_id)
             if conversation is None:
@@ -52,5 +68,8 @@ class AppendAssistantMessageHandler:
             )
 
 
-# Alias for naming consistency with CQRS templates
-AppendAssistantMessageCommandHandler = AppendAssistantMessageHandler
+__all__ = [
+    "AppendAssistantMessageCommand",
+    "AppendAssistantMessageCommandHandler",
+    "AppendAssistantMessageResult",
+]

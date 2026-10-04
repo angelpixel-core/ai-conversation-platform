@@ -5,14 +5,14 @@ import pytest
 
 from src.application.tools.commands.execute_sandboxed_tool import (
     ExecuteSandboxedToolCommand,
-    ExecuteSandboxedToolHandler,
+    ExecuteSandboxedToolCommandHandler,
 )
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.domain.tools.ports.tool_registry_port import ToolRegistryPort
 from src.domain.tools.value_objects.tool_call import ToolCall
 from src.domain.tools.value_objects.tool_definition import ToolDefinition
 from src.infrastructure.tools.anyio_sandboxed_tool_runner import (
-    AnyioSandboxedToolRunner,
+    AnyioSandboxedToolRunnerAdapter,
 )
 
 
@@ -46,10 +46,10 @@ async def _slow_handler(delay: float = 2.0) -> dict[str, str]:
 
 @pytest.mark.anyio
 async def test_sandboxed_tool_runner_aborts_on_timeout() -> None:
-    runner = AnyioSandboxedToolRunner(registry_handlers={"slow_external_api": _slow_handler})
+    runner = AnyioSandboxedToolRunnerAdapter(registry_handlers={"slow_external_api": _slow_handler})
     registry = SlowToolRegistry()
 
-    handler = ExecuteSandboxedToolHandler(
+    handler = ExecuteSandboxedToolCommandHandler(
         runner=runner,
         tool_registry=registry,
     )
@@ -80,7 +80,7 @@ async def test_sandboxed_tool_runner_handles_exception_gracefully() -> None:
     def _failing_handler() -> None:
         raise RuntimeError("Fatal connection failure to 3rd party service")
 
-    runner = AnyioSandboxedToolRunner(registry_handlers={"failing_tool": _failing_handler})
+    runner = AnyioSandboxedToolRunnerAdapter(registry_handlers={"failing_tool": _failing_handler})
 
     tool_call = ToolCall(
         call_id="call-fail-1",

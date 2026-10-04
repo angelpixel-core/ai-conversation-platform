@@ -8,6 +8,10 @@ from src.domain.knowledge.events.knowledge_events import (
     DocumentIndexedDomainEvent,
     DocumentUploadedDomainEvent,
 )
+from src.domain.knowledge.exceptions import (
+    DocumentValidationError,
+    InvalidDocumentChunkError,
+)
 from src.domain.shared.aggregate_root import AggregateRoot
 from src.domain.tenants.value_objects.tenant_id import TenantId
 
@@ -22,7 +26,10 @@ class DocumentStatus(StrEnum):
 
 
 class Document(AggregateRoot):
-    """Aggregate root managing ingestion and indexing of private knowledge documents."""
+    """Aggregate root managing ingestion and indexing of private knowledge documents.
+
+    Controls chunk count validation, ingestion lifecycle, and indexing domain events.
+    """
 
     def __init__(
         self,
@@ -35,9 +42,26 @@ class Document(AggregateRoot):
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
     ) -> None:
+        """Initialize a Document aggregate root.
+
+        Args:
+            document_id: Unique string identifier for the document.
+            tenant_id: TenantId scoping ownership of this document.
+            filename: Name of the uploaded file.
+            content_type: MIME type of the document. Defaults to text/plain.
+            status: Initial ingestion status. Defaults to PENDING.
+            total_chunks: Number of chunk embeddings generated. Defaults to 0.
+            created_at: Optional UTC creation timestamp. Defaults to now.
+            updated_at: Optional UTC modification timestamp. Defaults to now.
+
+        Raises:
+            DocumentValidationError: If filename is empty or whitespace.
+        """
         super().__init__()
         if not filename.strip():
-            raise ValueError("El nombre de archivo del documento no puede estar vacío.")
+            raise DocumentValidationError(
+                "El nombre de archivo del documento no puede estar vacío."
+            )
 
         self._id = document_id.strip()
         self._tenant_id = tenant_id
@@ -50,38 +74,47 @@ class Document(AggregateRoot):
 
     @property
     def id(self) -> str:
+        """str: Unique document identifier."""
         return self._id
 
     @property
     def tenant_id(self) -> TenantId:
+        """TenantId: Owning tenant identifier."""
         return self._tenant_id
 
     @property
     def filename(self) -> str:
+        """str: Name of the original file."""
         return self._filename
 
     @property
     def content_type(self) -> str:
+        """str: MIME content type."""
         return self._content_type
 
     @property
     def status(self) -> DocumentStatus:
+        """DocumentStatus: Ingestion and indexing lifecycle status."""
         return self._status
 
     @property
     def total_chunks(self) -> int:
+        """int: Total text chunks indexed into the vector store."""
         return self._total_chunks
 
     @property
     def created_at(self) -> datetime:
+        """datetime: UTC creation timestamp."""
         return self._created_at
 
     @property
     def updated_at(self) -> datetime:
+        """datetime: UTC last updated timestamp."""
         return self._updated_at
 
     @property
     def domain_events(self) -> list[Any]:
+        """list[Any]: Recorded domain events pending dispatch."""
         return list(self._domain_events)
 
     @classmethod
@@ -92,7 +125,20 @@ class Document(AggregateRoot):
         filename: str,
         content_type: str = "text/plain",
     ) -> "Document":
-        """Factory creating a new document in PENDING status and emitting upload event."""
+        """Factory creating a new document in PENDING status and emitting upload event.
+
+        Args:
+            document_id: Generated unique document identifier.
+            tenant_id: TenantId owning the document.
+            filename: Original file name.
+            content_type: MIME type string. Defaults to text/plain.
+
+        Returns:
+            Newly created Document aggregate root with recorded DocumentUploadedDomainEvent.
+
+        Raises:
+            DocumentValidationError: If filename is empty.
+        """
         doc = cls(
             document_id=document_id,
             tenant_id=tenant_id,
@@ -113,14 +159,23 @@ class Document(AggregateRoot):
         return doc
 
     def mark_processing(self) -> None:
-        """Transitions document status to PROCESSING."""
+        """Transition document status to PROCESSING."""
         self._status = DocumentStatus.PROCESSING
         self._updated_at = datetime.now(UTC)
 
     def mark_indexed(self, total_chunks: int) -> None:
-        """Transitions document status to INDEXED with total chunk count."""
+        """Transition document status to INDEXED with total chunk count.
+
+        Args:
+            total_chunks: Count of indexed chunks stored in vector store.
+
+        Raises:
+            InvalidDocumentChunkError: If total_chunks is less than or equal to 0.
+        """
         if total_chunks <= 0:
-            raise ValueError("El total de fragmentos indexados debe ser mayor a cero.")
+            raise InvalidDocumentChunkError(
+                "El total de fragmentos indexados debe ser mayor a cero."
+            )
         self._status = DocumentStatus.INDEXED
         self._total_chunks = total_chunks
         self._updated_at = datetime.now(UTC)
@@ -134,6 +189,9 @@ class Document(AggregateRoot):
         )
 
     def mark_failed(self) -> None:
-        """Transitions document status to FAILED."""
+        """Transition document status to FAILED."""
         self._status = DocumentStatus.FAILED
         self._updated_at = datetime.now(UTC)
+
+
+__all__ = ["Document", "DocumentStatus"]

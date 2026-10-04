@@ -81,3 +81,12 @@ class AgentActivityEventSchema(BaseModel):
     event_type: str
     data: dict[str, Any]
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+__all__ = [
+    "AgentActivityEventSchema",
+    "ResumeWorkflowRequest",
+    "StartWorkflowRequest",
+    "WorkflowCheckpointResponse",
+    "WorkflowStateResponse",
+]

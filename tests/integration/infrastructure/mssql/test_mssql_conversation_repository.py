@@ -1,4 +1,4 @@
-"""Integration tests for MssqlConversationRepository against live SQL Server 2022."""
+"""Integration tests for MssqlConversationRepositoryAdapter against live SQL Server 2022."""
 
 from uuid import uuid4
 
@@ -6,7 +6,7 @@ from sqlalchemy.engine import Engine
 
 from src.domain.conversations.entities.conversation import Conversation
 from src.infrastructure.persistence.mssql.connection import create_session_factory
-from src.infrastructure.persistence.mssql.repository import MssqlConversationRepository
+from src.infrastructure.persistence.mssql.repository import MssqlConversationRepositoryAdapter
 
 
 def test_mssql_repo_save_and_retrieve_with_messages(mssql_engine: Engine, clean_db: None) -> None:
@@ -19,13 +19,13 @@ def test_mssql_repo_save_and_retrieve_with_messages(mssql_engine: Engine, clean_
 
     # 2. Persist in first transaction
     with session_factory() as session:
-        repo = MssqlConversationRepository(session=session)
+        repo = MssqlConversationRepositoryAdapter(session=session)
         repo.add(conversation)
         session.commit()
 
     # 3. Retrieve in a completely new session
     with session_factory() as session:
-        repo = MssqlConversationRepository(session=session)
+        repo = MssqlConversationRepositoryAdapter(session=session)
         retrieved = repo.get(conversation.id)
 
         assert retrieved is not None
@@ -47,7 +47,7 @@ def test_mssql_repo_update_conversation_and_append_messages(
     conversation.append_user_message("First Turn")
 
     with session_factory() as session:
-        repo = MssqlConversationRepository(session=session)
+        repo = MssqlConversationRepositoryAdapter(session=session)
         repo.add(conversation)
         session.commit()
 
@@ -56,12 +56,12 @@ def test_mssql_repo_update_conversation_and_append_messages(
     conversation.append_assistant_message("Assistant Turn")
 
     with session_factory() as session:
-        repo = MssqlConversationRepository(session=session)
+        repo = MssqlConversationRepositoryAdapter(session=session)
         repo.add(conversation)
         session.commit()
 
     with session_factory() as session:
-        repo = MssqlConversationRepository(session=session)
+        repo = MssqlConversationRepositoryAdapter(session=session)
         retrieved = repo.get(conversation.id)
 
         assert retrieved is not None
@@ -78,13 +78,13 @@ def test_mssql_repo_list_conversations(mssql_engine: Engine, clean_db: None) -> 
     conv2 = Conversation.create(title="Conversation Beta")
 
     with session_factory() as session:
-        repo = MssqlConversationRepository(session=session)
+        repo = MssqlConversationRepositoryAdapter(session=session)
         repo.add(conv1)
         repo.add(conv2)
         session.commit()
 
     with session_factory() as session:
-        repo = MssqlConversationRepository(session=session)
+        repo = MssqlConversationRepositoryAdapter(session=session)
         conversations = repo.list()
         assert len(conversations) == 2
         titles = [c.title for c in conversations]
@@ -96,5 +96,5 @@ def test_mssql_repo_get_nonexistent_returns_none(mssql_engine: Engine, clean_db:
     session_factory = create_session_factory(mssql_engine)
 
     with session_factory() as session:
-        repo = MssqlConversationRepository(session=session)
+        repo = MssqlConversationRepositoryAdapter(session=session)
         assert repo.get(uuid4()) is None

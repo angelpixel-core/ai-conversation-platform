@@ -7,7 +7,7 @@ from src.domain.governance.ports.safety_guardrail_port import SafetyGuardrailPor
 from src.domain.tenants.value_objects.tenant_id import TenantId
 
 
-class AnyioStreamGuardrailFilter:
+class AnyioStreamGuardrailFilterAdapter:
     """Filters outgoing stream tokens through safety guardrails in real time."""
 
     def __init__(
@@ -42,3 +42,6 @@ class AnyioStreamGuardrailFilter:
 
             accumulated_text += chunk
             yield chunk
+
+
+__all__ = ["AnyioStreamGuardrailFilterAdapter"]

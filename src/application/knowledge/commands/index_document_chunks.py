@@ -4,9 +4,9 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from uuid import uuid4
 
-from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.shared.ports.unit_of_work import UnitOfWorkPort
 from src.domain.knowledge.entities.document_chunk import DocumentChunk
-from src.domain.knowledge.exceptions import DocumentNotFoundError
+from src.domain.knowledge.exceptions import DocumentNotFoundError, DocumentValidationError
 from src.domain.knowledge.ports.embedding_client_port import EmbeddingClientPort
 from src.domain.tenants.value_objects.tenant_id import TenantId
 
@@ -38,20 +38,38 @@ class IndexDocumentChunksResult:
     status: str
 
 
-class IndexDocumentChunksHandler:
+class IndexDocumentChunksCommandHandler:
     """Handles generating embeddings and saving chunks for a document."""
 
     def __init__(
         self,
-        unit_of_work: UnitOfWork,
+        unit_of_work: UnitOfWorkPort,
         embedding_client: EmbeddingClientPort,
     ) -> None:
+        """Initializes the chunk indexing handler.
+
+        Args:
+            unit_of_work: Transactional boundary port managing repository state.
+            embedding_client: Driven port for vector embedding generation.
+        """
         self._unit_of_work = unit_of_work
         self._embedding_client = embedding_client
 
     async def handle(self, command: IndexDocumentChunksCommand) -> IndexDocumentChunksResult:
+        """Processes chunks, generates embeddings, and persists indexed knowledge.
+
+        Args:
+            command: IndexDocumentChunksCommand payload.
+
+        Returns:
+            IndexDocumentChunksResult with indexing status.
+
+        Raises:
+            DocumentValidationError: If chunks list is empty.
+            DocumentNotFoundError: If referenced document does not exist.
+        """
         if not command.chunks:
-            raise ValueError("La lista de fragmentos a indexar no puede estar vacía.")
+            raise DocumentValidationError("La lista de fragmentos a indexar no puede estar vacía.")
 
         tenant_id = TenantId(command.tenant_id)
 
@@ -104,3 +122,11 @@ class IndexDocumentChunksHandler:
                     uow.knowledge.save_document(doc)
                     uow.commit()
             raise
+
+
+__all__ = [
+    "ChunkInput",
+    "IndexDocumentChunksCommand",
+    "IndexDocumentChunksCommandHandler",
+    "IndexDocumentChunksResult",
+]

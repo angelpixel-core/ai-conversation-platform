@@ -1,4 +1,4 @@
-"""Unit tests for MssqlStreamBufferRepository adapter."""
+"""Unit tests for MssqlStreamBufferRepositoryAdapter adapter."""
 
 from collections.abc import Iterator
 
@@ -10,7 +10,7 @@ from src.application.shared.ports.stream_buffer_repository_port import (
 )
 from src.domain.conversations.value_objects.stream_chunk import StreamChunk
 from src.infrastructure.persistence.mssql.stream_buffer_repository import (
-    MssqlStreamBufferRepository,
+    MssqlStreamBufferRepositoryAdapter,
 )
 
 
@@ -24,7 +24,7 @@ def fixture_session() -> Iterator[Session]:
 
 @pytest.mark.anyio
 async def test_mssql_stream_buffer_repository_append_and_query(session: Session) -> None:
-    repo = MssqlStreamBufferRepository(session=session)
+    repo = MssqlStreamBufferRepositoryAdapter(session=session)
     assert isinstance(repo, StreamBufferRepositoryPort)
 
     stream_id = "stream-mssql-1"

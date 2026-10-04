@@ -1,4 +1,4 @@
-"""Unit tests for MssqlWorkflowCheckpointRepository adapter."""
+"""Unit tests for MssqlWorkflowCheckpointRepositoryAdapter adapter."""
 
 from collections.abc import Iterator
 
@@ -11,7 +11,7 @@ from src.infrastructure.persistence.mssql.models import (
     TenantModel,
 )
 from src.infrastructure.persistence.mssql.mssql_workflow_checkpoint_repository import (
-    MssqlWorkflowCheckpointRepository,
+    MssqlWorkflowCheckpointRepositoryAdapter,
 )
 
 
@@ -30,7 +30,7 @@ def fixture_sqlite_session() -> Iterator[Session]:
 
 
 def test_mssql_workflow_checkpoint_repo_instance_lifecycle(sqlite_session: Session) -> None:
-    repo = MssqlWorkflowCheckpointRepository(session=sqlite_session)
+    repo = MssqlWorkflowCheckpointRepositoryAdapter(session=sqlite_session)
     tenant_id = TenantId("corp-acme")
     other_tenant = TenantId("corp-other")
 
@@ -55,7 +55,7 @@ def test_mssql_workflow_checkpoint_repo_instance_lifecycle(sqlite_session: Sessi
 
 
 def test_mssql_workflow_checkpoint_repo_checkpoints(sqlite_session: Session) -> None:
-    repo = MssqlWorkflowCheckpointRepository(session=sqlite_session)
+    repo = MssqlWorkflowCheckpointRepositoryAdapter(session=sqlite_session)
     tenant_id = TenantId("corp-acme")
     other_tenant = TenantId("corp-other")
 

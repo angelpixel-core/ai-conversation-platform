@@ -17,7 +17,7 @@ from src.domain.tools.entities.tool_approval_request import (
     ToolApprovalRequest,
 )
 from src.domain.tools.value_objects.tool_call import ToolCall
-from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWork
+from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWorkAdapter
 from src.interfaces.http.api import build_api
 
 
@@ -35,12 +35,12 @@ class StubLlmClient(LlmClientPort):
 
 
 @pytest.fixture
-def uow() -> InMemoryUnitOfWork:
-    return InMemoryUnitOfWork()
+def uow() -> InMemoryUnitOfWorkAdapter:
+    return InMemoryUnitOfWorkAdapter()
 
 
 @pytest.mark.anyio
-async def test_get_pending_approvals_endpoint(uow: InMemoryUnitOfWork) -> None:
+async def test_get_pending_approvals_endpoint(uow: InMemoryUnitOfWorkAdapter) -> None:
     app = build_api(unit_of_work=uow)
     tenant_id = TenantId("corp-acme")
     conv_id = uuid4()
@@ -79,7 +79,7 @@ async def test_get_pending_approvals_endpoint(uow: InMemoryUnitOfWork) -> None:
 
 
 @pytest.mark.anyio
-async def test_approve_tool_decision_endpoint(uow: InMemoryUnitOfWork) -> None:
+async def test_approve_tool_decision_endpoint(uow: InMemoryUnitOfWorkAdapter) -> None:
     app = build_api(unit_of_work=uow)
     tenant_id = TenantId("corp-acme")
     conv_id = uuid4()
@@ -122,7 +122,7 @@ async def test_approve_tool_decision_endpoint(uow: InMemoryUnitOfWork) -> None:
 
 
 @pytest.mark.anyio
-async def test_reject_tool_decision_endpoint(uow: InMemoryUnitOfWork) -> None:
+async def test_reject_tool_decision_endpoint(uow: InMemoryUnitOfWorkAdapter) -> None:
     app = build_api(unit_of_work=uow)
     tenant_id = TenantId("corp-acme")
     conv_id = uuid4()
@@ -168,7 +168,7 @@ async def test_reject_tool_decision_endpoint(uow: InMemoryUnitOfWork) -> None:
 
 @pytest.mark.anyio
 async def test_cross_tenant_approval_isolation_returns_404(
-    uow: InMemoryUnitOfWork,
+    uow: InMemoryUnitOfWorkAdapter,
 ) -> None:
     app = build_api(unit_of_work=uow)
     tenant_id = TenantId("corp-acme")
@@ -199,7 +199,7 @@ async def test_cross_tenant_approval_isolation_returns_404(
 
 @pytest.mark.anyio
 async def test_sse_stream_emits_tool_approval_required_event(
-    uow: InMemoryUnitOfWork,
+    uow: InMemoryUnitOfWorkAdapter,
 ) -> None:
     llm_client = StubLlmClient()
     stream_handler = StreamConversationQueryHandler(

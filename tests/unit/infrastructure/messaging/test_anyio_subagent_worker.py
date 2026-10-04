@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 
 from src.application.agents.ports.subagent_executor_port import SubAgentExecutorPort
-from src.application.shared.ports.event_publisher import EventPublisher
+from src.application.shared.ports.event_publisher import EventPublisherPort
 from src.domain.agents.value_objects.agent_role import AgentRole
 from src.domain.shared.events.event_envelope import EventEnvelope
 from src.infrastructure.messaging.rabbitmq.anyio_subagent_worker import AnyioSubagentWorker
@@ -38,7 +38,7 @@ class FakeSubAgentExecutor(SubAgentExecutorPort):
         return {"output": f"completed_{node_id}", "status": "success"}
 
 
-class FakeEventPublisher(EventPublisher):
+class FakeEventPublisher(EventPublisherPort):
     """Test fake for EventPublisher."""
 
     def __init__(self) -> None:

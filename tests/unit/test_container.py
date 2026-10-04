@@ -3,10 +3,10 @@
 from fastapi import FastAPI
 
 from src.application.conversations.commands.create_conversation import (
-    CreateConversationHandler,
+    CreateConversationCommandHandler,
 )
 from src.application.conversations.commands.send_message import (
-    SendMessageHandler,
+    SendMessageCommandHandler,
 )
 from src.application.conversations.queries.stream_conversation import (
     StreamConversationQueryHandler,
@@ -58,13 +58,13 @@ from src.infrastructure.persistence.in_memory import (
     InMemoryAuditRepositoryAdapter,
     InMemoryIdempotencyRepositoryAdapter,
     InMemoryStreamBufferRepositoryAdapter,
-    InMemoryUnitOfWork,
+    InMemoryUnitOfWorkAdapter,
 )
 from src.infrastructure.persistence.mssql import (
-    MssqlAuditRepository,
-    MssqlIdempotencyRepository,
-    MssqlStreamBufferRepository,
-    MssqlUnitOfWork,
+    MssqlAuditRepositoryAdapter,
+    MssqlIdempotencyRepositoryAdapter,
+    MssqlStreamBufferRepositoryAdapter,
+    MssqlUnitOfWorkAdapter,
 )
 from src.infrastructure.routing.in_memory_model_catalog import (
     InMemoryModelCatalogAdapter,
@@ -80,14 +80,14 @@ def test_create_app_container_default_wires_in_memory() -> None:
     container = create_app_container(settings=settings)
 
     assert isinstance(container, AppContainer)
-    assert isinstance(container.unit_of_work, InMemoryUnitOfWork)
+    assert isinstance(container.unit_of_work, InMemoryUnitOfWorkAdapter)
     assert isinstance(container.idempotency_repo, InMemoryIdempotencyRepositoryAdapter)
     assert isinstance(container.audit_repo, InMemoryAuditRepositoryAdapter)
     assert isinstance(container.stream_buffer_repo, InMemoryStreamBufferRepositoryAdapter)
     assert isinstance(container.stream_recovery_service, StreamRecoveryService)
     assert isinstance(container.idempotent_executor, IdempotentCommandExecutor)
-    assert isinstance(container.create_conversation_handler, CreateConversationHandler)
-    assert isinstance(container.send_message_handler, SendMessageHandler)
+    assert isinstance(container.create_conversation_handler, CreateConversationCommandHandler)
+    assert isinstance(container.send_message_handler, SendMessageCommandHandler)
     assert isinstance(container.stream_conversation_handler, StreamConversationQueryHandler)
     assert isinstance(container.fastapi_app, FastAPI)
     assert isinstance(container.model_catalog, ModelCatalogPort)
@@ -114,10 +114,10 @@ def test_create_app_container_with_mssql_driver() -> None:
     container = create_app_container(settings=settings)
 
     assert isinstance(container, AppContainer)
-    assert isinstance(container.unit_of_work, MssqlUnitOfWork)
-    assert isinstance(container.idempotency_repo, MssqlIdempotencyRepository)
-    assert isinstance(container.audit_repo, MssqlAuditRepository)
-    assert isinstance(container.stream_buffer_repo, MssqlStreamBufferRepository)
+    assert isinstance(container.unit_of_work, MssqlUnitOfWorkAdapter)
+    assert isinstance(container.idempotency_repo, MssqlIdempotencyRepositoryAdapter)
+    assert isinstance(container.audit_repo, MssqlAuditRepositoryAdapter)
+    assert isinstance(container.stream_buffer_repo, MssqlStreamBufferRepositoryAdapter)
     assert isinstance(container.stream_recovery_service, StreamRecoveryService)
     assert isinstance(container.idempotent_executor, IdempotentCommandExecutor)
     assert isinstance(container.fastapi_app, FastAPI)

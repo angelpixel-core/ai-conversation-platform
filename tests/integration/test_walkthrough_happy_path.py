@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 
 from src.application.conversations.commands.append_assistant_message import (
     AppendAssistantMessageCommand,
-    AppendAssistantMessageHandler,
+    AppendAssistantMessageCommandHandler,
 )
 from src.container import create_app_container
 from src.domain.conversations.value_objects.stream_chunk import StreamChunk
@@ -107,7 +107,7 @@ async def test_walkthrough_guide_full_happy_path() -> None:
     for chk in stream_chunks:
         await container.stream_buffer_repo.append_chunk(conv_id, chk)
 
-    append_handler = AppendAssistantMessageHandler(unit_of_work=container.unit_of_work)
+    append_handler = AppendAssistantMessageCommandHandler(unit_of_work=container.unit_of_work)
     append_handler.handle(
         AppendAssistantMessageCommand(
             conversation_id=UUID(conv_id),

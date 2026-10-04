@@ -73,6 +73,16 @@ exclude = ["src/infrastructure/persistence/mssql/migrations"]
 extraPaths = ["."]
 venvPath = "."
 venv = ".venv"
+typeCheckingMode = "standard"
+reportMissingTypeStubs = false
+reportAssertAlwaysTrue = "error"
+reportInvalidStringEscapeSequence = "error"
+reportInvalidTypeVarUse = "error"
+reportSelfClsParameterName = "error"
+reportConstantRedefinition = "error"
+reportDuplicateImport = "error"
+
+
 
 [tool.coverage.run]
 source = ["src"]

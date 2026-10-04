@@ -1,4 +1,4 @@
-"""Unit tests for MssqlTenantRepository adapter."""
+"""Unit tests for MssqlTenantRepositoryAdapter adapter."""
 
 from collections.abc import Iterator
 from decimal import Decimal
@@ -10,7 +10,7 @@ from src.domain.tenants.entities.tenant import Tenant, TenantStatus
 from src.domain.tenants.entities.tenant_policy import TenantPolicy, TenantTier
 from src.domain.tenants.value_objects.monetary_budget import MonetaryBudget
 from src.domain.tenants.value_objects.tenant_id import TenantId
-from src.infrastructure.persistence.mssql.tenant_repository import MssqlTenantRepository
+from src.infrastructure.persistence.mssql.tenant_repository import MssqlTenantRepositoryAdapter
 
 
 @pytest.fixture(name="sqlite_session")
@@ -22,7 +22,7 @@ def fixture_sqlite_session() -> Iterator[Session]:
 
 
 def test_repository_add_and_get(sqlite_session: Session) -> None:
-    repo = MssqlTenantRepository(session=sqlite_session)
+    repo = MssqlTenantRepositoryAdapter(session=sqlite_session)
     tenant = Tenant(
         tenant_id=TenantId("tenant-alpha"),
         name="Tenant Alpha",
@@ -49,13 +49,13 @@ def test_repository_add_and_get(sqlite_session: Session) -> None:
 
 
 def test_repository_get_not_found(sqlite_session: Session) -> None:
-    repo = MssqlTenantRepository(session=sqlite_session)
+    repo = MssqlTenantRepositoryAdapter(session=sqlite_session)
     retrieved = repo.get(TenantId("nonexistent-tenant"))
     assert retrieved is None
 
 
 def test_repository_get_for_update(sqlite_session: Session) -> None:
-    repo = MssqlTenantRepository(session=sqlite_session)
+    repo = MssqlTenantRepositoryAdapter(session=sqlite_session)
     tenant = Tenant(
         tenant_id=TenantId("tenant-lock"),
         name="Tenant Lock Test",
@@ -71,7 +71,7 @@ def test_repository_get_for_update(sqlite_session: Session) -> None:
 
 
 def test_repository_list_tenants(sqlite_session: Session) -> None:
-    repo = MssqlTenantRepository(session=sqlite_session)
+    repo = MssqlTenantRepositoryAdapter(session=sqlite_session)
     t1 = Tenant(
         tenant_id=TenantId("tenant-1"),
         name="Tenant One",
@@ -94,7 +94,7 @@ def test_repository_list_tenants(sqlite_session: Session) -> None:
 
 
 def test_repository_update_existing_tenant(sqlite_session: Session) -> None:
-    repo = MssqlTenantRepository(session=sqlite_session)
+    repo = MssqlTenantRepositoryAdapter(session=sqlite_session)
     tenant = Tenant(
         tenant_id=TenantId("tenant-update"),
         name="Original Name",

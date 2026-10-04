@@ -13,7 +13,7 @@ from src.infrastructure.persistence.mssql.governance_mapper import GovernanceMap
 from src.infrastructure.persistence.mssql.models import SecurityIncidentModel
 
 
-class MssqlIncidentRepository(IncidentRepositoryPort):
+class MssqlIncidentRepositoryAdapter(IncidentRepositoryPort):
     """MSSQL 2022 persistent adapter for security incidents with atomic session isolation."""
 
     def __init__(self, session: Session | Callable[[], Session]) -> None:
@@ -83,3 +83,6 @@ class MssqlIncidentRepository(IncidentRepositoryPort):
             "by_severity": by_severity,
             "by_rule": by_rule,
         }
+
+
+__all__ = ["MssqlIncidentRepositoryAdapter"]

@@ -1,4 +1,4 @@
-"""Integration tests for MssqlStreamBufferRepository against live SQL Server."""
+"""Integration tests for MssqlStreamBufferRepositoryAdapter against live SQL Server."""
 
 import pytest
 from sqlalchemy.engine import Engine
@@ -8,7 +8,7 @@ from src.infrastructure.persistence.mssql.connection import (
     create_session_factory,
 )
 from src.infrastructure.persistence.mssql.stream_buffer_repository import (
-    MssqlStreamBufferRepository,
+    MssqlStreamBufferRepositoryAdapter,
 )
 
 
@@ -22,13 +22,13 @@ async def test_mssql_stream_buffer_repository_real_db(mssql_engine: Engine, clea
     chunk2 = StreamChunk.create(2, "Live chunk 2", is_final=True)
 
     with session_factory() as session:
-        repo = MssqlStreamBufferRepository(session=session)
+        repo = MssqlStreamBufferRepositoryAdapter(session=session)
         await repo.append_chunk(stream_id, chunk0)
         await repo.append_chunk(stream_id, chunk1)
         await repo.append_chunk(stream_id, chunk2)
 
     with session_factory() as session:
-        repo = MssqlStreamBufferRepository(session=session)
+        repo = MssqlStreamBufferRepositoryAdapter(session=session)
         assert await repo.is_stream_completed(stream_id) is True
 
         chunks = await repo.get_chunks_since(stream_id, since_sequence=0)

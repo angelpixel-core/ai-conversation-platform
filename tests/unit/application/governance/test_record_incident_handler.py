@@ -6,7 +6,7 @@ import pytest
 
 from src.application.governance.commands.record_incident import (
     RecordSecurityIncidentCommand,
-    RecordSecurityIncidentHandler,
+    RecordSecurityIncidentCommandHandler,
 )
 from src.application.governance.queries.get_governance_metrics import (
     GetGovernanceMetricsQuery,
@@ -33,7 +33,7 @@ def mock_incident_repo() -> Mock:
 
 @pytest.mark.anyio
 async def test_record_incident_command_handler(mock_incident_repo: Mock) -> None:
-    handler = RecordSecurityIncidentHandler(incident_repo=mock_incident_repo)
+    handler = RecordSecurityIncidentCommandHandler(incident_repo=mock_incident_repo)
     command = RecordSecurityIncidentCommand(
         tenant_id="corp-acme",
         rule_name="PROMPT_INJECTION_RULE",
@@ -58,7 +58,7 @@ async def test_record_incident_command_handler_with_event_publisher(
     mock_incident_repo: Mock,
 ) -> None:
     mock_publisher = Mock()
-    handler = RecordSecurityIncidentHandler(
+    handler = RecordSecurityIncidentCommandHandler(
         incident_repo=mock_incident_repo,
         event_publisher=mock_publisher,
     )

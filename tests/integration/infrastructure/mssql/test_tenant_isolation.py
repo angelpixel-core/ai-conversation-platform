@@ -11,7 +11,7 @@ from src.domain.tenants.value_objects.monetary_budget import MonetaryBudget
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.infrastructure.persistence.mssql.connection import create_session_factory
 from src.infrastructure.persistence.mssql.models import ConversationModel
-from src.infrastructure.persistence.mssql.tenant_repository import MssqlTenantRepository
+from src.infrastructure.persistence.mssql.tenant_repository import MssqlTenantRepositoryAdapter
 
 
 def test_tenant_isolation_conversations_sqlite() -> None:
@@ -57,7 +57,7 @@ def test_tenant_isolation_budget_sqlite() -> None:
     SQLModel.metadata.create_all(engine)
 
     with Session(engine) as session:
-        repo = MssqlTenantRepository(session=session)
+        repo = MssqlTenantRepositoryAdapter(session=session)
         t_a = Tenant(
             tenant_id=TenantId("tenant-a"),
             name="Tenant A",
@@ -73,7 +73,7 @@ def test_tenant_isolation_budget_sqlite() -> None:
         session.commit()
 
     with Session(engine) as session:
-        repo = MssqlTenantRepository(session=session)
+        repo = MssqlTenantRepositoryAdapter(session=session)
         loaded_a = repo.get_for_update(TenantId("tenant-a"))
         assert loaded_a is not None
         loaded_a.reserve_budget(Decimal("40.0000"), "gpt-4o-mini")
@@ -81,7 +81,7 @@ def test_tenant_isolation_budget_sqlite() -> None:
         session.commit()
 
     with Session(engine) as session:
-        repo = MssqlTenantRepository(session=session)
+        repo = MssqlTenantRepositoryAdapter(session=session)
         re_a = repo.get(TenantId("tenant-a"))
         re_b = repo.get(TenantId("tenant-b"))
 
@@ -94,7 +94,7 @@ def test_mssql_tenant_isolation_live(mssql_engine: Engine, clean_db: None) -> No
     session_factory = create_session_factory(mssql_engine)
 
     with session_factory() as session:
-        repo = MssqlTenantRepository(session=session)
+        repo = MssqlTenantRepositoryAdapter(session=session)
         t1 = Tenant(
             tenant_id=TenantId("live-t1"), name="Live T1", budget=MonetaryBudget(Decimal("50.00"))
         )
@@ -106,7 +106,7 @@ def test_mssql_tenant_isolation_live(mssql_engine: Engine, clean_db: None) -> No
         session.commit()
 
     with session_factory() as session:
-        repo = MssqlTenantRepository(session=session)
+        repo = MssqlTenantRepositoryAdapter(session=session)
         t1_loaded = repo.get(TenantId("live-t1"))
         t2_loaded = repo.get(TenantId("live-t2"))
 

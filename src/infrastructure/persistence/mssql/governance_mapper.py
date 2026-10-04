@@ -39,3 +39,9 @@ class GovernanceMapper:
             details=details,
             created_at=model.created_at,
         )
+
+    # Canonical alias conforming to to_persistence standard
+    to_persistence = to_model
+
+
+__all__ = ["GovernanceMapper"]

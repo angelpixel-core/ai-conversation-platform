@@ -6,9 +6,9 @@ import pytest
 
 from src.application.knowledge.commands.upload_document import (
     UploadDocumentCommand,
-    UploadDocumentHandler,
+    UploadDocumentCommandHandler,
 )
-from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.shared.ports.unit_of_work import UnitOfWorkPort
 from src.domain.knowledge.entities.document import Document
 from src.domain.knowledge.entities.document_chunk import DocumentChunk
 from src.domain.knowledge.ports.knowledge_repository_port import KnowledgeRepositoryPort
@@ -64,7 +64,7 @@ class FakeKnowledgeRepo(KnowledgeRepositoryPort):
         return []
 
 
-class FakeUnitOfWork(UnitOfWork):
+class FakeUnitOfWork(UnitOfWorkPort):
     def __init__(self) -> None:
         self.tenants = FakeTenantRepo()
         self.knowledge = FakeKnowledgeRepo()  # type: ignore[attr-defined]
@@ -91,7 +91,7 @@ def test_upload_document_success() -> None:
         Tenant(tenant_id=tid, name="Acme", budget=MonetaryBudget(balance=Decimal("100.00")))
     )
 
-    handler = UploadDocumentHandler(unit_of_work=uow)
+    handler = UploadDocumentCommandHandler(unit_of_work=uow)
     command = UploadDocumentCommand(
         tenant_id="corp-acme",
         filename="company_policy.pdf",
@@ -111,7 +111,7 @@ def test_upload_document_success() -> None:
 
 def test_upload_document_tenant_not_found_raises_error() -> None:
     uow = FakeUnitOfWork()
-    handler = UploadDocumentHandler(unit_of_work=uow)
+    handler = UploadDocumentCommandHandler(unit_of_work=uow)
     command = UploadDocumentCommand(
         tenant_id="missing-tenant",
         filename="manual.pdf",
@@ -127,7 +127,7 @@ def test_upload_document_empty_filename_raises_error() -> None:
     uow.tenants.add(
         Tenant(tenant_id=tid, name="Acme", budget=MonetaryBudget(balance=Decimal("100.00")))
     )
-    handler = UploadDocumentHandler(unit_of_work=uow)
+    handler = UploadDocumentCommandHandler(unit_of_work=uow)
 
     with pytest.raises(ValueError, match="vacío"):
         handler.handle(UploadDocumentCommand(tenant_id="corp-acme", filename="   "))

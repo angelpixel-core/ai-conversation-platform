@@ -1,23 +1,29 @@
 """Microsoft SQL Server persistence package."""
 
 from src.infrastructure.persistence.mssql.audit_repository import (
-    MssqlAuditRepository,
+    MssqlAuditRepositoryAdapter,
 )
 from src.infrastructure.persistence.mssql.connection import (
     create_mssql_engine,
     create_session_factory,
 )
-from src.infrastructure.persistence.mssql.governance_mapper import GovernanceMapper
+from src.infrastructure.persistence.mssql.governance_mapper import (
+    GovernanceMapper,
+)
 from src.infrastructure.persistence.mssql.idempotency_repository import (
-    MssqlIdempotencyRepository,
+    MssqlIdempotencyRepositoryAdapter,
 )
 from src.infrastructure.persistence.mssql.in_memory_workflow_checkpoint_repository import (
     InMemoryWorkflowCheckpointRepositoryAdapter,
 )
-from src.infrastructure.persistence.mssql.mapper import ConversationDataMapper
+from src.infrastructure.persistence.mssql.mapper import (
+    ConversationMapper,
+)
 from src.infrastructure.persistence.mssql.models import (
     AuditLogModel,
     ConversationModel,
+    DocumentChunkModel,
+    DocumentModel,
     IdempotencyRecordModel,
     MessageModel,
     OutboxMessageModel,
@@ -26,57 +32,79 @@ from src.infrastructure.persistence.mssql.models import (
     StreamBufferChunkModel,
     TenantModel,
     TenantPolicyModel,
+    ToolApprovalModel,
+    ToolExecutionAuditModel,
     WorkflowCheckpointModel,
     WorkflowInstanceModel,
 )
 from src.infrastructure.persistence.mssql.mssql_incident_repository import (
-    MssqlIncidentRepository,
+    MssqlIncidentRepositoryAdapter,
 )
 from src.infrastructure.persistence.mssql.mssql_knowledge_repository import (
-    MssqlKnowledgeRepository,
+    MssqlKnowledgeRepositoryAdapter,
 )
 from src.infrastructure.persistence.mssql.mssql_tool_approval_repository import (
-    MssqlToolApprovalRepository,
+    MssqlToolApprovalRepositoryAdapter,
 )
 from src.infrastructure.persistence.mssql.mssql_workflow_checkpoint_repository import (
-    MssqlWorkflowCheckpointRepository,
+    MssqlWorkflowCheckpointRepositoryAdapter,
 )
-from src.infrastructure.persistence.mssql.outbox_repository import MssqlOutboxRepository
-from src.infrastructure.persistence.mssql.repository import MssqlConversationRepository
+from src.infrastructure.persistence.mssql.outbox_repository import (
+    MssqlOutboxRepositoryAdapter,
+)
+from src.infrastructure.persistence.mssql.repository import (
+    MssqlConversationRepositoryAdapter,
+)
 from src.infrastructure.persistence.mssql.stream_buffer_repository import (
-    MssqlStreamBufferRepository,
+    MssqlStreamBufferRepositoryAdapter,
 )
-from src.infrastructure.persistence.mssql.tenant_mapper import TenantDataMapper
-from src.infrastructure.persistence.mssql.tenant_repository import MssqlTenantRepository
-from src.infrastructure.persistence.mssql.unit_of_work import MssqlUnitOfWork
-from src.infrastructure.persistence.mssql.workflow_mapper import WorkflowMapper
+from src.infrastructure.persistence.mssql.tenant_mapper import (
+    TenantMapper,
+)
+from src.infrastructure.persistence.mssql.tenant_repository import (
+    MssqlTenantRepositoryAdapter,
+)
+from src.infrastructure.persistence.mssql.tool_approval_mapper import (
+    ToolApprovalMapper,
+)
+from src.infrastructure.persistence.mssql.unit_of_work import (
+    MssqlUnitOfWorkAdapter,
+)
+from src.infrastructure.persistence.mssql.workflow_mapper import (
+    WorkflowMapper,
+)
 
 __all__ = [
     "AuditLogModel",
-    "ConversationDataMapper",
+    "ConversationMapper",
     "ConversationModel",
+    "DocumentChunkModel",
+    "DocumentModel",
     "GovernanceMapper",
     "IdempotencyRecordModel",
     "InMemoryWorkflowCheckpointRepositoryAdapter",
     "MessageModel",
-    "MssqlAuditRepository",
-    "MssqlConversationRepository",
-    "MssqlIdempotencyRepository",
-    "MssqlIncidentRepository",
-    "MssqlKnowledgeRepository",
-    "MssqlOutboxRepository",
-    "MssqlStreamBufferRepository",
-    "MssqlTenantRepository",
-    "MssqlToolApprovalRepository",
-    "MssqlUnitOfWork",
-    "MssqlWorkflowCheckpointRepository",
+    "MssqlAuditRepositoryAdapter",
+    "MssqlConversationRepositoryAdapter",
+    "MssqlIdempotencyRepositoryAdapter",
+    "MssqlIncidentRepositoryAdapter",
+    "MssqlKnowledgeRepositoryAdapter",
+    "MssqlOutboxRepositoryAdapter",
+    "MssqlStreamBufferRepositoryAdapter",
+    "MssqlTenantRepositoryAdapter",
+    "MssqlToolApprovalRepositoryAdapter",
+    "MssqlUnitOfWorkAdapter",
+    "MssqlWorkflowCheckpointRepositoryAdapter",
     "OutboxMessageModel",
     "PiiAuditLogModel",
     "SecurityIncidentModel",
     "StreamBufferChunkModel",
-    "TenantDataMapper",
+    "TenantMapper",
     "TenantModel",
     "TenantPolicyModel",
+    "ToolApprovalMapper",
+    "ToolApprovalModel",
+    "ToolExecutionAuditModel",
     "WorkflowCheckpointModel",
     "WorkflowInstanceModel",
     "WorkflowMapper",

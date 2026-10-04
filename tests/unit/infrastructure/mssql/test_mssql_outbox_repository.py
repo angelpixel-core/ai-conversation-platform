@@ -1,10 +1,10 @@
-"""Unit tests for MssqlOutboxRepository adapter."""
+"""Unit tests for MssqlOutboxRepositoryAdapter adapter."""
 
 from uuid import uuid4
 
 from sqlmodel import Session, SQLModel, create_engine
 
-from src.infrastructure.persistence.mssql.outbox_repository import MssqlOutboxRepository
+from src.infrastructure.persistence.mssql.outbox_repository import MssqlOutboxRepositoryAdapter
 from src.infrastructure.shared.persistence.outbox.in_memory import OutboxMessage, OutboxStatus
 
 
@@ -20,12 +20,12 @@ def test_outbox_repository_save_and_get_pending() -> None:
     )
 
     with Session(engine) as session:
-        repo = MssqlOutboxRepository(session=session)
+        repo = MssqlOutboxRepositoryAdapter(session=session)
         repo.save(msg)
         session.commit()
 
     with Session(engine) as session:
-        repo = MssqlOutboxRepository(session=session)
+        repo = MssqlOutboxRepositoryAdapter(session=session)
         pending = repo.get_pending()
 
         assert len(pending) == 1
@@ -47,12 +47,12 @@ def test_outbox_repository_get_by_id() -> None:
     )
 
     with Session(engine) as session:
-        repo = MssqlOutboxRepository(session=session)
+        repo = MssqlOutboxRepositoryAdapter(session=session)
         repo.save(msg)
         session.commit()
 
     with Session(engine) as session:
-        repo = MssqlOutboxRepository(session=session)
+        repo = MssqlOutboxRepositoryAdapter(session=session)
         found = repo.get_by_id(msg.id)
         assert found is not None
         assert found.id == msg.id
@@ -80,19 +80,19 @@ def test_outbox_repository_mark_dispatched_and_failed() -> None:
     )
 
     with Session(engine) as session:
-        repo = MssqlOutboxRepository(session=session)
+        repo = MssqlOutboxRepositoryAdapter(session=session)
         repo.save(msg1)
         repo.save(msg2)
         session.commit()
 
     with Session(engine) as session:
-        repo = MssqlOutboxRepository(session=session)
+        repo = MssqlOutboxRepositoryAdapter(session=session)
         repo.mark_as_dispatched(msg1.id)
         repo.mark_as_failed(msg2.id, error="Broker unreachable")
         session.commit()
 
     with Session(engine) as session:
-        repo = MssqlOutboxRepository(session=session)
+        repo = MssqlOutboxRepositoryAdapter(session=session)
         pending = repo.get_pending()
         assert len(pending) == 0
 
@@ -119,7 +119,7 @@ def test_outbox_repository_save_updates_existing_message() -> None:
     )
 
     with Session(engine) as session:
-        repo = MssqlOutboxRepository(session=session)
+        repo = MssqlOutboxRepositoryAdapter(session=session)
         repo.save(msg)
         session.commit()
 
@@ -127,12 +127,12 @@ def test_outbox_repository_save_updates_existing_message() -> None:
     msg.mark_completed()
 
     with Session(engine) as session:
-        repo = MssqlOutboxRepository(session=session)
+        repo = MssqlOutboxRepositoryAdapter(session=session)
         repo.save(msg)
         session.commit()
 
     with Session(engine) as session:
-        repo = MssqlOutboxRepository(session=session)
+        repo = MssqlOutboxRepositoryAdapter(session=session)
         loaded = repo.get_by_id(msg.id)
         assert loaded is not None
         assert loaded.status == OutboxStatus.COMPLETED
@@ -147,12 +147,12 @@ def test_outbox_repository_add_event_compatibility() -> None:
             return '{"dummy": true}'
 
     with Session(engine) as session:
-        repo = MssqlOutboxRepository(session=session)
+        repo = MssqlOutboxRepositoryAdapter(session=session)
         repo.add(DummyEvent())
         session.commit()
 
     with Session(engine) as session:
-        repo = MssqlOutboxRepository(session=session)
+        repo = MssqlOutboxRepositoryAdapter(session=session)
         pending = repo.get_pending()
         assert len(pending) == 1
         assert pending[0].event_type == "DummyEvent"
@@ -170,12 +170,12 @@ def test_outbox_repository_add_outbox_message_directly() -> None:
     )
 
     with Session(engine) as session:
-        repo = MssqlOutboxRepository(session=session)
+        repo = MssqlOutboxRepositoryAdapter(session=session)
         repo.add(msg)
         session.commit()
 
     with Session(engine) as session:
-        repo = MssqlOutboxRepository(session=session)
+        repo = MssqlOutboxRepositoryAdapter(session=session)
         loaded = repo.get_by_id(msg.id)
         assert loaded is not None
         assert loaded.event_type == "DirectAdd"
@@ -193,17 +193,17 @@ def test_outbox_repository_mark_as_completed_alias() -> None:
     )
 
     with Session(engine) as session:
-        repo = MssqlOutboxRepository(session=session)
+        repo = MssqlOutboxRepositoryAdapter(session=session)
         repo.save(msg)
         session.commit()
 
     with Session(engine) as session:
-        repo = MssqlOutboxRepository(session=session)
+        repo = MssqlOutboxRepositoryAdapter(session=session)
         repo.mark_as_completed(msg.id)
         session.commit()
 
     with Session(engine) as session:
-        repo = MssqlOutboxRepository(session=session)
+        repo = MssqlOutboxRepositoryAdapter(session=session)
         loaded = repo.get_by_id(msg.id)
         assert loaded is not None
         assert loaded.status == OutboxStatus.COMPLETED
@@ -221,17 +221,17 @@ def test_outbox_repository_mark_as_published() -> None:
     )
 
     with Session(engine) as session:
-        repo = MssqlOutboxRepository(session=session)
+        repo = MssqlOutboxRepositoryAdapter(session=session)
         repo.save(msg)
         session.commit()
 
     with Session(engine) as session:
-        repo = MssqlOutboxRepository(session=session)
+        repo = MssqlOutboxRepositoryAdapter(session=session)
         repo.mark_as_published(msg.id)
         session.commit()
 
     with Session(engine) as session:
-        repo = MssqlOutboxRepository(session=session)
+        repo = MssqlOutboxRepositoryAdapter(session=session)
         loaded = repo.get_by_id(msg.id)
         assert loaded is not None
         assert loaded.status == OutboxStatus.PUBLISHED

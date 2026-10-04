@@ -14,7 +14,7 @@ from src.application.shared.ports.llm_client import LlmClientPort
 from src.domain.conversations.entities.conversation import Conversation
 from src.domain.conversations.exceptions import ConversationNotFoundError
 from src.domain.shared.domain_error import DomainError
-from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWork
+from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWorkAdapter
 
 
 class FakeStreamingLlmClient(LlmClientPort):
@@ -46,7 +46,7 @@ class FakeStreamingLlmClient(LlmClientPort):
 @pytest.mark.anyio
 async def test_handle__valid_query__streams_tokens_from_llm() -> None:
     # Arrange
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     conversation = Conversation.create("Test Conversation")
     conversation.append_user_message("What is Python?")
     uow.conversations.add(conversation)
@@ -74,7 +74,7 @@ async def test_handle__valid_query__streams_tokens_from_llm() -> None:
 @pytest.mark.anyio
 async def test_handle__multi_turn_conversation__sends_full_history_to_llm() -> None:
     # Arrange
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     conversation = Conversation.create("Dialogue")
     conversation.append_user_message("Turn 1 User")
     conversation.append_assistant_message("Turn 1 Assistant")
@@ -105,7 +105,7 @@ async def test_handle__multi_turn_conversation__sends_full_history_to_llm() -> N
 @pytest.mark.anyio
 async def test_handle__custom_temperature_and_max_tokens__passes_parameters_to_llm() -> None:
     # Arrange
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     conversation = Conversation.create("Custom Parameters")
     conversation.append_user_message("Tell me something")
     uow.conversations.add(conversation)
@@ -135,7 +135,7 @@ async def test_handle__custom_temperature_and_max_tokens__passes_parameters_to_l
 @pytest.mark.anyio
 async def test_handle__conversation_not_found__raises_conversation_not_found_error() -> None:
     # Arrange
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     llm_client = FakeStreamingLlmClient()
     handler = StreamConversationQueryHandler(
         conversation_repository=uow.conversations,
@@ -155,7 +155,7 @@ async def test_handle__conversation_not_found__raises_conversation_not_found_err
 @pytest.mark.anyio
 async def test_handle__conversation_without_messages__raises_domain_error() -> None:
     # Arrange
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     conversation = Conversation.create("Empty Conversation")
     uow.conversations.add(conversation)
 
@@ -177,7 +177,7 @@ async def test_handle__conversation_without_messages__raises_domain_error() -> N
 @pytest.mark.anyio
 async def test_handle__last_message_not_from_user__raises_domain_error() -> None:
     # Arrange
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     conversation = Conversation.create("Conversation with reply")
     conversation.append_user_message("User prompt")
     conversation.append_assistant_message("Assistant answered")
@@ -216,7 +216,7 @@ def test_query__invalid_max_tokens__raises_value_error() -> None:
 
 @pytest.mark.anyio
 async def test_handler_initialized_with_unit_of_work() -> None:
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     conversation = Conversation.create("UOW Init")
     conversation.append_user_message("Hello")
     uow.conversations.add(conversation)
@@ -235,7 +235,7 @@ async def test_handler_initialized_with_unit_of_work() -> None:
 
 def test_handler_initialization_errors() -> None:
     llm_client = FakeStreamingLlmClient()
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
 
     with pytest.raises(ValueError, match="Either conversation_repository or unit_of_work"):
         StreamConversationQueryHandler(llm_client=llm_client)
@@ -246,7 +246,7 @@ def test_handler_initialization_errors() -> None:
 
 @pytest.mark.anyio
 async def test_handle_supports_coroutine_returning_stream() -> None:
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     conversation = Conversation.create("Coroutine Stream")
     conversation.append_user_message("Hello")
     uow.conversations.add(conversation)

@@ -39,24 +39,34 @@ def clean_db(mssql_engine: Engine) -> Generator[None, None, None]:
     """Clean all tables before and after each integration test."""
 
     def _truncate_tables() -> None:
-        with Session(mssql_engine) as session:
-            session.execute(text("DELETE FROM pii_audit_logs"))
-            session.execute(text("DELETE FROM security_incidents"))
-            session.execute(text("DELETE FROM workflow_checkpoints"))
-            session.execute(text("DELETE FROM workflow_instances"))
-            session.execute(text("DELETE FROM tool_execution_audits"))
-            session.execute(text("DELETE FROM tool_approvals"))
-            session.execute(text("DELETE FROM knowledge_document_chunks"))
-            session.execute(text("DELETE FROM knowledge_documents"))
-            session.execute(text("DELETE FROM stream_buffer_chunks"))
-            session.execute(text("DELETE FROM messages"))
-            session.execute(text("DELETE FROM outbox_messages"))
-            session.execute(text("DELETE FROM conversations"))
-            session.execute(text("DELETE FROM audit_logs"))
-            session.execute(text("DELETE FROM idempotency_keys"))
-            session.execute(text("DELETE FROM tenant_policies"))
-            session.execute(text("DELETE FROM tenants"))
-            session.commit()
+        import time
+
+        for attempt in range(3):
+            with Session(mssql_engine) as session:
+                try:
+                    session.execute(text("DELETE FROM pii_audit_logs"))
+                    session.execute(text("DELETE FROM security_incidents"))
+                    session.execute(text("DELETE FROM workflow_checkpoints"))
+                    session.execute(text("DELETE FROM workflow_instances"))
+                    session.execute(text("DELETE FROM tool_execution_audits"))
+                    session.execute(text("DELETE FROM tool_approvals"))
+                    session.execute(text("DELETE FROM knowledge_document_chunks"))
+                    session.execute(text("DELETE FROM knowledge_documents"))
+                    session.execute(text("DELETE FROM stream_buffer_chunks"))
+                    session.execute(text("DELETE FROM messages"))
+                    session.execute(text("DELETE FROM outbox_messages"))
+                    session.execute(text("DELETE FROM conversations"))
+                    session.execute(text("DELETE FROM audit_logs"))
+                    session.execute(text("DELETE FROM idempotency_keys"))
+                    session.execute(text("DELETE FROM tenant_policies"))
+                    session.execute(text("DELETE FROM tenants"))
+                    session.commit()
+                    return
+                except Exception:
+                    session.rollback()
+                    if attempt == 2:
+                        raise
+                    time.sleep(0.1)
 
     _truncate_tables()
     yield

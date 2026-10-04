@@ -7,7 +7,7 @@ from uuid import uuid4
 import pytest
 
 from src.application.conversations.commands.append_assistant_message import (
-    AppendAssistantMessageHandler,
+    AppendAssistantMessageCommandHandler,
 )
 from src.application.conversations.workers.llm_message_processing_worker import (
     LlmMessageProcessingWorker,
@@ -22,7 +22,7 @@ from src.infrastructure.persistence.in_memory import (
     InMemoryAuditRepositoryAdapter,
     InMemoryIdempotencyRepositoryAdapter,
     InMemoryStreamBufferRepositoryAdapter,
-    InMemoryUnitOfWork,
+    InMemoryUnitOfWorkAdapter,
 )
 
 
@@ -58,12 +58,12 @@ class ErrorLlmClient(LlmClientPort):
 
 
 @pytest.fixture
-def uow() -> InMemoryUnitOfWork:
-    return InMemoryUnitOfWork()
+def uow() -> InMemoryUnitOfWorkAdapter:
+    return InMemoryUnitOfWorkAdapter()
 
 
 @pytest.fixture
-def active_conversation(uow: InMemoryUnitOfWork) -> Conversation:
+def active_conversation(uow: InMemoryUnitOfWorkAdapter) -> Conversation:
     conversation = Conversation.create(title="Support Session")
     conversation.append_user_message("What is Clean Architecture?")
     uow.conversations.add(conversation)
@@ -73,7 +73,7 @@ def active_conversation(uow: InMemoryUnitOfWork) -> Conversation:
 
 @pytest.mark.anyio
 async def test_worker_processes_user_message_and_appends_assistant_response(
-    uow: InMemoryUnitOfWork, active_conversation: Conversation
+    uow: InMemoryUnitOfWorkAdapter, active_conversation: Conversation
 ) -> None:
     # Arrange
     llm = StubLlmClient(["Clean Architecture", " separates concern", " beautifully."])
@@ -112,7 +112,7 @@ async def test_worker_processes_user_message_and_appends_assistant_response(
 
 @pytest.mark.anyio
 async def test_worker_can_be_invoked_as_callable(
-    uow: InMemoryUnitOfWork, active_conversation: Conversation
+    uow: InMemoryUnitOfWorkAdapter, active_conversation: Conversation
 ) -> None:
     # Arrange
     llm = StubLlmClient(["Response via __call__"])
@@ -140,7 +140,7 @@ async def test_worker_can_be_invoked_as_callable(
 
 @pytest.mark.anyio
 async def test_worker_ignores_assistant_messages_to_prevent_infinite_loops(
-    uow: InMemoryUnitOfWork, active_conversation: Conversation
+    uow: InMemoryUnitOfWorkAdapter, active_conversation: Conversation
 ) -> None:
     # Arrange
     llm = StubLlmClient(["This should never be generated"])
@@ -169,7 +169,7 @@ async def test_worker_ignores_assistant_messages_to_prevent_infinite_loops(
 
 
 @pytest.mark.anyio
-async def test_worker_raises_on_missing_conversation_id(uow: InMemoryUnitOfWork) -> None:
+async def test_worker_raises_on_missing_conversation_id(uow: InMemoryUnitOfWorkAdapter) -> None:
     # Arrange
     llm = StubLlmClient()
     worker = LlmMessageProcessingWorker(unit_of_work=uow, llm_client=llm)
@@ -185,7 +185,7 @@ async def test_worker_raises_on_missing_conversation_id(uow: InMemoryUnitOfWork)
 
 
 @pytest.mark.anyio
-async def test_worker_raises_conversation_not_found(uow: InMemoryUnitOfWork) -> None:
+async def test_worker_raises_conversation_not_found(uow: InMemoryUnitOfWorkAdapter) -> None:
     # Arrange
     llm = StubLlmClient()
     worker = LlmMessageProcessingWorker(unit_of_work=uow, llm_client=llm)
@@ -206,7 +206,7 @@ async def test_worker_raises_conversation_not_found(uow: InMemoryUnitOfWork) -> 
 
 @pytest.mark.anyio
 async def test_worker_propagates_llm_failure_for_dlq_routing(
-    uow: InMemoryUnitOfWork, active_conversation: Conversation
+    uow: InMemoryUnitOfWorkAdapter, active_conversation: Conversation
 ) -> None:
     # Arrange
     llm = ErrorLlmClient()
@@ -227,11 +227,11 @@ async def test_worker_propagates_llm_failure_for_dlq_routing(
 
 @pytest.mark.anyio
 async def test_worker_allows_custom_append_assistant_message_handler(
-    uow: InMemoryUnitOfWork, active_conversation: Conversation
+    uow: InMemoryUnitOfWorkAdapter, active_conversation: Conversation
 ) -> None:
     # Arrange
     llm = StubLlmClient(["Custom handler output"])
-    custom_handler = MagicMock(spec=AppendAssistantMessageHandler)
+    custom_handler = MagicMock(spec=AppendAssistantMessageCommandHandler)
     worker = LlmMessageProcessingWorker(
         unit_of_work=uow,
         llm_client=llm,
@@ -258,7 +258,7 @@ async def test_worker_allows_custom_append_assistant_message_handler(
 
 @pytest.mark.anyio
 async def test_worker_buffers_chunks_incrementally_to_stream_buffer_repo(
-    uow: InMemoryUnitOfWork, active_conversation: Conversation
+    uow: InMemoryUnitOfWorkAdapter, active_conversation: Conversation
 ) -> None:
     # Arrange
     llm = StubLlmClient(["Chunk 1", ", ", "Chunk 2"])
@@ -304,7 +304,7 @@ async def test_worker_buffers_chunks_incrementally_to_stream_buffer_repo(
 
 @pytest.mark.anyio
 async def test_worker_records_audit_log_upon_completion(
-    uow: InMemoryUnitOfWork, active_conversation: Conversation
+    uow: InMemoryUnitOfWorkAdapter, active_conversation: Conversation
 ) -> None:
     # Arrange
     llm = StubLlmClient(["Audit", " token", " response"])
@@ -342,7 +342,7 @@ async def test_worker_records_audit_log_upon_completion(
 
 @pytest.mark.anyio
 async def test_worker_respects_amqp_idempotency_and_skips_duplicates(
-    uow: InMemoryUnitOfWork, active_conversation: Conversation
+    uow: InMemoryUnitOfWorkAdapter, active_conversation: Conversation
 ) -> None:
     # Arrange
     llm = StubLlmClient(["Once only"])
@@ -389,7 +389,7 @@ async def test_worker_respects_amqp_idempotency_and_skips_duplicates(
 
 @pytest.mark.anyio
 async def test_worker_marks_idempotency_failed_when_llm_raises_error(
-    uow: InMemoryUnitOfWork, active_conversation: Conversation
+    uow: InMemoryUnitOfWorkAdapter, active_conversation: Conversation
 ) -> None:
     # Arrange
     llm = ErrorLlmClient()

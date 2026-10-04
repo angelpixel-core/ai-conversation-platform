@@ -1,19 +1,19 @@
-"""Integration tests for Transactional Outbox Pattern and OutboxDispatcher (TDD)."""
+"""Integration tests for Transactional Outbox Pattern and OutboxDispatcherAdapter (TDD)."""
 
 from uuid import uuid4
 
 import pytest
 
-from src.application.shared.ports.event_publisher import EventPublisher
-from src.infrastructure.shared.persistence.outbox.dispatcher import OutboxDispatcher
+from src.application.shared.ports.event_publisher import EventPublisherPort
+from src.infrastructure.shared.persistence.outbox.dispatcher import OutboxDispatcherAdapter
 from src.infrastructure.shared.persistence.outbox.in_memory import (
-    InMemoryOutboxRepository,
+    InMemoryOutboxRepositoryAdapter,
     OutboxMessage,
     OutboxStatus,
 )
 
 
-class DummyEventPublisher(EventPublisher):
+class DummyEventPublisher(EventPublisherPort):
     """Dummy event publisher supporting failure injection and event inspection."""
 
     def __init__(self, should_fail: bool = False) -> None:
@@ -26,7 +26,7 @@ class DummyEventPublisher(EventPublisher):
         self.published_events.append(event)
 
 
-class AsyncDummyEventPublisher(EventPublisher):
+class AsyncDummyEventPublisher(EventPublisherPort):
     """Async event publisher to test coroutine publish method."""
 
     def __init__(self) -> None:
@@ -61,7 +61,7 @@ def test_outbox_message_creation_sets_default_values() -> None:
 
 
 def test_in_memory_outbox_repository_save_and_query() -> None:
-    repo = InMemoryOutboxRepository()
+    repo = InMemoryOutboxRepositoryAdapter()
     msg = OutboxMessage.create(
         aggregate_type="Conversation",
         aggregate_id=uuid4(),
@@ -85,7 +85,7 @@ def test_in_memory_outbox_repository_save_and_query() -> None:
 
 
 def test_in_memory_outbox_repository_add_compatibility() -> None:
-    repo = InMemoryOutboxRepository()
+    repo = InMemoryOutboxRepositoryAdapter()
 
     # Case 1: Add raw event string/object
     repo.add("RawEventPayload")
@@ -102,9 +102,9 @@ def test_in_memory_outbox_repository_add_compatibility() -> None:
 @pytest.mark.anyio
 async def test_outbox_dispatcher_processes_pending_messages() -> None:
     # Arrange
-    repo = InMemoryOutboxRepository()
+    repo = InMemoryOutboxRepositoryAdapter()
     publisher = DummyEventPublisher()
-    dispatcher = OutboxDispatcher(repository=repo, event_publisher=publisher)
+    dispatcher = OutboxDispatcherAdapter(repository=repo, event_publisher=publisher)
 
     msg = OutboxMessage.create(
         aggregate_type="Conversation",
@@ -128,9 +128,9 @@ async def test_outbox_dispatcher_processes_pending_messages() -> None:
 @pytest.mark.anyio
 async def test_outbox_dispatcher_marks_failed_on_publisher_error() -> None:
     # Arrange
-    repo = InMemoryOutboxRepository()
+    repo = InMemoryOutboxRepositoryAdapter()
     failing_publisher = DummyEventPublisher(should_fail=True)
-    dispatcher = OutboxDispatcher(repository=repo, event_publisher=failing_publisher)
+    dispatcher = OutboxDispatcherAdapter(repository=repo, event_publisher=failing_publisher)
 
     msg = OutboxMessage.create(
         aggregate_type="Conversation",
@@ -154,9 +154,9 @@ async def test_outbox_dispatcher_marks_failed_on_publisher_error() -> None:
 @pytest.mark.anyio
 async def test_outbox_dispatcher_handles_async_publisher() -> None:
     # Arrange
-    repo = InMemoryOutboxRepository()
+    repo = InMemoryOutboxRepositoryAdapter()
     async_publisher = AsyncDummyEventPublisher()
-    dispatcher = OutboxDispatcher(repository=repo, event_publisher=async_publisher)
+    dispatcher = OutboxDispatcherAdapter(repository=repo, event_publisher=async_publisher)
 
     msg = OutboxMessage.create(
         aggregate_type="Conversation",
@@ -177,9 +177,9 @@ async def test_outbox_dispatcher_handles_async_publisher() -> None:
 
 @pytest.mark.anyio
 async def test_outbox_dispatcher_returns_zero_when_no_pending_messages() -> None:
-    repo = InMemoryOutboxRepository()
+    repo = InMemoryOutboxRepositoryAdapter()
     publisher = DummyEventPublisher()
-    dispatcher = OutboxDispatcher(repository=repo, event_publisher=publisher)
+    dispatcher = OutboxDispatcherAdapter(repository=repo, event_publisher=publisher)
 
     processed = await dispatcher.dispatch_pending()
 

@@ -45,5 +45,4 @@ class InMemoryWorkflowCheckpointRepositoryAdapter(WorkflowCheckpointRepositoryPo
         return sorted(snaps, key=lambda s: s.version)
 
 
-# Alias for naming consistency
-InMemoryWorkflowCheckpointRepository = InMemoryWorkflowCheckpointRepositoryAdapter
+__all__ = ["InMemoryWorkflowCheckpointRepositoryAdapter"]

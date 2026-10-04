@@ -8,12 +8,12 @@ from src.domain.tenants.entities.tenant import Tenant
 from src.domain.tenants.entities.tenant_policy import TenantPolicy
 from src.domain.tenants.value_objects.monetary_budget import MonetaryBudget
 from src.domain.tenants.value_objects.tenant_id import TenantId
-from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWork
+from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWorkAdapter
 from src.interfaces.http.api import build_api
 
 
 def test_budget_exceeded_rejection_http_402() -> None:
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     tenant = Tenant(
         tenant_id=TenantId("broke-startup"),
         name="Broke Startup",

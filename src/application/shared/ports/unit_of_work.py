@@ -2,7 +2,9 @@ from abc import ABC, abstractmethod
 from types import TracebackType
 from typing import Self
 
-from src.domain.conversations.ports.conversation_repository import ConversationRepository
+from src.domain.conversations.ports.conversation_repository import (
+    ConversationRepositoryPort,
+)
 from src.domain.knowledge.ports.knowledge_repository_port import KnowledgeRepositoryPort
 from src.domain.tenants.ports.tenant_repository_port import TenantRepositoryPort
 from src.domain.tools.ports.tool_approval_repository_port import (
@@ -10,14 +12,14 @@ from src.domain.tools.ports.tool_approval_repository_port import (
 )
 
 
-class UnitOfWork(ABC):
-    """Transaction boundary.
+class UnitOfWorkPort(ABC):
+    """Transaction boundary interface (Unit of Work).
 
-    A future PostgreSQL implementation can map this to one database
-    transaction, committing repository changes and an outbox record together.
+    Coordinates persistence operations and transaction boundaries across multiple
+    domain aggregate repositories, ensuring atomic commits and outbox event dispatch.
     """
 
-    conversations: ConversationRepository
+    conversations: ConversationRepositoryPort
     tenants: TenantRepositoryPort
     knowledge: KnowledgeRepositoryPort
     tool_approvals: ToolApprovalRepositoryPort
@@ -42,3 +44,6 @@ class UnitOfWork(ABC):
     @abstractmethod
     def rollback(self) -> None:
         raise NotImplementedError
+
+
+__all__ = ["UnitOfWorkPort"]

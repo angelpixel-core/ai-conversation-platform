@@ -5,7 +5,7 @@ from typing import Self
 
 import pytest
 
-from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.shared.ports.unit_of_work import UnitOfWorkPort
 from src.application.tenants.commands.settle_quota_command import (
     SettleQuotaCommand,
     SettleQuotaCommandHandler,
@@ -33,7 +33,7 @@ class FakeTenantRepo(TenantRepositoryPort):
         return list(self.tenants.values())
 
 
-class FakeUnitOfWork(UnitOfWork):
+class FakeUnitOfWork(UnitOfWorkPort):
     def __init__(self) -> None:
         self.tenants = FakeTenantRepo()
         self.committed = False

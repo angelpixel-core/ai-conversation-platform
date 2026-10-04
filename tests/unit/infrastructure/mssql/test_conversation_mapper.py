@@ -1,11 +1,11 @@
-"""Unit tests for MSSQL SQLModel models and ConversationDataMapper."""
+"""Unit tests for MSSQL SQLModel models and ConversationMapper."""
 
 from datetime import UTC, datetime
 from uuid import uuid4
 
 from src.domain.conversations.entities.conversation import Conversation
 from src.domain.conversations.value_objects.message import Message, MessageRole
-from src.infrastructure.persistence.mssql.mapper import ConversationDataMapper
+from src.infrastructure.persistence.mssql.mapper import ConversationMapper
 from src.infrastructure.persistence.mssql.models import (
     ConversationModel,
     MessageModel,
@@ -20,7 +20,7 @@ def test_mapper__entity_to_model__converts_conversation_and_messages_correctly()
     conversation.append_assistant_message("Utilizando Data Mappers y SQLModel.")
 
     # Act
-    model = ConversationDataMapper.to_model(conversation)
+    model = ConversationMapper.to_model(conversation)
 
     # Assert
     assert isinstance(model, ConversationModel)
@@ -68,7 +68,7 @@ def test_mapper__model_to_domain__reconstitutes_aggregate_with_messages_correctl
     ]
 
     # Act
-    entity = ConversationDataMapper.to_domain(model)
+    entity = ConversationMapper.to_domain(model)
 
     # Assert
     assert isinstance(entity, Conversation)
@@ -88,7 +88,7 @@ def test_mapper__message_to_model__converts_single_message_value_object() -> Non
     message = Message.create_user_message("Prueba unitaria de Value Object")
 
     # Act
-    model = ConversationDataMapper.message_to_model(message, conversation_id=conv_id)
+    model = ConversationMapper.message_to_model(message, conversation_id=conv_id)
 
     # Assert
     assert isinstance(model, MessageModel)

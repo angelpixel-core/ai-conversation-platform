@@ -1,13 +1,13 @@
 from src.application.conversations.commands.create_conversation import (
     CreateConversationCommand,
-    CreateConversationHandler,
+    CreateConversationCommandHandler,
 )
-from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWork
+from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWorkAdapter
 
 
 def test_create_conversation_persists_aggregate() -> None:
-    uow = InMemoryUnitOfWork()
-    handler = CreateConversationHandler(uow)
+    uow = InMemoryUnitOfWorkAdapter()
+    handler = CreateConversationCommandHandler(uow)
 
     result = handler.handle(CreateConversationCommand("Demo conversation"))
 

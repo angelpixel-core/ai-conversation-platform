@@ -35,10 +35,10 @@ from src.domain.tools.ports.tool_approval_repository_port import (
     ToolApprovalRepositoryPort,
 )
 from src.infrastructure.governance.anyio_stream_guardrail_filter import (
-    AnyioStreamGuardrailFilter,
+    AnyioStreamGuardrailFilterAdapter,
 )
 from src.infrastructure.messaging.in_memory.in_memory_message_broker import (
-    InMemoryMessageBroker,
+    InMemoryMessageBrokerAdapter,
 )
 from src.infrastructure.messaging.rabbitmq.rabbitmq_connection_manager import (
     RabbitMQConnectionManager,
@@ -49,8 +49,12 @@ from src.infrastructure.messaging.rabbitmq.rabbitmq_consumer_adapter import (
 from src.infrastructure.messaging.rabbitmq.rabbitmq_topology_config import (
     RabbitMQTopologyConfig,
 )
-from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWork
-from src.infrastructure.persistence.mssql.unit_of_work import MssqlUnitOfWork
+from src.infrastructure.persistence.in_memory.unit_of_work import (
+    InMemoryUnitOfWorkAdapter,
+)
+from src.infrastructure.persistence.mssql.unit_of_work import (
+    MssqlUnitOfWorkAdapter,
+)
 from src.infrastructure.shared.config.settings import (
     MessagingDriver,
     PersistenceDriver,
@@ -67,8 +71,8 @@ def test_create_worker_container_default_wires_in_memory() -> None:
     container = create_worker_container(settings=settings)
 
     assert isinstance(container, WorkerContainer)
-    assert isinstance(container.unit_of_work, InMemoryUnitOfWork)
-    assert isinstance(container.consumer, InMemoryMessageBroker)
+    assert isinstance(container.unit_of_work, InMemoryUnitOfWorkAdapter)
+    assert isinstance(container.consumer, InMemoryMessageBrokerAdapter)
     assert isinstance(container.worker_handler, LlmMessageProcessingWorker)
     assert isinstance(container.settle_quota_handler, SettleQuotaCommandHandler)
     assert isinstance(container.model_router_service, ModelRouterService)
@@ -81,7 +85,7 @@ def test_create_worker_container_default_wires_in_memory() -> None:
     assert isinstance(container.incident_repo, IncidentRepositoryPort)
     assert isinstance(container.pii_scanner, PiiScannerPort)
     assert isinstance(container.safety_guardrail, SafetyGuardrailPort)
-    assert isinstance(container.stream_guardrail_filter, AnyioStreamGuardrailFilter)
+    assert isinstance(container.stream_guardrail_filter, AnyioStreamGuardrailFilterAdapter)
 
 
 def test_create_worker_container_with_mssql_driver() -> None:
@@ -93,7 +97,7 @@ def test_create_worker_container_with_mssql_driver() -> None:
     container = create_worker_container(settings=settings)
 
     assert isinstance(container, WorkerContainer)
-    assert isinstance(container.unit_of_work, MssqlUnitOfWork)
+    assert isinstance(container.unit_of_work, MssqlUnitOfWorkAdapter)
     assert isinstance(container.retriever_service, HybridRetrieverService)
     assert isinstance(container.embedding_client, EmbeddingClientPort)
     assert isinstance(container.incident_repo, IncidentRepositoryPort)
@@ -116,7 +120,7 @@ def test_create_worker_container_with_rabbitmq_driver() -> None:
 
 
 def test_create_worker_container_with_custom_uow_and_llm() -> None:
-    custom_uow = InMemoryUnitOfWork()
+    custom_uow = InMemoryUnitOfWorkAdapter()
     custom_llm = MagicMock()
     container = create_worker_container(
         unit_of_work=custom_uow,
@@ -143,7 +147,7 @@ async def test_worker_container_start_and_stop_lifecycle_in_memory() -> None:
     )
     container = create_worker_container(settings=settings)
 
-    assert isinstance(container.consumer, InMemoryMessageBroker)
+    assert isinstance(container.consumer, InMemoryMessageBrokerAdapter)
     await container.start()
     assert container.consumer._is_consuming is True
 

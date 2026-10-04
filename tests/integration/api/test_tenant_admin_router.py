@@ -2,12 +2,12 @@
 
 from fastapi.testclient import TestClient
 
-from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWork
+from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWorkAdapter
 from src.interfaces.http.api import build_api
 
 
 def test_tenant_admin_provision_and_list() -> None:
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     app = build_api(unit_of_work=uow)
     client = TestClient(app)
 

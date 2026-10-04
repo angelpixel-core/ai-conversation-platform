@@ -119,15 +119,23 @@ class OutboxRelayService:
                     msg.status = OutboxStatus.PUBLISHED.value
                     msg.processed_at = datetime.now(UTC)
                     session.add(msg)
-                    session.commit()
                     dispatched_count += 1
                 except Exception as exc:
                     logger.exception("Error relaying outbox message %s: %s", msg.id, exc)
-                    session.rollback()
                     msg.status = OutboxStatus.FAILED.value
                     msg.error_message = str(exc)
                     session.add(msg)
-                    session.commit()
+
+            try:
+                session.commit()
+            except Exception as exc:
+                logger.exception("Error committing outbox batch: %s", exc)
+                try:
+                    session.rollback()
+                except Exception as rollback_exc:
+                    logger.debug(
+                        "Rollback failed during outbox batch error handling: %s", rollback_exc
+                    )
 
             return dispatched_count
 

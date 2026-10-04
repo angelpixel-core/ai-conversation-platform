@@ -20,7 +20,7 @@ from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.infrastructure.embeddings.fake_embedding_client import (
     FakeEmbeddingClientAdapter,
 )
-from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWork
+from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWorkAdapter
 from src.interfaces.http.api import build_api
 
 
@@ -39,7 +39,7 @@ class StubLlmClient(LlmClientPort):
 
 @pytest.mark.anyio
 async def test_sse_streaming_emits_citation_events() -> None:
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     tenant_id = TenantId("acme-corp")
 
     # 1. Seed document and chunk with embedding

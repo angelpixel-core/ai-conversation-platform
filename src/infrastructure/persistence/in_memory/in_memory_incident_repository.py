@@ -53,3 +53,6 @@ class InMemoryIncidentRepositoryAdapter(IncidentRepositoryPort):
             "by_severity": by_severity,
             "by_rule": by_rule,
         }
+
+
+__all__ = ["InMemoryIncidentRepositoryAdapter"]

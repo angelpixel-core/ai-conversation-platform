@@ -1,4 +1,4 @@
-"""Unit tests for AppendAssistantMessageCommand and AppendAssistantMessageHandler (TDD)."""
+"""Unit tests for AppendAssistantMessageCommand and AppendAssistantMessageCommandHandler (TDD)."""
 
 from uuid import uuid4
 
@@ -6,7 +6,7 @@ import pytest
 
 from src.application.conversations.commands.append_assistant_message import (
     AppendAssistantMessageCommand,
-    AppendAssistantMessageHandler,
+    AppendAssistantMessageCommandHandler,
     AppendAssistantMessageResult,
 )
 from src.domain.conversations.entities.conversation import Conversation
@@ -17,18 +17,18 @@ from src.domain.conversations.events.message_appended import MessageAppendedDoma
 from src.domain.conversations.exceptions import ConversationNotFoundError
 from src.domain.conversations.value_objects.message import MessageRole
 from src.domain.shared.domain_error import DomainError
-from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWork
+from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWorkAdapter
 
 
 def test_handle__valid_assistant_message__persists_message_and_commits() -> None:
     # Arrange
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     conversation = Conversation.create("Test Conversation")
     conversation.append_user_message("Hello AI")
     uow.conversations.add(conversation)
     uow.commit()
 
-    handler = AppendAssistantMessageHandler(unit_of_work=uow)
+    handler = AppendAssistantMessageCommandHandler(unit_of_work=uow)
     command = AppendAssistantMessageCommand(
         conversation_id=conversation.id,
         content="Hello! How can I help you today?",
@@ -54,13 +54,13 @@ def test_handle__valid_assistant_message__persists_message_and_commits() -> None
 
 def test_handle__valid_assistant_message__emits_domain_events() -> None:
     # Arrange
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     conversation = Conversation.create("Test Conversation")
     conversation.append_user_message("Tell me a fact")
     conversation.pull_events()  # Clear events recorded so far
     uow.conversations.add(conversation)
 
-    handler = AppendAssistantMessageHandler(unit_of_work=uow)
+    handler = AppendAssistantMessageCommandHandler(unit_of_work=uow)
     command = AppendAssistantMessageCommand(
         conversation_id=conversation.id,
         content="The Earth orbits the Sun.",
@@ -88,8 +88,8 @@ def test_handle__valid_assistant_message__emits_domain_events() -> None:
 
 def test_handle__conversation_not_found__raises_conversation_not_found_error() -> None:
     # Arrange
-    uow = InMemoryUnitOfWork()
-    handler = AppendAssistantMessageHandler(unit_of_work=uow)
+    uow = InMemoryUnitOfWorkAdapter()
+    handler = AppendAssistantMessageCommandHandler(unit_of_work=uow)
     non_existent_id = uuid4()
     command = AppendAssistantMessageCommand(
         conversation_id=non_existent_id,
@@ -108,11 +108,11 @@ def test_handle__conversation_not_found__raises_conversation_not_found_error() -
 
 def test_handle__without_preceding_user_message__raises_domain_error() -> None:
     # Arrange
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     conversation = Conversation.create("Empty Conversation")
     uow.conversations.add(conversation)
 
-    handler = AppendAssistantMessageHandler(unit_of_work=uow)
+    handler = AppendAssistantMessageCommandHandler(unit_of_work=uow)
     command = AppendAssistantMessageCommand(
         conversation_id=conversation.id,
         content="Unprompted assistant answer",
@@ -133,12 +133,12 @@ def test_handle__without_preceding_user_message__raises_domain_error() -> None:
 
 def test_handle__consecutive_assistant_messages__raises_domain_error() -> None:
     # Arrange
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     conversation = Conversation.create("Test Conversation")
     conversation.append_user_message("User question")
     uow.conversations.add(conversation)
 
-    handler = AppendAssistantMessageHandler(unit_of_work=uow)
+    handler = AppendAssistantMessageCommandHandler(unit_of_work=uow)
     first_command = AppendAssistantMessageCommand(
         conversation_id=conversation.id,
         content="First answer",
@@ -166,12 +166,12 @@ def test_handle__consecutive_assistant_messages__raises_domain_error() -> None:
 
 def test_handle__empty_content__raises_domain_error() -> None:
     # Arrange
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     conversation = Conversation.create("Test Conversation")
     conversation.append_user_message("User message")
     uow.conversations.add(conversation)
 
-    handler = AppendAssistantMessageHandler(unit_of_work=uow)
+    handler = AppendAssistantMessageCommandHandler(unit_of_work=uow)
     command = AppendAssistantMessageCommand(
         conversation_id=conversation.id,
         content="   ",
@@ -189,12 +189,12 @@ def test_handle__empty_content__raises_domain_error() -> None:
 
 def test_handle__content_exceeds_max_length__raises_domain_error() -> None:
     # Arrange
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     conversation = Conversation.create("Test Conversation")
     conversation.append_user_message("User message")
     uow.conversations.add(conversation)
 
-    handler = AppendAssistantMessageHandler(unit_of_work=uow)
+    handler = AppendAssistantMessageCommandHandler(unit_of_work=uow)
     command = AppendAssistantMessageCommand(
         conversation_id=conversation.id,
         content="y" * 4001,
@@ -212,12 +212,12 @@ def test_handle__content_exceeds_max_length__raises_domain_error() -> None:
 
 def test_handle__when_error_occurs__rolls_back_unit_of_work() -> None:
     # Arrange
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     conversation = Conversation.create("Test Conversation")
     conversation.append_user_message("User message")
     uow.conversations.add(conversation)
 
-    handler = AppendAssistantMessageHandler(unit_of_work=uow)
+    handler = AppendAssistantMessageCommandHandler(unit_of_work=uow)
     invalid_command = AppendAssistantMessageCommand(
         conversation_id=conversation.id,
         content="",
