@@ -322,7 +322,7 @@ Demonstrate logical tenant scoping and security boundaries:
 # 2.1 Attempt accessing protected resource WITHOUT X-Tenant-ID (rejected with 400 Bad Request)
 curl -s -w "\nHTTP Status: %{http_code}\n" -X POST http://localhost:8000/conversations \
   -H "Content-Type: application/json" \
-  -d '{"title": "Unidentified Tenant"}'
+  -d '{"title": "Unidentified Tenant"}' | jq
 ```
 
 ```json
@@ -725,4 +725,3 @@ make check-all     # Run full quality barrier (format + lint + types + security 
   - 📄 Architecture Decision: [ADR 0012: GitHub Actions CI/CD Standardization & Service Containers](.agent/architecture/decisions/0012-github-actions-ci-cd-standardization-and-service-containers.md)
 - [x] [**Cloud Infrastructure Matrix:** AWS 3-Tier VPC, EKS 1.31, RDS SQL Server 2022 & Amazon MQ](.agent/architecture/decisions/0013-cloud-infrastructure-requirements-and-provisioning-matrix.md)
   - 📄 Architecture Decision: [ADR 0013: Cloud Infrastructure Requirements & Provisioning Matrix](.agent/architecture/decisions/0013-cloud-infrastructure-requirements-and-provisioning-matrix.md)
-
