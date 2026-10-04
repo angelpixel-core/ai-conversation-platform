@@ -77,10 +77,13 @@ async def test_concurrent_outbox_relays_compete_without_duplicates(
     )
 
     async def run_relay(relay: OutboxRelayService) -> None:
-        while True:
+        consecutive_empty = 0
+        while len(broker.published_ids) < total_messages and consecutive_empty < 10:
             published = await relay.poll_and_publish_once()
             if published == 0:
-                break
+                consecutive_empty += 1
+            else:
+                consecutive_empty = 0
             await anyio.sleep(0.01)
 
     with anyio.fail_after(10.0):
