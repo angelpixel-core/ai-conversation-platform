@@ -14,7 +14,6 @@ BROKER_TEST_URL = os.getenv(
     "BROKER_URL",
     "amqp://guest:guest@localhost:5672/",
 )
-RABBITMQ_TEST_URL = BROKER_TEST_URL
 
 
 @pytest.fixture
