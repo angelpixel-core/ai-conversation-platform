@@ -5,6 +5,7 @@ from typing import Any
 
 from src.application.agents.services.graph_execution_engine import GraphExecutionEngine
 from src.domain.agents.entities.workflow_instance import WorkflowStatus
+from src.domain.agents.exceptions import WorkflowNotFoundError, WorkflowStateError
 from src.domain.agents.ports.workflow_checkpoint_repository_port import (
     WorkflowCheckpointRepositoryPort,
 )
@@ -38,17 +39,37 @@ class ResumeWorkflowCommandHandler:
         checkpoint_repo: WorkflowCheckpointRepositoryPort,
         engine: GraphExecutionEngine,
     ) -> None:
+        """Initializes the workflow resumption handler.
+
+        Args:
+            checkpoint_repo: Driven port for persisting workflow instances and checkpoints.
+            engine: Graph execution engine to continue execution.
+        """
         self._repo = checkpoint_repo
         self._engine = engine
 
     async def handle(self, command: ResumeWorkflowCommand) -> ResumeWorkflowResult:
+        """Resumes a paused workflow, updates state, and continues graph execution.
+
+        Args:
+            command: ResumeWorkflowCommand payload.
+
+        Returns:
+            ResumeWorkflowResult containing updated workflow execution state.
+
+        Raises:
+            WorkflowNotFoundError: If workflow instance does not exist.
+            WorkflowStateError: If workflow is in a terminal state that cannot be resumed.
+        """
         tenant_id = TenantId(command.tenant_id)
         instance = self._repo.get_instance(tenant_id, command.workflow_id)
         if instance is None:
-            raise ValueError(f"Workflow '{command.workflow_id}' no encontrado.")
+            raise WorkflowNotFoundError(f"Workflow '{command.workflow_id}' no encontrado.")
 
         if instance.status not in (WorkflowStatus.WAITING_APPROVAL, WorkflowStatus.RUNNING):
-            raise ValueError(f"No se puede reanudar un workflow en estado '{instance.status}'.")
+            raise WorkflowStateError(
+                f"No se puede reanudar un workflow en estado '{instance.status}'."
+            )
 
         # Update state with incoming payload and restore running status if suspended
         instance.state_data.update(command.resumed_state_updates)
@@ -64,3 +85,7 @@ class ResumeWorkflowCommandHandler:
             current_node=executed.current_node,
             version=executed.version,
         )
+
+
+# Alias for backward compatibility
+ResumeWorkflowHandler = ResumeWorkflowCommandHandler

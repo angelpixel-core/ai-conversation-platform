@@ -24,3 +24,7 @@ class GetGovernanceMetricsQueryHandler:
         """Executes retrieval of governance metrics optionally filtered by tenant."""
         tenant_id = TenantId(query.tenant_id) if query.tenant_id else None
         return await self._incident_repo.get_metrics(tenant_id=tenant_id)
+
+
+# Alias for backward compatibility
+GetGovernanceMetricsHandler = GetGovernanceMetricsQueryHandler

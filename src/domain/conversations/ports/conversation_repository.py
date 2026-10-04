@@ -18,3 +18,7 @@ class ConversationRepository(ABC):
     @abstractmethod
     def list(self) -> list[Conversation]:
         raise NotImplementedError
+
+
+# Alias for port naming convention
+ConversationRepositoryPort = ConversationRepository

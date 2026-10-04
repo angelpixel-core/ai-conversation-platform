@@ -57,16 +57,23 @@ Siguiendo las directivas de `.agent/rules/00-core-philosophy.md`:
   - Dual-inheritance (`DomainError, ValueError`) para garantizar retrocompatibilidad total sin romper tests ni handlers existentes.
   - Formalizado en [ADR 0014](.agent/architecture/decisions/0014-domain-layer-standardization-and-clean-arch-polish.md).
 
-### 2.2. Capa de Aplicación (`src/application/`)
+### 2.2. Capa de Aplicación (`src/application/`) — [Completado / ADR 0015]
 
-- **Separación CQRS:**
+- [x] **Separación CQRS:**
   - **Commands:** Mutan estado, retornan DTOs de resultado o `None`. Nomenclatura: `<Action>Command` y `<Action>CommandHandler`.
   - **Queries:** Solo lectura, no generan efectos secundarios. Nomenclatura: `<Entity>Query` y `<Entity>QueryHandler`.
-- **Puertos (Driven Ports):**
+  - **Protocolos Genéricos:** `CommandHandler[C, R]`, `AsyncCommandHandler[C, R]`, `QueryHandler[Q, R]`, `AsyncQueryHandler[Q, R]` en `src/application/shared/cqrs/base.py`.
+  - **Retrocompatibilidad Total:** Alias para todos los handlers previos (ej. `CreateConversationHandler = CreateConversationCommandHandler`).
+- [x] **Puertos (Driven Ports):**
   - Interfaces abstractas puras utilizando `typing.Protocol` o `abc.ABC`.
-  - Nomenclatura: `<Resource>RepositoryPort`, `<Service>Port`, `<Client>Port`.
-- **Unit of Work (UoW):**
+  - Nomenclatura uniforme con sufijo `*Port`: `EventPublisherPort`, `HttpClientPort`, `UnitOfWorkPort`, `ConversationRepositoryPort`.
+- [x] **Unit of Work (UoW):**
   - Context manager explícito (`with unit_of_work as uow:`) que agrupa repositorios bajo una misma transacción y confirma con `uow.commit()`.
+  - Tipado y contratos abstractos reforzados en `UnitOfWorkPort`.
+- [x] **Excepciones de Aplicación:**
+  - Raíz `ApplicationError(Exception)` en `src/application/shared/exceptions.py`.
+  - Adopción exhaustiva de excepciones semánticas de dominio (con herencia dual) en todos los handlers de negocio.
+- [x] **Formalización:** Documentado en [ADR 0015](.agent/architecture/decisions/0015-application-layer-standardization-and-cqrs-polish.md).
 
 ### 2.3. Capa de Infraestructura (`src/infrastructure/`)
 
@@ -161,7 +168,7 @@ def reserve_quota(
 | Paso | Alcance | Tareas Principales | Estado |
 | :---: | :--- | :--- | :---: |
 | **1** | **Dominio & VO** | Congelar dataclasses de Value Objects, unificar excepciones en `src/domain/shared/exceptions.py`, factorías semánticas y encapsulación. | ✅ **Completado ([ADR 0014](.agent/architecture/decisions/0014-domain-layer-standardization-and-clean-arch-polish.md))** |
-| **2** | **CQRS Handlers** | Homogeneizar firmas de handlers, inyección de dependencias y context managers de UoW. | ⏳ Pendiente |
+| **2** | **CQRS Handlers** | Homogeneizar firmas de handlers, protocolos base, Driven Ports (*Port), context managers de UoW y excepciones de aplicación. | ✅ **Completado ([ADR 0015](.agent/architecture/decisions/0015-application-layer-standardization-and-cqrs-polish.md))** |
 | **3** | **Adaptadores & Mappers** | Revisar mapeo exhaustivo entre modelos SQLModel y entidades DDD. | ⏳ Pendiente |
 | **4** | **Interfaces & Routers** | Unificar formato RFC 7807 en exception handlers, verificar decoradores OpenAPI. | ⏳ Pendiente |
 | **5** | **Docstrings & Tipado** | Aplicar tipado estricto en Pyright con `reportUnknownMemberType` y docstrings estilo Google. | ⏳ Pendiente |

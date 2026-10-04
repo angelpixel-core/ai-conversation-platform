@@ -30,3 +30,7 @@ class ListIncidentsQueryHandler:
             limit=query.limit,
             offset=query.offset,
         )
+
+
+# Alias for backward compatibility
+ListIncidentsHandler = ListIncidentsQueryHandler

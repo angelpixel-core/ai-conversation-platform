@@ -11,7 +11,7 @@ class TenantNotFoundError(EntityNotFoundError):
     """Raised when a requested tenant organization does not exist."""
 
 
-class TenantAlreadyExistsError(DomainError):
+class TenantAlreadyExistsError(DomainError, ValueError):
     """Raised when attempting to provision a tenant with an existing ID."""
 
 

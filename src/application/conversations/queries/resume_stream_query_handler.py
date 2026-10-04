@@ -25,3 +25,7 @@ class ResumeStreamQueryHandler:
             since_sequence=since_seq,
         ):
             yield chunk
+
+
+# Alias for backward compatibility
+ResumeStreamHandler = ResumeStreamQueryHandler

@@ -19,9 +19,9 @@ class DomainValidationError(DomainError, ValueError):
     """Raised when an entity or value object fails structural domain invariants."""
 
 
-class EntityNotFoundError(DomainError):
+class EntityNotFoundError(DomainError, ValueError):
     """Base exception raised when an aggregate root or entity is not found."""
 
 
-class InvariantViolationError(DomainError):
+class InvariantViolationError(DomainError, ValueError):
     """Raised when an operation would violate an aggregate consistency boundary."""

@@ -3,9 +3,10 @@
 from dataclasses import dataclass
 from decimal import Decimal
 
-from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.shared.ports.unit_of_work import UnitOfWorkPort
 from src.domain.tenants.entities.tenant import Tenant
 from src.domain.tenants.entities.tenant_policy import TenantPolicy, TenantTier
+from src.domain.tenants.exceptions import TenantAlreadyExistsError
 from src.domain.tenants.value_objects.monetary_budget import MonetaryBudget
 from src.domain.tenants.value_objects.tenant_id import TenantId
 
@@ -40,15 +41,31 @@ class ProvisionTenantResult:
 class ProvisionTenantCommandHandler:
     """Application use case for registering and provisioning new tenants."""
 
-    def __init__(self, unit_of_work: UnitOfWork) -> None:
+    def __init__(self, unit_of_work: UnitOfWorkPort) -> None:
+        """Initializes the handler with a transactional unit of work.
+
+        Args:
+            unit_of_work: Transactional boundary port managing repository state.
+        """
         self._unit_of_work = unit_of_work
 
     def handle(self, command: ProvisionTenantCommand) -> ProvisionTenantResult:
+        """Provisions a new tenant with initial budget and policy configuration.
+
+        Args:
+            command: ProvisionTenantCommand payload.
+
+        Returns:
+            ProvisionTenantResult with tenant metadata and initial balance.
+
+        Raises:
+            TenantAlreadyExistsError: If tenant identifier is already registered.
+        """
         tenant_vo = TenantId(command.tenant_id)
         with self._unit_of_work as uow:
             existing = uow.tenants.get(tenant_vo)
             if existing is not None:
-                raise ValueError(f"Tenant '{command.tenant_id}' ya existe.")
+                raise TenantAlreadyExistsError(f"Tenant '{command.tenant_id}' ya existe.")
 
             try:
                 tier_enum = TenantTier(command.tier)
@@ -82,3 +99,7 @@ class ProvisionTenantCommandHandler:
                 available_balance=tenant.budget.available_balance,
                 currency=tenant.budget.currency,
             )
+
+
+# Alias for backward compatibility
+ProvisionTenantHandler = ProvisionTenantCommandHandler

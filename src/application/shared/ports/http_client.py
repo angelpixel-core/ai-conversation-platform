@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 
-class HttpClient(ABC):
+class HttpClientPort(ABC):
     """Outbound HTTP port.
 
     AI provider adapters will depend on this abstraction instead of a concrete
@@ -12,3 +12,7 @@ class HttpClient(ABC):
     @abstractmethod
     async def request(self, method: str, url: str, **kwargs: Any) -> Any:
         raise NotImplementedError
+
+
+# Alias for backward compatibility
+HttpClient = HttpClientPort

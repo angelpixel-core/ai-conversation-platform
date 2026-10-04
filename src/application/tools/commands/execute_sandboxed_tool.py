@@ -3,10 +3,10 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from src.application.shared.ports.event_publisher import EventPublisher
+from src.application.shared.ports.event_publisher import EventPublisherPort
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.domain.tools.events.tool_events import ToolExecutionCompletedDomainEvent
-from src.domain.tools.exceptions import ToolNotFoundError
+from src.domain.tools.exceptions import ToolNotAllowedError, ToolNotFoundError
 from src.domain.tools.ports.sandboxed_tool_runner_port import (
     SandboxedToolRunnerPort,
 )
@@ -34,20 +34,39 @@ class ExecuteSandboxedToolResult:
     execution_time_ms: float
 
 
-class ExecuteSandboxedToolHandler:
+class ExecuteSandboxedToolCommandHandler:
     """Handles sandboxed execution of tools with timeouts and permission checks."""
 
     def __init__(
         self,
         runner: SandboxedToolRunnerPort,
         tool_registry: ToolRegistryPort,
-        event_publisher: EventPublisher | None = None,
+        event_publisher: EventPublisherPort | None = None,
     ) -> None:
+        """Initializes the sandboxed tool execution handler.
+
+        Args:
+            runner: Driven port for isolated sandbox runner.
+            tool_registry: Driven port for registered tools catalog.
+            event_publisher: Optional event publisher port for telemetry/audit.
+        """
         self._runner = runner
         self._registry = tool_registry
         self._event_publisher = event_publisher
 
     async def handle(self, command: ExecuteSandboxedToolCommand) -> ExecuteSandboxedToolResult:
+        """Validates tool authorization and executes in sandbox runner.
+
+        Args:
+            command: ExecuteSandboxedToolCommand payload.
+
+        Returns:
+            ExecuteSandboxedToolResult with stdout/stderr and execution time.
+
+        Raises:
+            ToolNotFoundError: If tool is not registered.
+            ToolNotAllowedError: If tool is prohibited by tenant policy.
+        """
         tenant_id = TenantId(command.tenant_id)
         tool_def = self._registry.get_tool(command.tool_call.tool_name)
         if tool_def is None:
@@ -56,7 +75,7 @@ class ExecuteSandboxedToolHandler:
             )
 
         if not self._registry.is_tool_allowed(tenant_id, command.tool_call.tool_name):
-            raise ValueError(
+            raise ToolNotAllowedError(
                 f"Herramienta '{command.tool_call.tool_name}' no autorizada "
                 f"para el tenant '{command.tenant_id}'."
             )
@@ -84,3 +103,7 @@ class ExecuteSandboxedToolHandler:
             is_error=result.is_error,
             execution_time_ms=result.execution_time_ms,
         )
+
+
+# Alias for backward compatibility
+ExecuteSandboxedToolHandler = ExecuteSandboxedToolCommandHandler

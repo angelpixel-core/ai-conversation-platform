@@ -78,3 +78,7 @@ class StartWorkflowCommandHandler:
             current_node=executed_instance.current_node,
             version=executed_instance.version,
         )
+
+
+# Alias for backward compatibility
+StartWorkflowHandler = StartWorkflowCommandHandler

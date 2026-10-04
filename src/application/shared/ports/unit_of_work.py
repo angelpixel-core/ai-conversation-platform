@@ -10,11 +10,11 @@ from src.domain.tools.ports.tool_approval_repository_port import (
 )
 
 
-class UnitOfWork(ABC):
-    """Transaction boundary.
+class UnitOfWorkPort(ABC):
+    """Transaction boundary interface (Unit of Work).
 
-    A future PostgreSQL implementation can map this to one database
-    transaction, committing repository changes and an outbox record together.
+    Coordinates persistence operations and transaction boundaries across multiple
+    domain aggregate repositories, ensuring atomic commits and outbox event dispatch.
     """
 
     conversations: ConversationRepository
@@ -42,3 +42,7 @@ class UnitOfWork(ABC):
     @abstractmethod
     def rollback(self) -> None:
         raise NotImplementedError
+
+
+# Alias for backward compatibility
+UnitOfWork = UnitOfWorkPort

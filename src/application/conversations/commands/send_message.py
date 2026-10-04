@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
-from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.shared.ports.unit_of_work import UnitOfWorkPort
 from src.domain.conversations.exceptions import ConversationNotFoundError
 
 
@@ -26,13 +26,29 @@ class SendMessageResult:
     created_at: datetime
 
 
-class SendMessageHandler:
+class SendMessageCommandHandler:
     """Application use case for handling user message ingestion."""
 
-    def __init__(self, unit_of_work: UnitOfWork) -> None:
+    def __init__(self, unit_of_work: UnitOfWorkPort) -> None:
+        """Initializes the handler with a transactional unit of work.
+
+        Args:
+            unit_of_work: Transactional boundary port managing repository state.
+        """
         self._unit_of_work = unit_of_work
 
     def handle(self, command: SendMessageCommand) -> SendMessageResult:
+        """Appends a user message to a conversation aggregate.
+
+        Args:
+            command: SendMessageCommand payload.
+
+        Returns:
+            SendMessageResult with persisted message data.
+
+        Raises:
+            ConversationNotFoundError: If target conversation does not exist.
+        """
         with self._unit_of_work as uow:
             conversation = uow.conversations.get(command.conversation_id)
             if conversation is None:
@@ -52,5 +68,5 @@ class SendMessageHandler:
             )
 
 
-# Alias for naming consistency with CQRS templates
-SendMessageCommandHandler = SendMessageHandler
+# Alias for backward compatibility
+SendMessageHandler = SendMessageCommandHandler

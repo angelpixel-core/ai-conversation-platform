@@ -132,8 +132,10 @@ class OutboxRelayService:
                 logger.exception("Error committing outbox batch: %s", exc)
                 try:
                     session.rollback()
-                except Exception:
-                    pass
+                except Exception as rollback_exc:
+                    logger.debug(
+                        "Rollback failed during outbox batch error handling: %s", rollback_exc
+                    )
 
             return dispatched_count
 

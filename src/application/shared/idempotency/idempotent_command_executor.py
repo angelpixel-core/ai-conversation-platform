@@ -11,6 +11,7 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar
 
+from src.application.shared.exceptions import IdempotencyConflictError
 from src.application.shared.ports.idempotency_repository_port import (
     IdempotencyRepositoryPort,
     IdempotencyStatus,
@@ -19,10 +20,6 @@ from src.application.shared.ports.idempotency_repository_port import (
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
-
-
-class IdempotencyConflictError(Exception):
-    """Raised when an operation with the same idempotency key is already running."""
 
 
 class IdempotentCommandExecutor:
