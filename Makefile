@@ -62,7 +62,7 @@ test-file:
 test-happy-path:
 	.venv/bin/python -m pytest tests/integration/test_walkthrough_happy_path.py -v
 
-.PHONY: install install-dev test test-file test-happy-path coverage lint format format-check typecheck security audit check-all docs-build run-api run-worker db/upgrade db/downgrade stack/up stack/up-build stack/down stack/status
+.PHONY: install install-dev test test-file test-happy-path coverage lint format format-check typecheck security audit check-all docs-build run-api run-worker db/upgrade db/downgrade db/shell stack/up stack/up-build stack/down stack/status
 
 # Ejecutar todas las comprobaciones de calidad, tipado, seguridad y tests
 check-all: format-check lint typecheck security test
@@ -87,7 +87,11 @@ db/upgrade:
 db/downgrade:
 	.venv/bin/alembic downgrade -1
 
-# Levantar servicios con Docker Compose (API + Worker + SQL Server + RabbitMQ)
+# Abrir consola interactiva SQLCMD en el contenedor de base de datos (MSSQL)
+db/shell:
+	docker compose exec db /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourStrong!Passw0rd' -C -d ChatbotDB
+
+# Levantar servicios con Docker Compose (API + Worker + DB + Broker)
 stack/up:
 	docker compose up
 

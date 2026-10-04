@@ -277,19 +277,19 @@ def _wire_worker_consumer(
             conn_mgr = RabbitMQConnectionManager(url=settings.get_rabbitmq_url())
         if topo is None:
             topo = RabbitMQTopologyConfig(
-                exchange_name=settings.RABBITMQ_EXCHANGE,
-                queue_name=settings.RABBITMQ_QUEUE,
-                dlx_exchange_name=settings.RABBITMQ_DLX_EXCHANGE,
-                dlq_name=settings.RABBITMQ_DLQ,
-                routing_key=settings.RABBITMQ_ROUTING_KEY,
+                exchange_name=settings.BROKER_EXCHANGE,
+                queue_name=settings.BROKER_QUEUE,
+                dlx_exchange_name=settings.BROKER_DLX_EXCHANGE,
+                dlq_name=settings.BROKER_DLQ,
+                routing_key=settings.BROKER_ROUTING_KEY,
             )
         cons = RabbitMQConsumerAdapter(
             connection_manager=conn_mgr,
-            queue_name=settings.RABBITMQ_QUEUE,
-            prefetch_count=settings.RABBITMQ_PREFETCH_COUNT,
+            queue_name=settings.BROKER_QUEUE,
+            prefetch_count=settings.BROKER_PREFETCH_COUNT,
             queue_arguments={
-                "x-dead-letter-exchange": settings.RABBITMQ_DLX_EXCHANGE,
-                "x-dead-letter-routing-key": settings.RABBITMQ_ROUTING_KEY,
+                "x-dead-letter-exchange": settings.BROKER_DLX_EXCHANGE,
+                "x-dead-letter-routing-key": settings.BROKER_ROUTING_KEY,
             },
         )
         return cons, conn_mgr, topo
@@ -358,7 +358,7 @@ def create_worker_container(
         current_settings, consumer, connection_manager, topology_config
     )
 
-    routing_key = topo.routing_key if topo is not None else current_settings.RABBITMQ_ROUTING_KEY
+    routing_key = topo.routing_key if topo is not None else current_settings.BROKER_ROUTING_KEY
     cons.subscribe(routing_key, worker_handler.handle)
 
     outbox_relay_service = outbox_relay
@@ -371,7 +371,7 @@ def create_worker_container(
         if session_factory is not None and conn_mgr is not None:
             publisher = RabbitMQPublisherAdapter(
                 connection_manager=conn_mgr,
-                exchange_name=current_settings.RABBITMQ_EXCHANGE,
+                exchange_name=current_settings.BROKER_EXCHANGE,
             )
             outbox_relay_service = OutboxRelayService(
                 session_factory=session_factory,
