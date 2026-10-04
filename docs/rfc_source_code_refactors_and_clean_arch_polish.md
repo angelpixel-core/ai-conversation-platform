@@ -108,18 +108,19 @@ Siguiendo las directivas de `.agent/rules/00-core-philosophy.md`:
 
 ---
 
-## 3. Estándar de Tipado Estricto y Docstrings
+## 3. Estándar de Tipado Estricto y Docstrings — [Completado / ADR 0018]
 
 ### 3.1. Tipado Estático (Python 3.12+ / Pyright)
 
-- **Uniones Modernas:** Utilizar siempre el operador `|` en lugar de `Union[A, B]` u `Optional[A]`.
-- **Colecciones Built-in:** Utilizar `list[T]`, `dict[K, V]`, `set[T]`, `tuple[T, ...]` en lugar de las clases deprecadas de `typing`.
-- **Generadores y Streams:** Tipado explícito con `AsyncIterator[str]` o `Iterator[DomainEvent]`.
-- **Evitar `Any`:** Restringir el uso de `Any` al mínimo indispensable (ej. argumentos dinámicos de herramientas de IA). Usar `object` o `TypeVar` cuando sea posible.
+- [x] **Uniones Modernas:** Utilizar siempre el operador `|` en lugar de `Union[A, B]` u `Optional[A]`. Erradicados todos los tipos legados de `typing` en código productivo de `src/`.
+- [x] **Colecciones Built-in:** Utilizar `list[T]`, `dict[K, V]`, `set[T]`, `frozenset[T]`, `tuple[T, ...]` en lugar de las clases deprecadas de `typing`.
+- [x] **Generadores y Streams:** Tipado explícito con `AsyncIterator[str]` o `Iterator[DomainEvent]`.
+- [x] **Evitar `Any`:** Restringir el uso de `Any` al mínimo indispensable (ej. argumentos dinámicos de herramientas de IA). Usar `object` o `TypeVar` cuando sea posible.
+- [x] **Configuración Rigurosa de Pyright:** Activado `typeCheckingMode = "standard"` con reglas estrictas (`reportAssertAlwaysTrue`, `reportSelfClsParameterName`, `reportConstantRedefinition`, `reportDuplicateImport`).
 
 ### 3.2. Formato de Docstrings (Google Style)
 
-Todas las clases públicas, métodos de negocio y endpoints deben incluir docstrings con estructura canónica:
+- [x] Todas las clases públicas, agregados de dominio, métodos de negocio, handlers CQRS y endpoints HTTP incluyen docstrings estructurados conforme a Google Style con secciones `Args:`, `Returns:` y `Raises:`:
 
 ```python
 def reserve_quota(
@@ -139,6 +140,8 @@ def reserve_quota(
         InsufficientBudgetError: If available balance is less than estimated cost.
     """
 ```
+- [x] **Formalización:** Documentado en [ADR 0018](.agent/architecture/decisions/0018-strict-typing-and-google-docstrings.md).
+
 
 ---
 
@@ -171,6 +174,6 @@ def reserve_quota(
 | **2** | **CQRS Handlers** | Homogeneizar firmas de handlers, protocolos base, Driven Ports (*Port), context managers de UoW y excepciones de aplicación. | ✅ **Completado ([ADR 0015](.agent/architecture/decisions/0015-application-layer-standardization-and-cqrs-polish.md))** |
 | **3** | **Adaptadores & Mappers** | Estandarizar adaptadores a `<Technology><Port>Adapter`, métodos `to_domain`/`to_persistence` en mappers y resiliencia de I/O. | ✅ **Completado ([ADR 0016](.agent/architecture/decisions/0016-infrastructure-layer-standardization-and-adapters-polish.md))** |
 | **4** | **Interfaces & Routers** | Unificar formato RFC 7807 en exception handlers, modularizar routers a `<entity>_router.py` y verificar decoradores OpenAPI. | ✅ **Completado ([ADR 0017](.agent/architecture/decisions/0017-interfaces-layer-standardization-and-problem-details.md))** |
-| **5** | **Docstrings & Tipado** | Aplicar tipado estricto en Pyright con `reportUnknownMemberType` y docstrings estilo Google. | ⏳ Pendiente |
+| **5** | **Docstrings & Tipado** | Aplicar tipado estricto en Pyright (`typeCheckingMode = "standard"` + reglas estrictas) y docstrings estilo Google. | ✅ **Completado ([ADR 0018](.agent/architecture/decisions/0018-strict-typing-and-google-docstrings.md))** |
 | **6** | **Quality Gate** | Ejecución completa de `make check-all` garantizando 0 regresiones. | ⏳ Pendiente |
 

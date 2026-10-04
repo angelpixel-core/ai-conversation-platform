@@ -50,7 +50,20 @@ class StreamConversationQueryHandler:
         self._llm_client = llm_client
 
     async def handle(self, query: StreamConversationQuery) -> AsyncIterator[str]:
+        """Stream real-time LLM token chunks for a given conversation query.
+
+        Args:
+            query: StreamConversationQuery containing conversation ID and sampling params.
+
+        Returns:
+            AsyncIterator of token chunks streamed from the LLM provider.
+
+        Raises:
+            ConversationNotFoundError: If target conversation does not exist.
+            DomainError: If conversation is empty or last message was not from user.
+        """
         conversation = self._repository.get(query.conversation_id)
+
         if conversation is None:
             raise ConversationNotFoundError(f"Conversation {query.conversation_id} not found.")
 

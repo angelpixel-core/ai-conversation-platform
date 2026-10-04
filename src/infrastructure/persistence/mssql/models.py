@@ -2,39 +2,10 @@
 
 from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Optional
 from uuid import UUID, uuid4
 
 from sqlalchemy import Index
 from sqlmodel import Field, Relationship, SQLModel
-
-
-class TenantModel(SQLModel, table=True):
-    """Physical relational model for the 'tenants' table."""
-
-    __tablename__ = "tenants"  # pyright: ignore[reportAssignmentType]
-
-    id: str = Field(primary_key=True, max_length=64, nullable=False)
-    name: str = Field(max_length=200, nullable=False)
-    status: str = Field(default="ACTIVE", max_length=20, nullable=False)
-    balance_usd: Decimal = Field(
-        default=Decimal("0.0000"), max_digits=12, decimal_places=4, nullable=False
-    )
-    reserved_usd: Decimal = Field(
-        default=Decimal("0.0000"), max_digits=12, decimal_places=4, nullable=False
-    )
-    currency: str = Field(default="USD", max_length=3, nullable=False)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
-
-    policy: Optional["TenantPolicyModel"] = Relationship(
-        back_populates="tenant",
-        sa_relationship_kwargs={
-            "cascade": "all, delete-orphan",
-            "uselist": False,
-            "lazy": "joined",
-        },
-    )
 
 
 class TenantPolicyModel(SQLModel, table=True):
@@ -59,7 +30,35 @@ class TenantPolicyModel(SQLModel, table=True):
         nullable=False,
     )
 
-    tenant: TenantModel | None = Relationship(back_populates="policy")
+    tenant: "TenantModel" = Relationship(back_populates="policy")
+
+
+class TenantModel(SQLModel, table=True):
+    """Physical relational model for the 'tenants' table."""
+
+    __tablename__ = "tenants"  # pyright: ignore[reportAssignmentType]
+
+    id: str = Field(primary_key=True, max_length=64, nullable=False)
+    name: str = Field(max_length=200, nullable=False)
+    status: str = Field(default="ACTIVE", max_length=20, nullable=False)
+    balance_usd: Decimal = Field(
+        default=Decimal("0.0000"), max_digits=12, decimal_places=4, nullable=False
+    )
+    reserved_usd: Decimal = Field(
+        default=Decimal("0.0000"), max_digits=12, decimal_places=4, nullable=False
+    )
+    currency: str = Field(default="USD", max_length=3, nullable=False)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
+
+    policy: TenantPolicyModel | None = Relationship(
+        back_populates="tenant",
+        sa_relationship_kwargs={
+            "cascade": "all, delete-orphan",
+            "uselist": False,
+            "lazy": "joined",
+        },
+    )
 
 
 class ConversationModel(SQLModel, table=True):

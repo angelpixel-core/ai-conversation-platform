@@ -14,6 +14,8 @@ from src.domain.tools.value_objects.tool_call import ToolCall
 
 
 class ApprovalStatus(StrEnum):
+    """Lifecycle status of a tool approval request."""
+
     PENDING = "PENDING"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
@@ -21,8 +23,9 @@ class ApprovalStatus(StrEnum):
 
 
 class ToolApprovalRequest(AggregateRoot):
-    """Aggregate managing human-in-the-loop (HITL) approval lifecycle
-    for critical tool executions.
+    """Aggregate managing human-in-the-loop (HITL) approval lifecycle.
+
+    Guards high-risk or sensitive tool executions requiring human authorization.
     """
 
     def __init__(
@@ -37,6 +40,22 @@ class ToolApprovalRequest(AggregateRoot):
         created_at: datetime | None = None,
         resolved_at: datetime | None = None,
     ) -> None:
+        """Initialize a ToolApprovalRequest aggregate.
+
+        Args:
+            approval_id: Unique string identifier for the approval request.
+            tenant_id: TenantId owning the conversation and tool request.
+            conversation_id: Identifier of the conversation triggering the tool.
+            tool_call: Immutable ToolCall payload containing tool name and arguments.
+            status: Operational status. Defaults to PENDING.
+            operator_id: Optional identifier of the resolving operator.
+            justification: Optional explanation or audit notes.
+            created_at: Optional UTC creation timestamp. Defaults to now.
+            resolved_at: Optional UTC resolution timestamp.
+
+        Raises:
+            ValueError: If approval_id or conversation_id is empty or whitespace.
+        """
         super().__init__()
         if not approval_id or not approval_id.strip():
             raise ValueError("El approval_id no puede estar vacío.")
@@ -55,47 +74,47 @@ class ToolApprovalRequest(AggregateRoot):
 
     @property
     def id(self) -> str:
-        """Unique identifier of the approval request."""
+        """str: Unique identifier of the approval request."""
         return self._id
 
     @property
     def tenant_id(self) -> TenantId:
-        """Tenant owning this approval request."""
+        """TenantId: Tenant owning this approval request."""
         return self._tenant_id
 
     @property
     def conversation_id(self) -> str:
-        """Conversation ID where the tool was requested."""
+        """str: Conversation ID where the tool was requested."""
         return self._conversation_id
 
     @property
     def tool_call(self) -> ToolCall:
-        """Tool call payload pending approval."""
+        """ToolCall: Tool call payload pending approval."""
         return self._tool_call
 
     @property
     def status(self) -> ApprovalStatus:
-        """Current status of the approval request."""
+        """ApprovalStatus: Current status of the approval request."""
         return self._status
 
     @property
     def operator_id(self) -> str | None:
-        """Identifier of the human operator who resolved the request."""
+        """str | None: Identifier of the operator who resolved the request."""
         return self._operator_id
 
     @property
     def justification(self) -> str | None:
-        """Operator notes or rejection justification."""
+        """str | None: Operator notes or rejection justification."""
         return self._justification
 
     @property
     def created_at(self) -> datetime:
-        """Timestamp of request creation."""
+        """datetime: Timestamp of request creation."""
         return self._created_at
 
     @property
     def resolved_at(self) -> datetime | None:
-        """Timestamp of resolution (approval/rejection), or None if pending."""
+        """datetime | None: Timestamp of resolution, or None if pending."""
         return self._resolved_at
 
     @classmethod
@@ -106,7 +125,17 @@ class ToolApprovalRequest(AggregateRoot):
         conversation_id: str,
         tool_call: ToolCall,
     ) -> "ToolApprovalRequest":
-        """Factory method to initialize a new approval request and record the required event."""
+        """Factory initializing a new approval request and recording approval required event.
+
+        Args:
+            approval_id: Unique string identifier for the request.
+            tenant_id: TenantId scoping ownership.
+            conversation_id: Conversation originating the tool call.
+            tool_call: ToolCall value object containing parameters.
+
+        Returns:
+            Newly created ToolApprovalRequest aggregate in PENDING status.
+        """
         request = cls(
             approval_id=approval_id,
             tenant_id=tenant_id,
@@ -126,7 +155,16 @@ class ToolApprovalRequest(AggregateRoot):
         return request
 
     def approve(self, operator_id: str, justification: str | None = None) -> None:
-        """Approves the tool execution request."""
+        """Approve the tool execution request.
+
+        Args:
+            operator_id: Identifier of the authorizing operator.
+            justification: Optional justification or audit explanation.
+
+        Raises:
+            InvalidApprovalStateError: If current status is not PENDING.
+            ValueError: If operator_id is empty or whitespace.
+        """
         if self._status != ApprovalStatus.PENDING:
             raise InvalidApprovalStateError(
                 f"No se puede aprobar una solicitud en estado '{self._status}'."
@@ -152,7 +190,16 @@ class ToolApprovalRequest(AggregateRoot):
         )
 
     def reject(self, operator_id: str, reason: str | None = None) -> None:
-        """Rejects the tool execution request."""
+        """Reject the tool execution request.
+
+        Args:
+            operator_id: Identifier of the rejecting operator.
+            reason: Optional justification or rejection explanation.
+
+        Raises:
+            InvalidApprovalStateError: If current status is not PENDING.
+            ValueError: If operator_id is empty or whitespace.
+        """
         if self._status != ApprovalStatus.PENDING:
             raise InvalidApprovalStateError(
                 f"No se puede rechazar una solicitud en estado '{self._status}'."
@@ -176,3 +223,6 @@ class ToolApprovalRequest(AggregateRoot):
                 occurred_at=self._resolved_at,
             )
         )
+
+
+__all__ = ["ApprovalStatus", "ToolApprovalRequest"]

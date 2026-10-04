@@ -1,4 +1,4 @@
-"""WorkflowInstance Aggregate Root."""
+"""WorkflowInstance Aggregate Root managing multi-agent graph workflows."""
 
 from datetime import UTC, datetime
 from enum import StrEnum
@@ -27,7 +27,10 @@ class WorkflowStatus(StrEnum):
 
 
 class WorkflowInstance(AggregateRoot):
-    """Aggregate root managing the lifecycle of an executed workflow instance."""
+    """Aggregate root managing the lifecycle of an executed workflow instance.
+
+    Tracks node transitions, checkpoints, sub-agent delegations, and HITL approval states.
+    """
 
     def __init__(
         self,
@@ -41,6 +44,22 @@ class WorkflowInstance(AggregateRoot):
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
     ) -> None:
+        """Initialize a WorkflowInstance aggregate.
+
+        Args:
+            workflow_id: Unique string identifier for the execution.
+            tenant_id: TenantId scoping ownership of this workflow execution.
+            name: Descriptive name of the graph workflow.
+            current_node: Name of the active node in the graph.
+            status: Operational status. Defaults to RUNNING.
+            state_data: Contextual state dictionary. Defaults to empty dict.
+            version: Incremental transition version counter. Defaults to 1.
+            created_at: Optional UTC creation timestamp. Defaults to now.
+            updated_at: Optional UTC modification timestamp. Defaults to now.
+
+        Raises:
+            ValueError: If workflow_id is empty or whitespace.
+        """
         super().__init__()
         clean_id = workflow_id.strip() if workflow_id else ""
         if not clean_id:
@@ -57,27 +76,27 @@ class WorkflowInstance(AggregateRoot):
 
     @property
     def id(self) -> str:
-        """Unique identifier of the workflow instance."""
+        """str: Unique identifier of the workflow instance."""
         return self._id
 
     @property
     def tenant_id(self) -> TenantId:
-        """Tenant owning this workflow."""
+        """TenantId: Tenant owning this workflow."""
         return self._tenant_id
 
     @property
     def name(self) -> str:
-        """Descriptive name of the workflow execution."""
+        """str: Descriptive name of the workflow execution."""
         return self._name
 
     @property
     def current_node(self) -> str:
-        """Active graph node where execution is currently paused or running."""
+        """str: Active graph node where execution is currently paused or running."""
         return self._current_node
 
     @property
     def status(self) -> WorkflowStatus:
-        """Operational status of the workflow."""
+        """WorkflowStatus: Operational status of the workflow."""
         return self._status
 
     @status.setter
@@ -87,26 +106,33 @@ class WorkflowInstance(AggregateRoot):
 
     @property
     def state_data(self) -> dict[str, Any]:
-        """Current state dictionary."""
+        """dict[str, Any]: Current state dictionary."""
         return self._state_data
 
     @property
     def version(self) -> int:
-        """Incremental state transition version counter."""
+        """int: Incremental state transition version counter."""
         return self._version
 
     @property
     def created_at(self) -> datetime:
-        """Timestamp of workflow creation."""
+        """datetime: Timestamp of workflow creation."""
         return self._created_at
 
     @property
     def updated_at(self) -> datetime:
-        """Timestamp of last transition or state mutation."""
+        """datetime: Timestamp of last transition or state mutation."""
         return self._updated_at
 
     def resume(self, resumed_state_updates: dict[str, Any] | None = None) -> None:
-        """Resumes a workflow suspended awaiting approval."""
+        """Resume a workflow suspended awaiting approval.
+
+        Args:
+            resumed_state_updates: Optional state data updates provided on resumption.
+
+        Raises:
+            InvalidGraphTransitionError: If current status is not WAITING_APPROVAL or RUNNING.
+        """
         if self._status not in (WorkflowStatus.WAITING_APPROVAL, WorkflowStatus.RUNNING):
             raise InvalidGraphTransitionError(
                 f"No se puede reanudar un workflow en estado '{self._status}'."
@@ -117,7 +143,11 @@ class WorkflowInstance(AggregateRoot):
         self._updated_at = datetime.now(UTC)
 
     def update_state(self, updates: dict[str, Any]) -> None:
-        """Updates internal state data dictionary."""
+        """Update internal state data dictionary with key-value pairs.
+
+        Args:
+            updates: Dictionary of new or updated state keys.
+        """
         self._state_data.update(updates)
         self._updated_at = datetime.now(UTC)
 
@@ -130,7 +160,18 @@ class WorkflowInstance(AggregateRoot):
         initial_node: str,
         initial_state: dict[str, Any] | None = None,
     ) -> "WorkflowInstance":
-        """Factory method to initialize and record the start of a workflow instance."""
+        """Factory method initializing and recording the start of a workflow instance.
+
+        Args:
+            workflow_id: Target unique execution identifier.
+            tenant_id: TenantId owning the execution.
+            name: Human-readable name of the workflow.
+            initial_node: Initial node identifier in the execution graph.
+            initial_state: Optional seed state dictionary. Defaults to None.
+
+        Returns:
+            Newly created WorkflowInstance with recorded WorkflowStartedDomainEvent.
+        """
         instance = cls(
             workflow_id=workflow_id,
             tenant_id=tenant_id,
@@ -152,7 +193,19 @@ class WorkflowInstance(AggregateRoot):
         return instance
 
     def transition_to(self, next_node: str, updated_state: dict[str, Any]) -> StateSnapshot:
-        """Transitions workflow to next node, updates state data and increments version."""
+        """Transition workflow to next node, updating state and incrementing version.
+
+        Args:
+            next_node: Target node identifier in the graph.
+            updated_state: State delta to merge into internal state data.
+
+        Returns:
+            Immutable StateSnapshot checkpoint created for this transition.
+
+        Raises:
+            InvalidGraphTransitionError: If workflow is not in RUNNING status.
+            ValueError: If next_node is empty or whitespace.
+        """
         if self._status != WorkflowStatus.RUNNING:
             raise InvalidGraphTransitionError(
                 f"No se puede realizar una transición en estado '{self._status}'."
@@ -191,7 +244,13 @@ class WorkflowInstance(AggregateRoot):
         return snapshot
 
     def delegate_subagent(self, from_node: str, to_agent: str, subtask: str) -> None:
-        """Records delegation from a coordinator/supervisor to a specialized subagent."""
+        """Record delegation from a coordinator/supervisor to a specialized subagent.
+
+        Args:
+            from_node: Originating node or agent identifier.
+            to_agent: Target specialized sub-agent identifier.
+            subtask: Prompt or task directive assigned to the subagent.
+        """
         self.record_event(
             SubAgentTaskDelegatedDomainEvent(
                 workflow_id=self._id,
@@ -204,7 +263,12 @@ class WorkflowInstance(AggregateRoot):
         )
 
     def mark_waiting_approval(self, approval_id: str, tool_name: str) -> None:
-        """Suspends workflow awaiting human authorization (Slice 8 HITL integration)."""
+        """Suspend workflow awaiting human authorization (Slice 8 HITL integration).
+
+        Args:
+            approval_id: Identifier of the pending tool execution approval.
+            tool_name: Name of the high-privilege tool requiring confirmation.
+        """
         self._status = WorkflowStatus.WAITING_APPROVAL
         self._updated_at = datetime.now(UTC)
         self.record_event(
@@ -218,7 +282,11 @@ class WorkflowInstance(AggregateRoot):
         )
 
     def mark_completed(self, final_output: str | None = None) -> None:
-        """Marks the workflow execution as successfully finished."""
+        """Mark the workflow execution as successfully finished.
+
+        Args:
+            final_output: Optional terminal string response or summary.
+        """
         self._status = WorkflowStatus.COMPLETED
         if final_output is not None:
             self._state_data["final_output"] = final_output
@@ -233,8 +301,15 @@ class WorkflowInstance(AggregateRoot):
         )
 
     def mark_failed(self, reason: str | None = None) -> None:
-        """Marks the workflow execution as failed."""
+        """Mark the workflow execution as failed.
+
+        Args:
+            reason: Optional error explanation or traceback summary.
+        """
         self._status = WorkflowStatus.FAILED
         if reason:
             self._state_data["error"] = reason
         self._updated_at = datetime.now(UTC)
+
+
+__all__ = ["WorkflowInstance", "WorkflowStatus"]
