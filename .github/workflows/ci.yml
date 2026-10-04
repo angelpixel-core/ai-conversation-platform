@@ -79,9 +79,6 @@ jobs:
     env:
       DATABASE_URL: "mssql+pymssql://sa:YourStrong%40Password123@localhost:1433/ChatbotDB"
       BROKER_URL: "amqp://guest:guest@localhost:5672/"
-      PERSISTENCE_DRIVER: "mssql"
-      MESSAGING_DRIVER: "rabbitmq"
-      ENVIRONMENT: "test"
 
     steps:
       - uses: actions/checkout@v4

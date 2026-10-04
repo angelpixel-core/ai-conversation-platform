@@ -18,6 +18,58 @@ from src.infrastructure.shared.config.settings import (
 )
 
 
+@pytest.fixture(autouse=True)
+def _isolate_settings_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Isolate settings tests from ambient shell or CI environment variables."""
+    for key in (
+        "APP_NAME",
+        "ENVIRONMENT",
+        "DEBUG",
+        "LOG_LEVEL",
+        "API_HOST",
+        "API_PORT",
+        "PERSISTENCE_DRIVER",
+        "DB_SERVER",
+        "DB_PORT",
+        "DB_NAME",
+        "DB_USER",
+        "DB_PASSWORD",
+        "DATABASE_URL",
+        "MESSAGING_DRIVER",
+        "BROKER_URL",
+        "BROKER_HOST",
+        "BROKER_PORT",
+        "BROKER_USER",
+        "BROKER_PASSWORD",
+        "BROKER_PREFETCH_COUNT",
+        "BROKER_EXCHANGE",
+        "BROKER_QUEUE",
+        "BROKER_DLX_EXCHANGE",
+        "BROKER_DLQ",
+        "BROKER_ROUTING_KEY",
+        "RABBITMQ_HOST",
+        "RABBITMQ_PORT",
+        "RABBITMQ_USER",
+        "RABBITMQ_PASSWORD",
+        "RABBITMQ_PREFETCH_COUNT",
+        "RABBITMQ_EXCHANGE",
+        "RABBITMQ_QUEUE",
+        "RABBITMQ_DLX_EXCHANGE",
+        "RABBITMQ_DLQ",
+        "RABBITMQ_ROUTING_KEY",
+        "ENABLE_TENANT_MIDDLEWARE",
+        "DEFAULT_TENANT_ID",
+        "ENABLE_OPENTELEMETRY",
+        "OTEL_SERVICE_NAME",
+        "OTEL_EXPORTER_OTLP_ENDPOINT",
+        "LLM_PROVIDER",
+        "OPENAI_API_KEY",
+        "OPENAI_BASE_URL",
+        "LLM_TIMEOUT_SECONDS",
+    ):
+        monkeypatch.delenv(key, raising=False)
+
+
 def test_default_persistence_driver_is_in_memory() -> None:
     settings = Settings()
     assert settings.PERSISTENCE_DRIVER == PersistenceDriver.IN_MEMORY
