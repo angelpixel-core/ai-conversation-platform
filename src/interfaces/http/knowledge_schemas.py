@@ -55,3 +55,14 @@ class CitationSchema(BaseModel):
     page_number: int | None = None
     similarity_score: float
     snippet: str
+
+
+CitationResponse = CitationSchema
+
+__all__ = [
+    "CitationResponse",
+    "CitationSchema",
+    "DocumentStatusResponse",
+    "DocumentUploadRequest",
+    "DocumentUploadResponse",
+]

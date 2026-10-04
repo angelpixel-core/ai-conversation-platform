@@ -27,7 +27,10 @@ graph TD
         GovernanceRouterNode["GovernanceRouter (/admin/tenants/{tenant_id}/incidents, /admin/governance/metrics)"]
         GovernanceSchemasNode["GovernanceSchemas (IncidentResponse, GovernanceMetricsResponse)"]
         SafetyViolationHandlerNode["SafetyPolicyViolation Handler (HTTP 400 Bad Request)"]
+        ConversationsRouterNode["ConversationsRouter (src/interfaces/http/routers/conversations_router.py)"]
+        ProblemDetailsNode["ProblemDetails & RFC 7807 (src/interfaces/http/problem_details.py)"]
     end
+
 
 
     subgraph Application ["Application Layer (CQRS & Ports)"]
@@ -245,14 +248,17 @@ graph TD
     AppContainerNode --> StreamBufferRepoPort
     AppContainerNode --> StreamRecoveryServiceNode
     AppContainerNode --> IdempotentExecutor
-    RouterFastAPI --> CreateConvHandler
-    RouterFastAPI --> SendMessageHandler
-    RouterFastAPI --> StreamConvHandler
-    RouterFastAPI --> IdempotencyDep
-    RouterFastAPI --> ResumableSSE
-    RouterFastAPI --> IdempotentExecutor
-    RouterFastAPI --> StreamRecoveryServiceNode
+    RouterFastAPI --> ConversationsRouterNode
+    RouterFastAPI --> ProblemDetailsNode
+    ConversationsRouterNode --> CreateConvHandler
+    ConversationsRouterNode --> SendMessageHandler
+    ConversationsRouterNode --> StreamConvHandler
+    ConversationsRouterNode --> IdempotencyDep
+    ConversationsRouterNode --> ResumableSSE
+    ConversationsRouterNode --> IdempotentExecutor
+    ConversationsRouterNode --> StreamRecoveryServiceNode
     ResumableSSE --> StreamRecoveryServiceNode
+
     RouterFastAPI --> AppSettings
     RouterFastAPI --> TenantContextMiddlewareNode
     RouterFastAPI --> TenantAdminRouterNode

@@ -89,26 +89,22 @@ Siguiendo las directivas de `.agent/rules/00-core-philosophy.md`:
   - Pre-ping y connection pooling en MSSQL (`pool_pre_ping=True`, `pool_recycle=1800`).
 - [x] **Formalización:** Documentado en [ADR 0016](.agent/architecture/decisions/0016-infrastructure-layer-standardization-and-adapters-polish.md).
 
-### 2.4. Capa de Interfaces (`src/interfaces/`)
+### 2.4. Capa de Interfaces (`src/interfaces/`) — [Completado / ADR 0017]
 
-- **Controladores y Routers:**
-  - Nomenclatura de routers: `<entity>_router.py`.
-  - Los endpoints HTTP deben delegar inmediatamente en Application Handlers o Servicios coordinadores; prohibido escribir lógica de negocio en routers.
-- **DTOs y Esquemas (Pydantic v2):**
+- [x] **Controladores y Routers:**
+  - Nomenclatura uniforme `<entity>_router.py` en `src/interfaces/http/routers/` (ej. `conversations_router.py`, `approvals_router.py`, `governance_router.py`, `knowledge_router.py`, `tenant_admin_router.py`, `workflows_router.py`).
+  - Extracción de la lógica de transporte de conversaciones, mensajes y SSE streaming desde `api.py` a `conversations_router.py`.
+  - Los endpoints HTTP delegan inmediatamente en Application Handlers o Servicios coordinadores; prohibido escribir lógica de negocio en routers.
+- [x] **DTOs y Esquemas (Pydantic v2):**
   - Distinción entre Requests (`*Request`) y Responses (`*Response`).
   - Decoradores y validaciones con `Field(...)`, `minLength`, `maxLength`, `description` y `examples`.
-- **Estandarización de Errores HTTP:**
-  - Respuestas de error uniformes basadas en **RFC 7807 (Problem Details)**:
+  - Aliases canónicos para retrocompatibilidad total (`CitationResponse = CitationSchema`, `AgentActivityEventResponse = AgentActivityEventSchema`).
+- [x] **Estandarización de Errores HTTP con RFC 7807 (Problem Details):**
+  - Modelo `ProblemDetails` y fábrica `problem_details_response` en `src/interfaces/http/problem_details.py`.
+  - Tipo de contenido `application/problem+json` y exception handlers globales en `api.py`.
+  - Retrocompatibilidad absoluta: preservación de extensiones legadas (`error`, `message`, `violation_type`, `incident_id`, etc.) sin romper tests existentes.
+- [x] **Formalización:** Documentado en [ADR 0017](.agent/architecture/decisions/0017-interfaces-layer-standardization-and-problem-details.md).
 
-    ```json
-    {
-      "type": "urn:problem:safety-policy-violation",
-      "title": "Safety Policy Violation",
-      "status": 400,
-      "detail": "Prompt injection detected.",
-      "code": "PROMPT_INJECTION_DETECTED"
-    }
-    ```
 
 ---
 
@@ -174,6 +170,7 @@ def reserve_quota(
 | **1** | **Dominio & VO** | Congelar dataclasses de Value Objects, unificar excepciones en `src/domain/shared/exceptions.py`, factorías semánticas y encapsulación. | ✅ **Completado ([ADR 0014](.agent/architecture/decisions/0014-domain-layer-standardization-and-clean-arch-polish.md))** |
 | **2** | **CQRS Handlers** | Homogeneizar firmas de handlers, protocolos base, Driven Ports (*Port), context managers de UoW y excepciones de aplicación. | ✅ **Completado ([ADR 0015](.agent/architecture/decisions/0015-application-layer-standardization-and-cqrs-polish.md))** |
 | **3** | **Adaptadores & Mappers** | Estandarizar adaptadores a `<Technology><Port>Adapter`, métodos `to_domain`/`to_persistence` en mappers y resiliencia de I/O. | ✅ **Completado ([ADR 0016](.agent/architecture/decisions/0016-infrastructure-layer-standardization-and-adapters-polish.md))** |
-| **4** | **Interfaces & Routers** | Unificar formato RFC 7807 en exception handlers, verificar decoradores OpenAPI. | ⏳ Pendiente |
+| **4** | **Interfaces & Routers** | Unificar formato RFC 7807 en exception handlers, modularizar routers a `<entity>_router.py` y verificar decoradores OpenAPI. | ✅ **Completado ([ADR 0017](.agent/architecture/decisions/0017-interfaces-layer-standardization-and-problem-details.md))** |
 | **5** | **Docstrings & Tipado** | Aplicar tipado estricto en Pyright con `reportUnknownMemberType` y docstrings estilo Google. | ⏳ Pendiente |
 | **6** | **Quality Gate** | Ejecución completa de `make check-all` garantizando 0 regresiones. | ⏳ Pendiente |
+
