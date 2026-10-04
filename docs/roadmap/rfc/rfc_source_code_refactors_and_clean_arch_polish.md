@@ -55,7 +55,7 @@ Siguiendo las directivas de `.agent/rules/00-core-philosophy.md`:
 - [x] **Excepciones de Dominio:**
   - Jerarquía unificada en `src/domain/shared/exceptions.py` (`DomainError`, `DomainException`, `DomainValidationError`, `EntityNotFoundError`, `InvariantViolationError`).
   - Dual-inheritance (`DomainError, ValueError`) para garantizar retrocompatibilidad total sin romper tests ni handlers existentes.
-  - Formalizado en [ADR 0014](.agent/architecture/decisions/0014-domain-layer-standardization-and-clean-arch-polish.md).
+  - Formalizado en [ADR 0014](../../../.agent/architecture/decisions/0014-domain-layer-standardization-and-clean-arch-polish.md).
 
 ### 2.2. Capa de Aplicación (`src/application/`) — [Completado / ADR 0015]
 
@@ -73,7 +73,7 @@ Siguiendo las directivas de `.agent/rules/00-core-philosophy.md`:
 - [x] **Excepciones de Aplicación:**
   - Raíz `ApplicationError(Exception)` en `src/application/shared/exceptions.py`.
   - Adopción exhaustiva de excepciones semánticas de dominio (con herencia dual) en todos los handlers de negocio.
-- [x] **Formalización:** Documentado en [ADR 0015](.agent/architecture/decisions/0015-application-layer-standardization-and-cqrs-polish.md).
+- [x] **Formalización:** Documentado en [ADR 0015](../../../.agent/architecture/decisions/0015-application-layer-standardization-and-cqrs-polish.md).
 
 ### 2.3. Capa de Infraestructura (`src/infrastructure/`) — [Completado / ADR 0016]
 
@@ -87,7 +87,7 @@ Siguiendo las directivas de `.agent/rules/00-core-philosophy.md`:
   - Políticas de timeout por defecto (30s HTTPX, 15s MSSQL login/query, 10s tool runner).
   - Reconexión robusta con exponential backoff en RabbitMQ (`aio_pika.connect_robust`).
   - Pre-ping y connection pooling en MSSQL (`pool_pre_ping=True`, `pool_recycle=1800`).
-- [x] **Formalización:** Documentado en [ADR 0016](.agent/architecture/decisions/0016-infrastructure-layer-standardization-and-adapters-polish.md).
+- [x] **Formalización:** Documentado en [ADR 0016](../../../.agent/architecture/decisions/0016-infrastructure-layer-standardization-and-adapters-polish.md).
 
 ### 2.4. Capa de Interfaces (`src/interfaces/`) — [Completado / ADR 0017]
 
@@ -103,7 +103,7 @@ Siguiendo las directivas de `.agent/rules/00-core-philosophy.md`:
   - Modelo `ProblemDetails` y fábrica `problem_details_response` en `src/interfaces/http/problem_details.py`.
   - Tipo de contenido `application/problem+json` y exception handlers globales en `api.py`.
   - Retrocompatibilidad absoluta: preservación de extensiones legadas (`error`, `message`, `violation_type`, `incident_id`, etc.) sin romper tests existentes.
-- [x] **Formalización:** Documentado en [ADR 0017](.agent/architecture/decisions/0017-interfaces-layer-standardization-and-problem-details.md).
+- [x] **Formalización:** Documentado en [ADR 0017](../../../.agent/architecture/decisions/0017-interfaces-layer-standardization-and-problem-details.md).
 
 
 ---
@@ -140,7 +140,7 @@ def reserve_quota(
         InsufficientBudgetError: If available balance is less than estimated cost.
     """
 ```
-- [x] **Formalización:** Documentado en [ADR 0018](.agent/architecture/decisions/0018-strict-typing-and-google-docstrings.md).
+- [x] **Formalización:** Documentado en [ADR 0018](../../../.agent/architecture/decisions/0018-strict-typing-and-google-docstrings.md).
 
 
 ---
@@ -170,10 +170,10 @@ def reserve_quota(
 
 | Paso | Alcance | Tareas Principales | Estado |
 | :---: | :--- | :--- | :---: |
-| **1** | **Dominio & VO** | Congelar dataclasses de Value Objects, unificar excepciones en `src/domain/shared/exceptions.py`, factorías semánticas y encapsulación. | ✅ **Completado ([ADR 0014](.agent/architecture/decisions/0014-domain-layer-standardization-and-clean-arch-polish.md))** |
-| **2** | **CQRS Handlers** | Homogeneizar firmas de handlers, protocolos base, Driven Ports (*Port), context managers de UoW y excepciones de aplicación. | ✅ **Completado ([ADR 0015](.agent/architecture/decisions/0015-application-layer-standardization-and-cqrs-polish.md))** |
-| **3** | **Adaptadores & Mappers** | Estandarizar adaptadores a `<Technology><Port>Adapter`, métodos `to_domain`/`to_persistence` en mappers y resiliencia de I/O. | ✅ **Completado ([ADR 0016](.agent/architecture/decisions/0016-infrastructure-layer-standardization-and-adapters-polish.md))** |
-| **4** | **Interfaces & Routers** | Unificar formato RFC 7807 en exception handlers, modularizar routers a `<entity>_router.py` y verificar decoradores OpenAPI. | ✅ **Completado ([ADR 0017](.agent/architecture/decisions/0017-interfaces-layer-standardization-and-problem-details.md))** |
-| **5** | **Docstrings & Tipado** | Aplicar tipado estricto en Pyright (`typeCheckingMode = "standard"` + reglas estrictas) y docstrings estilo Google. | ✅ **Completado ([ADR 0018](.agent/architecture/decisions/0018-strict-typing-and-google-docstrings.md))** |
+| **1** | **Dominio & VO** | Congelar dataclasses de Value Objects, unificar excepciones en `src/domain/shared/exceptions.py`, factorías semánticas y encapsulación. | ✅ **Completado ([ADR 0014](../../../.agent/architecture/decisions/0014-domain-layer-standardization-and-clean-arch-polish.md))** |
+| **2** | **CQRS Handlers** | Homogeneizar firmas de handlers, protocolos base, Driven Ports (*Port), context managers de UoW y excepciones de aplicación. | ✅ **Completado ([ADR 0015](../../../.agent/architecture/decisions/0015-application-layer-standardization-and-cqrs-polish.md))** |
+| **3** | **Adaptadores & Mappers** | Estandarizar adaptadores a `<Technology><Port>Adapter`, métodos `to_domain`/`to_persistence` en mappers y resiliencia de I/O. | ✅ **Completado ([ADR 0016](../../../.agent/architecture/decisions/0016-infrastructure-layer-standardization-and-adapters-polish.md))** |
+| **4** | **Interfaces & Routers** | Unificar formato RFC 7807 en exception handlers, modularizar routers a `<entity>_router.py` y verificar decoradores OpenAPI. | ✅ **Completado ([ADR 0017](../../../.agent/architecture/decisions/0017-interfaces-layer-standardization-and-problem-details.md))** |
+| **5** | **Docstrings & Tipado** | Aplicar tipado estricto en Pyright (`typeCheckingMode = "standard"` + reglas estrictas) y docstrings estilo Google. | ✅ **Completado ([ADR 0018](../../../.agent/architecture/decisions/0018-strict-typing-and-google-docstrings.md))** |
 | **6** | **Quality Gate** | Ejecución completa de `make check-all` garantizando 0 regresiones. | ✅ **Completado (658 tests verdes, Ruff/Pyright/Bandit 100%)** |
 
