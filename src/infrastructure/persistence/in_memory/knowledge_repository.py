@@ -57,3 +57,7 @@ class InMemoryKnowledgeRepositoryAdapter(KnowledgeRepositoryPort):
 
         results.sort(key=lambda x: x[1], reverse=True)
         return results[:top_k]
+
+
+# Backward compatible alias
+InMemoryKnowledgeRepository = InMemoryKnowledgeRepositoryAdapter

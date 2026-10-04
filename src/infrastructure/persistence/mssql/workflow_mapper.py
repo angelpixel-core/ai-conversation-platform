@@ -73,3 +73,12 @@ class WorkflowMapper:
             status=model.status,
             created_at=model.created_at,
         )
+
+    # Canonical aliases conforming to to_domain / to_persistence
+    to_domain = to_domain_instance
+    to_persistence = to_model_instance
+    to_persistence_checkpoint = to_model_checkpoint
+
+
+# Alias for naming consistency
+WorkflowDataMapper = WorkflowMapper

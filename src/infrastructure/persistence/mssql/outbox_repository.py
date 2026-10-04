@@ -107,3 +107,7 @@ class MssqlOutboxRepository:
             processed_at=model.processed_at,
             error_message=model.error_message,
         )
+
+
+# Canonical adapter alias conforming to <Technology><Port>Adapter
+MssqlOutboxRepositoryAdapter = MssqlOutboxRepository

@@ -62,3 +62,7 @@ class InMemoryIdempotencyRepositoryAdapter(IdempotencyRepositoryPort):
                 created_at=self._records[key].created_at,
                 updated_at=now,
             )
+
+
+# Backward compatible alias
+InMemoryIdempotencyRepository = InMemoryIdempotencyRepositoryAdapter

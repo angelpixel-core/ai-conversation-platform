@@ -45,3 +45,7 @@ class InMemoryUnitOfWork(UnitOfWork):
 
     def rollback(self) -> None:
         self._committed = False
+
+
+# Canonical adapter alias conforming to <Technology><Port>Adapter
+InMemoryUnitOfWorkAdapter = InMemoryUnitOfWork

@@ -83,3 +83,7 @@ class MssqlIncidentRepository(IncidentRepositoryPort):
             "by_severity": by_severity,
             "by_rule": by_rule,
         }
+
+
+# Canonical adapter alias conforming to <Technology><Port>Adapter
+MssqlIncidentRepositoryAdapter = MssqlIncidentRepository

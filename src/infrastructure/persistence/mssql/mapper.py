@@ -50,6 +50,11 @@ class ConversationDataMapper:
         return model
 
     @staticmethod
+    def to_persistence(entity: Conversation) -> ConversationModel:
+        """Map Conversation aggregate root to SQLModel database model for persistence."""
+        return ConversationDataMapper.to_model(entity)
+
+    @staticmethod
     def message_to_model(message: Message, conversation_id: UUID) -> MessageModel:
         """Map Message value object to MessageModel database record."""
         return MessageModel(
@@ -58,3 +63,7 @@ class ConversationDataMapper:
             content=message.content,
             created_at=message.created_at,
         )
+
+
+# Canonical alias conforming to <Entity>Mapper standard
+ConversationMapper = ConversationDataMapper

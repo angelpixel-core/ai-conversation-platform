@@ -66,3 +66,7 @@ class MssqlAuditRepository(AuditRepositoryPort):
                 )
                 for m in results
             ]
+
+
+# Canonical adapter alias conforming to <Technology><Port>Adapter
+MssqlAuditRepositoryAdapter = MssqlAuditRepository

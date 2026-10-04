@@ -149,3 +149,7 @@ class MssqlUnitOfWork(UnitOfWork):
         if self._session is None:
             raise RuntimeError("Cannot rollback: No active session.")
         self._session.rollback()
+
+
+# Canonical adapter alias conforming to <Technology><Port>Adapter
+MssqlUnitOfWorkAdapter = MssqlUnitOfWork

@@ -87,3 +87,7 @@ class MssqlWorkflowCheckpointRepository(WorkflowCheckpointRepositoryPort):
         with self._get_session() as session:
             models = session.exec(stmt).all()
             return [WorkflowMapper.to_domain_checkpoint(m) for m in models]
+
+
+# Canonical adapter alias conforming to <Technology><Port>Adapter
+MssqlWorkflowCheckpointRepositoryAdapter = MssqlWorkflowCheckpointRepository

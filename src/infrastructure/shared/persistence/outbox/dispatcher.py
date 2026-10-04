@@ -39,3 +39,7 @@ class OutboxDispatcher:
             self._repository.save(message)
 
         return len(pending)
+
+
+# Canonical adapter alias conforming to <Technology><Port>Adapter standard
+OutboxDispatcherAdapter = OutboxDispatcher

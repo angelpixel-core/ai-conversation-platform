@@ -119,3 +119,8 @@ class RabbitMQConsumerAdapter(EventConsumerPort):
 
         self._is_consuming = False
         self._consumer_tag = None
+
+
+# Canonical aliases conforming to <Technology><Port>Adapter standard
+RabbitMqConsumerAdapter = RabbitMQConsumerAdapter
+RabbitMqEventConsumerAdapter = RabbitMQConsumerAdapter

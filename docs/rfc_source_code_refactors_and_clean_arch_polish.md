@@ -75,15 +75,19 @@ Siguiendo las directivas de `.agent/rules/00-core-philosophy.md`:
   - Adopción exhaustiva de excepciones semánticas de dominio (con herencia dual) en todos los handlers de negocio.
 - [x] **Formalización:** Documentado en [ADR 0015](.agent/architecture/decisions/0015-application-layer-standardization-and-cqrs-polish.md).
 
-### 2.3. Capa de Infraestructura (`src/infrastructure/`)
+### 2.3. Capa de Infraestructura (`src/infrastructure/`) — [Completado / ADR 0016]
 
-- **Adaptadores:**
-  - Nomenclatura explícita: `<Technology><Port>Adapter` (ej. `MssqlIncidentRepository`, `RabbitMqEventPublisherAdapter`, `RegexPiiScannerAdapter`).
-- **Persistencia y Modelos ORM:**
+- [x] **Adaptadores:**
+  - Nomenclatura explícita y canónica: `<Technology><Port>Adapter` (ej. `MssqlIncidentRepositoryAdapter`, `MssqlConversationRepositoryAdapter`, `RabbitMqEventPublisherAdapter`, `HttpxHttpClientAdapter`, `InMemoryUnitOfWorkAdapter`).
+  - Retrocompatibilidad absoluta: exportación de alias de clase para 100% de componentes previos.
+- [x] **Persistencia y Modelos ORM:**
   - Separación rigurosa entre modelos de base de datos (`*Model` en SQLModel/SQLAlchemy) y entidades de dominio.
-  - Mappers dedicados (`*Mapper`) con métodos estáticos `to_domain()` y `to_persistence()`.
-- **Resiliencia de Conexiones:**
-  - Políticas de timeout, retries exponenciales y manejo de desconexión transitoria en operaciones de I/O.
+  - Mappers dedicados (`*Mapper` / `*DataMapper`) con métodos canónicos estáticos `to_domain()` y `to_persistence()`.
+- [x] **Resiliencia de Conexiones:**
+  - Políticas de timeout por defecto (30s HTTPX, 15s MSSQL login/query, 10s tool runner).
+  - Reconexión robusta con exponential backoff en RabbitMQ (`aio_pika.connect_robust`).
+  - Pre-ping y connection pooling en MSSQL (`pool_pre_ping=True`, `pool_recycle=1800`).
+- [x] **Formalización:** Documentado en [ADR 0016](.agent/architecture/decisions/0016-infrastructure-layer-standardization-and-adapters-polish.md).
 
 ### 2.4. Capa de Interfaces (`src/interfaces/`)
 
@@ -169,7 +173,7 @@ def reserve_quota(
 | :---: | :--- | :--- | :---: |
 | **1** | **Dominio & VO** | Congelar dataclasses de Value Objects, unificar excepciones en `src/domain/shared/exceptions.py`, factorías semánticas y encapsulación. | ✅ **Completado ([ADR 0014](.agent/architecture/decisions/0014-domain-layer-standardization-and-clean-arch-polish.md))** |
 | **2** | **CQRS Handlers** | Homogeneizar firmas de handlers, protocolos base, Driven Ports (*Port), context managers de UoW y excepciones de aplicación. | ✅ **Completado ([ADR 0015](.agent/architecture/decisions/0015-application-layer-standardization-and-cqrs-polish.md))** |
-| **3** | **Adaptadores & Mappers** | Revisar mapeo exhaustivo entre modelos SQLModel y entidades DDD. | ⏳ Pendiente |
+| **3** | **Adaptadores & Mappers** | Estandarizar adaptadores a `<Technology><Port>Adapter`, métodos `to_domain`/`to_persistence` en mappers y resiliencia de I/O. | ✅ **Completado ([ADR 0016](.agent/architecture/decisions/0016-infrastructure-layer-standardization-and-adapters-polish.md))** |
 | **4** | **Interfaces & Routers** | Unificar formato RFC 7807 en exception handlers, verificar decoradores OpenAPI. | ⏳ Pendiente |
 | **5** | **Docstrings & Tipado** | Aplicar tipado estricto en Pyright con `reportUnknownMemberType` y docstrings estilo Google. | ⏳ Pendiente |
 | **6** | **Quality Gate** | Ejecución completa de `make check-all` garantizando 0 regresiones. | ⏳ Pendiente |

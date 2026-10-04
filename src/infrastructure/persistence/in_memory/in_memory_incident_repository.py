@@ -53,3 +53,7 @@ class InMemoryIncidentRepositoryAdapter(IncidentRepositoryPort):
             "by_severity": by_severity,
             "by_rule": by_rule,
         }
+
+
+# Backward compatible alias
+InMemoryIncidentRepository = InMemoryIncidentRepositoryAdapter

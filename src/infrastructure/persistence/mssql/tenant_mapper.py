@@ -71,3 +71,12 @@ class TenantDataMapper:
             policy=policy_model,
         )
         return model
+
+    @staticmethod
+    def to_persistence(entity: Tenant) -> TenantModel:
+        """Map Tenant aggregate root to SQLModel physical database records for persistence."""
+        return TenantDataMapper.to_model(entity)
+
+
+# Canonical alias conforming to <Entity>Mapper standard
+TenantMapper = TenantDataMapper

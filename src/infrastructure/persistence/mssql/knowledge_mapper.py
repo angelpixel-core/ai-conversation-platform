@@ -65,3 +65,12 @@ class KnowledgeDataMapper:
             page_number=model.page_number,
             created_at=model.created_at,
         )
+
+    # Canonical aliases for general document conversion
+    to_domain = to_domain_document
+    to_persistence = to_model_document
+    to_persistence_chunk = to_model_chunk
+
+
+# Canonical alias conforming to <Entity>Mapper standard
+KnowledgeMapper = KnowledgeDataMapper

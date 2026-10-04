@@ -42,3 +42,7 @@ class AnyioStreamGuardrailFilter:
 
             accumulated_text += chunk
             yield chunk
+
+
+# Canonical adapter alias conforming to <Technology><Port>Adapter standard
+AnyioStreamGuardrailFilterAdapter = AnyioStreamGuardrailFilter

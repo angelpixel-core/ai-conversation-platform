@@ -62,3 +62,7 @@ class MssqlToolApprovalRepository(ToolApprovalRepositoryPort):
         )
         models = self._session.exec(statement).all()
         return [ToolApprovalMapper.to_entity(m) for m in models]
+
+
+# Canonical adapter alias conforming to <Technology><Port>Adapter
+MssqlToolApprovalRepositoryAdapter = MssqlToolApprovalRepository

@@ -97,3 +97,4 @@ class InMemoryOutboxRepository:
 
 # Alias for backward compatibility
 InMemoryOutbox = InMemoryOutboxRepository
+InMemoryOutboxRepositoryAdapter = InMemoryOutboxRepository

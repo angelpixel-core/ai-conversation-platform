@@ -50,3 +50,11 @@ class ToolApprovalMapper:
             created_at=model.created_at,
             resolved_at=model.resolved_at,
         )
+
+    # Canonical aliases conforming to to_domain / to_persistence
+    to_domain = to_entity
+    to_persistence = to_model
+
+
+# Alias for naming consistency
+ToolApprovalDataMapper = ToolApprovalMapper

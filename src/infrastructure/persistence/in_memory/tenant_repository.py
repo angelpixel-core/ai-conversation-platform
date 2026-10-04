@@ -26,3 +26,7 @@ class InMemoryTenantRepositoryAdapter(TenantRepositoryPort):
     def list(self) -> list[Tenant]:
         """List all tenants in memory."""
         return list(self._tenants.values())
+
+
+# Backward compatible alias
+InMemoryTenantRepository = InMemoryTenantRepositoryAdapter

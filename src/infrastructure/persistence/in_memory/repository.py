@@ -18,3 +18,7 @@ class InMemoryConversationRepository(ConversationRepository):
 
     def list(self) -> list[Conversation]:
         return list(self._items.values())
+
+
+# Canonical adapter alias conforming to <Technology><Port>Adapter
+InMemoryConversationRepositoryAdapter = InMemoryConversationRepository

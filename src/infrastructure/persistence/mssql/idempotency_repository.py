@@ -83,3 +83,7 @@ class MssqlIdempotencyRepository(IdempotencyRepositoryPort):
                 model.updated_at = datetime.now(UTC)
                 session.add(model)
                 session.commit()
+
+
+# Canonical adapter alias conforming to <Technology><Port>Adapter
+MssqlIdempotencyRepositoryAdapter = MssqlIdempotencyRepository

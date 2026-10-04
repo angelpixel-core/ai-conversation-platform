@@ -64,3 +64,7 @@ class AnyioSandboxedToolRunner(SandboxedToolRunnerPort):
                 is_error=True,
                 execution_time_ms=round(elapsed_ms, 2),
             )
+
+
+# Canonical adapter alias conforming to <Technology><Port>Adapter standard
+AnyioSandboxedToolRunnerAdapter = AnyioSandboxedToolRunner

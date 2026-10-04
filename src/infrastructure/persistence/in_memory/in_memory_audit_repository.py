@@ -29,3 +29,7 @@ class InMemoryAuditRepositoryAdapter(AuditRepositoryPort):
     def all_records(self) -> list[AuditLogRecord]:
         """Inspection helper for unit tests."""
         return list(self._records)
+
+
+# Backward compatible alias
+InMemoryAuditRepository = InMemoryAuditRepositoryAdapter

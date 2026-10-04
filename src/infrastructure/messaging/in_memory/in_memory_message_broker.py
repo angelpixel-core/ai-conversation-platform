@@ -51,3 +51,7 @@ class InMemoryMessageBroker(MessageBrokerPort, EventConsumerPort):
         self._handlers.clear()
         self._is_consuming = False
         self._dispatched_indices.clear()
+
+
+# Canonical adapter alias conforming to <Technology><Port>Adapter standard
+InMemoryMessageBrokerAdapter = InMemoryMessageBroker

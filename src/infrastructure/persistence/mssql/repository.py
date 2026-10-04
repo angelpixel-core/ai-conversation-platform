@@ -79,3 +79,7 @@ class MssqlConversationRepository(ConversationRepository):
         statement = select(ConversationModel).order_by(ConversationModel.created_at)  # type: ignore[arg-type]
         results = self._session.exec(statement).all()
         return [ConversationDataMapper.to_domain(model) for model in results]
+
+
+# Canonical adapter alias conforming to <Technology><Port>Adapter
+MssqlConversationRepositoryAdapter = MssqlConversationRepository

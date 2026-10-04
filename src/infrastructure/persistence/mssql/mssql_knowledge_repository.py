@@ -85,3 +85,7 @@ class MssqlKnowledgeRepository(KnowledgeRepositoryPort):
 
         results.sort(key=lambda x: x[1], reverse=True)
         return results[:top_k]
+
+
+# Canonical adapter alias conforming to <Technology><Port>Adapter
+MssqlKnowledgeRepositoryAdapter = MssqlKnowledgeRepository

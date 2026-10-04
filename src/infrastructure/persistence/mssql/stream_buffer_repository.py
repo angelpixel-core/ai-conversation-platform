@@ -75,3 +75,7 @@ class MssqlStreamBufferRepository(StreamBufferRepositoryPort):
         with self._get_session() as session:
             result = session.exec(stmt).first()
             return result is not None
+
+
+# Canonical adapter alias conforming to <Technology><Port>Adapter
+MssqlStreamBufferRepositoryAdapter = MssqlStreamBufferRepository

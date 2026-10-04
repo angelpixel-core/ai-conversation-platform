@@ -42,3 +42,7 @@ class MssqlTenantRepository(TenantRepositoryPort):
         statement = select(TenantModel)
         models = self._session.exec(statement).all()
         return [TenantDataMapper.to_domain(m) for m in models]
+
+
+# Canonical adapter alias conforming to <Technology><Port>Adapter
+MssqlTenantRepositoryAdapter = MssqlTenantRepository
