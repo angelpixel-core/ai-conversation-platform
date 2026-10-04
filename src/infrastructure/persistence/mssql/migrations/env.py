@@ -59,7 +59,8 @@ target_metadata = SQLModel.metadata
 # Allow DATABASE_URL environment variable to override config
 database_url = os.getenv("DATABASE_URL")
 if database_url:
-    config.set_main_option("sqlalchemy.url", database_url)
+    # Escape % characters so configparser BasicInterpolation does not fail on URL-encoded passwords
+    config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 
 
 def run_migrations_offline() -> None:
