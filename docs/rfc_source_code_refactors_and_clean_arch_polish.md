@@ -175,5 +175,5 @@ def reserve_quota(
 | **3** | **Adaptadores & Mappers** | Estandarizar adaptadores a `<Technology><Port>Adapter`, métodos `to_domain`/`to_persistence` en mappers y resiliencia de I/O. | ✅ **Completado ([ADR 0016](.agent/architecture/decisions/0016-infrastructure-layer-standardization-and-adapters-polish.md))** |
 | **4** | **Interfaces & Routers** | Unificar formato RFC 7807 en exception handlers, modularizar routers a `<entity>_router.py` y verificar decoradores OpenAPI. | ✅ **Completado ([ADR 0017](.agent/architecture/decisions/0017-interfaces-layer-standardization-and-problem-details.md))** |
 | **5** | **Docstrings & Tipado** | Aplicar tipado estricto en Pyright (`typeCheckingMode = "standard"` + reglas estrictas) y docstrings estilo Google. | ✅ **Completado ([ADR 0018](.agent/architecture/decisions/0018-strict-typing-and-google-docstrings.md))** |
-| **6** | **Quality Gate** | Ejecución completa de `make check-all` garantizando 0 regresiones. | ⏳ Pendiente |
+| **6** | **Quality Gate** | Ejecución completa de `make check-all` garantizando 0 regresiones. | ✅ **Completado (659 tests verdes, Ruff/Pyright/Bandit 100%)** |
 
