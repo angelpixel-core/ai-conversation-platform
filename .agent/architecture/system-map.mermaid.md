@@ -27,27 +27,32 @@ graph TD
         GovernanceRouterNode["GovernanceRouter (/admin/tenants/{tenant_id}/incidents, /admin/governance/metrics)"]
         GovernanceSchemasNode["GovernanceSchemas (IncidentResponse, GovernanceMetricsResponse)"]
         SafetyViolationHandlerNode["SafetyPolicyViolation Handler (HTTP 400 Bad Request)"]
+        ConversationsRouterNode["ConversationsRouter (src/interfaces/http/routers/conversations_router.py)"]
+        ProblemDetailsNode["ProblemDetails & RFC 7807 (src/interfaces/http/problem_details.py)"]
     end
 
 
+
     subgraph Application ["Application Layer (CQRS & Ports)"]
+        CQRSProtocols["CommandHandler / QueryHandler (Protocols)"]
+        AppExceptionsNode["ApplicationError (src/application/shared/exceptions)"]
         CreateConvCmd["CreateConversationCommand"]
-        CreateConvHandler["CreateConversationHandler"]
+        CreateConvHandler["CreateConversationCommandHandler"]
         SendMessageCmd["SendMessageCommand"]
-        SendMessageHandler["SendMessageHandler"]
+        SendMessageHandler["SendMessageCommandHandler"]
         AppendAssistantCmd["AppendAssistantMessageCommand"]
-        AppendAssistantHandler["AppendAssistantMessageHandler"]
+        AppendAssistantHandler["AppendAssistantMessageCommandHandler"]
         StreamConvQuery["StreamConversationQuery"]
         StreamConvHandler["StreamConversationQueryHandler"]
-        UOWPort["UnitOfWork Port"]
+        UOWPort["UnitOfWorkPort (Port)"]
         LLMClientPort["LlmClientPort"]
-        EventPubPort["EventPublisherPort"]
-        HTTPClientPort["HttpClientPort"]
+        EventPubPort["EventPublisherPort (Port)"]
+        HTTPClientPort["HttpClientPort (Port)"]
         MsgBrokerPort["MessageBrokerPort (Port)"]
         EventConsumerPortNode["EventConsumerPort (Port)"]
         WorkerHandlerNode["LlmMessageProcessingWorker"]
-        IdempotencyRepoPort["IdempotencyRepository (Port)"]
-        StreamBufferRepoPort["StreamBufferRepository (Port)"]
+        IdempotencyRepoPort["IdempotencyRepositoryPort (Port)"]
+        StreamBufferRepoPort["StreamBufferRepositoryPort (Port)"]
         IdempotentExecutor["IdempotentCommandExecutor"]
         StreamRecoveryServiceNode["StreamRecoveryService"]
         ResumeStreamQueryNode["ResumeStreamQuery"]
@@ -61,17 +66,17 @@ graph TD
         SettleQuotaCmd["SettleQuotaCommand"]
         SettleQuotaHandler["SettleQuotaCommandHandler"]
         UploadDocCmd["UploadDocumentCommand"]
-        UploadDocHandler["UploadDocumentHandler"]
+        UploadDocHandler["UploadDocumentCommandHandler"]
         IndexChunksCmd["IndexDocumentChunksCommand"]
-        IndexChunksHandler["IndexDocumentChunksHandler"]
+        IndexChunksHandler["IndexDocumentChunksCommandHandler"]
         HybridRetrieverServiceNode["HybridRetrieverService"]
         ToolPolicyEvaluatorServiceNode["ToolPolicyEvaluatorService"]
         ApproveToolExecutionCmd["ApproveToolExecutionCommand"]
-        ApproveToolExecutionHandlerNode["ApproveToolExecutionHandler"]
+        ApproveToolExecutionHandlerNode["ApproveToolExecutionCommandHandler"]
         RejectToolExecutionCmd["RejectToolExecutionCommand"]
-        RejectToolExecutionHandlerNode["RejectToolExecutionHandler"]
+        RejectToolExecutionHandlerNode["RejectToolExecutionCommandHandler"]
         ExecuteSandboxedToolCmd["ExecuteSandboxedToolCommand"]
-        ExecuteSandboxedToolHandlerNode["ExecuteSandboxedToolHandler"]
+        ExecuteSandboxedToolHandlerNode["ExecuteSandboxedToolCommandHandler"]
         StateReducerServiceNode["StateReducerService"]
         GraphExecutionEngineNode["GraphExecutionEngine"]
         SubAgentExecutorPortNode["SubAgentExecutorPort (Port)"]
@@ -83,7 +88,7 @@ graph TD
         GuardedCommandExecutorNode["GuardedCommandExecutor"]
         TraceContextCarrierNode["TraceContextCarrier"]
         RecordSecurityIncidentCmd["RecordSecurityIncidentCommand"]
-        RecordSecurityIncidentHandlerNode["RecordSecurityIncidentHandler"]
+        RecordSecurityIncidentHandlerNode["RecordSecurityIncidentCommandHandler"]
         ListIncidentsQueryNode["ListIncidentsQuery"]
         ListIncidentsQueryHandlerNode["ListIncidentsQueryHandler"]
         GetGovernanceMetricsQueryNode["GetGovernanceMetricsQuery"]
@@ -98,7 +103,9 @@ graph TD
         AssistantCompletedEvent["AssistantResponseCompletedDomainEvent"]
         ConvRepoPort["ConversationRepository (Port)"]
         ConvNotFoundErr["ConversationNotFoundError"]
-        DomainError["DomainError"]
+        ConvExceptionsNode["ConversationExceptions (InvalidConversationTitleError, ConsecutiveUserMessageError)"]
+        DomainError["DomainError (DomainException)"]
+        DomainExceptionsNode["DomainExceptions (DomainValidationError, EntityNotFoundError, InvariantViolationError)"]
         EventEnvelopeVO["EventEnvelope (ValueObject)"]
         IdempotencyKeyVO["IdempotencyKey (ValueObject)"]
         StreamChunkVO["StreamChunk (ValueObject)"]
@@ -109,6 +116,7 @@ graph TD
         ModelRouteVO["ModelRoute (ValueObject)"]
         TenantAggregate["Tenant (AggregateRoot)"]
         TenantPolicyEntity["TenantPolicy (Entity)"]
+        TenantExceptionsNode["TenantExceptions (TenantNotFoundError, InsufficientBudgetError, TenantSuspendedError, ModelNotAllowedError)"]
         TenantBudgetReservedEvent["TenantBudgetReservedDomainEvent"]
         TenantBudgetSettledEvent["TenantBudgetSettledDomainEvent"]
         TenantQuotaExceededEvent["TenantQuotaExceededDomainEvent"]
@@ -174,22 +182,22 @@ graph TD
         IncidentNotFoundErr["IncidentNotFoundError"]
     end
 
-    subgraph Infrastructure ["Infrastructure (Driven Adapters)"]
-        InMemoryUOW["InMemoryUnitOfWork"]
-        InMemoryRepo["InMemoryConversationRepository"]
+    subgraph Infrastructure ["Infrastructure (Driven Adapters & Mappers)"]
+        InMemoryUOW["InMemoryUnitOfWorkAdapter"]
+        InMemoryRepo["InMemoryConversationRepositoryAdapter"]
         InMemoryKnowledgeRepoNode["InMemoryKnowledgeRepositoryAdapter"]
-        HttpxClient["HttpxClientAdapter"]
-        InMemoryOutbox["InMemoryOutboxRepository"]
-        OutboxDispatcher["OutboxDispatcher"]
+        HttpxClient["HttpxHttpClientAdapter"]
+        InMemoryOutbox["InMemoryOutboxRepositoryAdapter"]
+        OutboxDispatcher["OutboxDispatcherAdapter"]
         FakeLlmClient["FakeLlmClientAdapter"]
         HttpxLlmClient["HttpxLlmClientAdapter"]
         MssqlModels["MSSQL Models (SQLModel)"]
-        ConversationMapper["ConversationDataMapper"]
+        ConversationMapper["ConversationMapper"]
         MssqlConnection["MSSQL Connection & SessionFactory"]
-        MssqlRepo["MssqlConversationRepository"]
-        MssqlOutbox["MssqlOutboxRepository"]
-        MssqlUOW["MssqlUnitOfWork"]
-        InMemoryMsgBroker["InMemoryMessageBroker"]
+        MssqlRepo["MssqlConversationRepositoryAdapter"]
+        MssqlOutbox["MssqlOutboxRepositoryAdapter"]
+        MssqlUOW["MssqlUnitOfWorkAdapter"]
+        InMemoryMsgBroker["InMemoryMessageBrokerAdapter"]
         RabbitMQConnManager["RabbitMQConnectionManager"]
         RabbitMQTopology["RabbitMQTopologyConfig"]
         RabbitMQPub["RabbitMQPublisherAdapter"]
@@ -197,36 +205,36 @@ graph TD
         OutboxRelay["OutboxRelayService"]
         InMemoryIdempotencyRepo["InMemoryIdempotencyRepositoryAdapter"]
         InMemoryAuditRepo["InMemoryAuditRepositoryAdapter"]
-        MssqlIdempotencyRepo["MssqlIdempotencyRepository"]
-        MssqlAuditRepo["MssqlAuditRepository"]
-        MssqlStreamBufferRepo["MssqlStreamBufferRepository"]
-        TenantDataMapperNode["TenantDataMapper"]
-        MssqlTenantRepoNode["MssqlTenantRepository"]
+        MssqlIdempotencyRepo["MssqlIdempotencyRepositoryAdapter"]
+        MssqlAuditRepo["MssqlAuditRepositoryAdapter"]
+        MssqlStreamBufferRepo["MssqlStreamBufferRepositoryAdapter"]
+        TenantMapperNode["TenantMapper"]
+        MssqlTenantRepoNode["MssqlTenantRepositoryAdapter"]
         InMemoryTenantRepoNode["InMemoryTenantRepositoryAdapter"]
         InMemoryModelCatalogNode["InMemoryModelCatalogAdapter"]
-        KnowledgeDataMapperNode["KnowledgeDataMapper"]
-        MssqlKnowledgeRepoNode["MssqlKnowledgeRepository"]
+        KnowledgeMapperNode["KnowledgeMapper"]
+        MssqlKnowledgeRepoNode["MssqlKnowledgeRepositoryAdapter"]
         FakeEmbeddingClientNode["FakeEmbeddingClientAdapter"]
         HttpxEmbeddingClientNode["HttpxEmbeddingClientAdapter"]
         KnowledgeTopologyNode["KnowledgeTopologyConfig"]
         AnyioDocumentIndexerWorkerNode["AnyioDocumentIndexerWorker"]
-        ToolApprovalDataMapperNode["ToolApprovalMapper"]
-        MssqlToolApprovalRepoNode["MssqlToolApprovalRepository"]
+        ToolApprovalMapperNode["ToolApprovalMapper"]
+        MssqlToolApprovalRepoNode["MssqlToolApprovalRepositoryAdapter"]
         InMemoryToolApprovalRepoNode["InMemoryToolApprovalRepositoryAdapter"]
-        AnyioSandboxedToolRunnerNode["AnyioSandboxedToolRunner"]
+        AnyioSandboxedToolRunnerNode["AnyioSandboxedToolRunnerAdapter"]
         ToolsTopologyNode["ToolsTopologyConfig"]
         AnyioToolExecutionWorkerNode["AnyioToolExecutionWorker"]
         WorkflowMapperNode["WorkflowMapper"]
-        MssqlWorkflowCheckpointRepoNode["MssqlWorkflowCheckpointRepository"]
+        MssqlWorkflowCheckpointRepoNode["MssqlWorkflowCheckpointRepositoryAdapter"]
         InMemoryWorkflowCheckpointRepoNode["InMemoryWorkflowCheckpointRepositoryAdapter"]
         MultiAgentTopologyNode["MultiAgentTopologyConfig"]
         AnyioSubagentWorkerNode["AnyioSubagentWorker"]
         GovernanceMapperNode["GovernanceMapper"]
-        MssqlIncidentRepoNode["MssqlIncidentRepository"]
+        MssqlIncidentRepoNode["MssqlIncidentRepositoryAdapter"]
         InMemoryIncidentRepoNode["InMemoryIncidentRepositoryAdapter"]
         RegexPiiScannerAdapterNode["RegexPiiScannerAdapter"]
         HeuristicInjectionDetectorAdapterNode["HeuristicInjectionDetectorAdapter"]
-        AnyioStreamGuardrailFilterNode["AnyioStreamGuardrailFilter"]
+        AnyioStreamGuardrailFilterNode["AnyioStreamGuardrailFilterAdapter"]
         OpenTelemetryConfigNode["OpenTelemetryConfig (W3C Propagator)"]
         AppSettings["Settings (Pydantic Settings)"]
     end
@@ -240,14 +248,17 @@ graph TD
     AppContainerNode --> StreamBufferRepoPort
     AppContainerNode --> StreamRecoveryServiceNode
     AppContainerNode --> IdempotentExecutor
-    RouterFastAPI --> CreateConvHandler
-    RouterFastAPI --> SendMessageHandler
-    RouterFastAPI --> StreamConvHandler
-    RouterFastAPI --> IdempotencyDep
-    RouterFastAPI --> ResumableSSE
-    RouterFastAPI --> IdempotentExecutor
-    RouterFastAPI --> StreamRecoveryServiceNode
+    RouterFastAPI --> ConversationsRouterNode
+    RouterFastAPI --> ProblemDetailsNode
+    ConversationsRouterNode --> CreateConvHandler
+    ConversationsRouterNode --> SendMessageHandler
+    ConversationsRouterNode --> StreamConvHandler
+    ConversationsRouterNode --> IdempotencyDep
+    ConversationsRouterNode --> ResumableSSE
+    ConversationsRouterNode --> IdempotentExecutor
+    ConversationsRouterNode --> StreamRecoveryServiceNode
     ResumableSSE --> StreamRecoveryServiceNode
+
     RouterFastAPI --> AppSettings
     RouterFastAPI --> TenantContextMiddlewareNode
     RouterFastAPI --> TenantAdminRouterNode
@@ -384,10 +395,10 @@ graph TD
     ModelRouterServiceNode --> TenantAggregate
     MssqlTenantRepoNode -- Implementa --> TenantRepoPort
     InMemoryTenantRepoNode -- Implementa --> TenantRepoPort
-    MssqlTenantRepoNode --> TenantDataMapperNode
+    MssqlTenantRepoNode --> TenantMapperNode
     MssqlTenantRepoNode --> MssqlModels
-    TenantDataMapperNode --> TenantAggregate
-    TenantDataMapperNode --> MssqlModels
+    TenantMapperNode --> TenantAggregate
+    TenantMapperNode --> MssqlModels
     MssqlUOW --> MssqlTenantRepoNode
     InMemoryUOW --> InMemoryTenantRepoNode
     AppContainerNode --> ModelCatalogPortNode
@@ -425,11 +436,11 @@ graph TD
     InMemoryUOW --> InMemoryKnowledgeRepoNode
     MssqlKnowledgeRepoNode -- Implementa --> KnowledgeRepoPortNode
     MssqlUOW --> MssqlKnowledgeRepoNode
-    MssqlKnowledgeRepoNode --> KnowledgeDataMapperNode
+    MssqlKnowledgeRepoNode --> KnowledgeMapperNode
     MssqlKnowledgeRepoNode --> MssqlModels
-    KnowledgeDataMapperNode --> DocumentAggregate
-    KnowledgeDataMapperNode --> DocumentChunkEntity
-    KnowledgeDataMapperNode --> MssqlModels
+    KnowledgeMapperNode --> DocumentAggregate
+    KnowledgeMapperNode --> DocumentChunkEntity
+    KnowledgeMapperNode --> MssqlModels
     FakeEmbeddingClientNode -- Implementa --> EmbeddingClientPortNode
     HttpxEmbeddingClientNode -- Implementa --> EmbeddingClientPortNode
     AnyioDocumentIndexerWorkerNode --> UOWPort
@@ -447,10 +458,10 @@ graph TD
     MssqlToolApprovalRepoNode -- Implementa --> ToolApprovalRepoPortNode
     InMemoryToolApprovalRepoNode -- Implementa --> ToolApprovalRepoPortNode
     AnyioSandboxedToolRunnerNode -- Implementa --> SandboxedToolRunnerPortNode
-    MssqlToolApprovalRepoNode --> ToolApprovalDataMapperNode
+    MssqlToolApprovalRepoNode --> ToolApprovalMapperNode
     MssqlToolApprovalRepoNode --> MssqlModels
-    ToolApprovalDataMapperNode --> ToolApprovalRequestAggregate
-    ToolApprovalDataMapperNode --> MssqlModels
+    ToolApprovalMapperNode --> ToolApprovalRequestAggregate
+    ToolApprovalMapperNode --> MssqlModels
     MssqlUOW --> MssqlToolApprovalRepoNode
     InMemoryUOW --> InMemoryToolApprovalRepoNode
     UOWPort --> ToolApprovalRepoPortNode

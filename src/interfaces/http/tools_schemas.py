@@ -53,3 +53,11 @@ class ToolExecutionAuditResponse(BaseModel):
     execution_time_ms: float
     executed_at: datetime
     is_error: bool
+
+
+__all__ = [
+    "CreateToolApprovalRequest",
+    "PendingApprovalResponse",
+    "ToolApprovalDecisionRequest",
+    "ToolExecutionAuditResponse",
+]

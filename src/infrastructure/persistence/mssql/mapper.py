@@ -8,7 +8,7 @@ from src.domain.conversations.value_objects.message import Message, MessageRole
 from src.infrastructure.persistence.mssql.models import ConversationModel, MessageModel
 
 
-class ConversationDataMapper:
+class ConversationMapper:
     """Bidirectional data mapper between domain entities and SQLModel database models."""
 
     @staticmethod
@@ -44,10 +44,15 @@ class ConversationDataMapper:
             updated_at=entity.created_at,
         )
         model.messages = [
-            ConversationDataMapper.message_to_model(msg, conversation_id=entity.id)
+            ConversationMapper.message_to_model(msg, conversation_id=entity.id)
             for msg in entity.messages
         ]
         return model
+
+    @staticmethod
+    def to_persistence(entity: Conversation) -> ConversationModel:
+        """Map Conversation aggregate root to SQLModel database model for persistence."""
+        return ConversationMapper.to_model(entity)
 
     @staticmethod
     def message_to_model(message: Message, conversation_id: UUID) -> MessageModel:
@@ -58,3 +63,6 @@ class ConversationDataMapper:
             content=message.content,
             created_at=message.created_at,
         )
+
+
+__all__ = ["ConversationMapper"]

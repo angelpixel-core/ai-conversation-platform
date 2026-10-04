@@ -7,7 +7,7 @@ from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.infrastructure.persistence.mssql.models import DocumentChunkModel, DocumentModel
 
 
-class KnowledgeDataMapper:
+class KnowledgeMapper:
     """Bi-directional mapper between Knowledge domain models and physical relational models."""
 
     @staticmethod
@@ -65,3 +65,11 @@ class KnowledgeDataMapper:
             page_number=model.page_number,
             created_at=model.created_at,
         )
+
+    # Canonical aliases for general document conversion
+    to_domain = to_domain_document
+    to_persistence = to_model_document
+    to_persistence_chunk = to_model_chunk
+
+
+__all__ = ["KnowledgeMapper"]

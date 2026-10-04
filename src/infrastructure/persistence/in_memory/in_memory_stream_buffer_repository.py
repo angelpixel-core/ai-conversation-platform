@@ -36,3 +36,6 @@ class InMemoryStreamBufferRepositoryAdapter(StreamBufferRepositoryPort):
     def all_chunks(self, stream_id: str) -> list[StreamChunk]:
         """Inspection helper for unit tests."""
         return list(self._buffers.get(stream_id, []))
+
+
+__all__ = ["InMemoryStreamBufferRepositoryAdapter"]

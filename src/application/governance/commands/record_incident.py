@@ -4,7 +4,7 @@ import secrets
 from dataclasses import dataclass, field
 from typing import Any
 
-from src.application.shared.ports.event_publisher import EventPublisher
+from src.application.shared.ports.event_publisher import EventPublisherPort
 from src.domain.governance.entities.security_incident import SecurityIncident
 from src.domain.governance.ports.incident_repository_port import IncidentRepositoryPort
 from src.domain.governance.value_objects.incident_severity import IncidentSeverity
@@ -23,19 +23,32 @@ class RecordSecurityIncidentCommand:
     details: dict[str, Any] = field(default_factory=dict)
 
 
-class RecordSecurityIncidentHandler:
+class RecordSecurityIncidentCommandHandler:
     """Handler executing the persistence and domain event publishing of security incidents."""
 
     def __init__(
         self,
         incident_repo: IncidentRepositoryPort,
-        event_publisher: EventPublisher | None = None,
+        event_publisher: EventPublisherPort | None = None,
     ) -> None:
+        """Initializes the security incident command handler.
+
+        Args:
+            incident_repo: Driven port for security incident persistence.
+            event_publisher: Optional event publisher port for audit events.
+        """
         self._incident_repo = incident_repo
         self._event_publisher = event_publisher
 
     async def handle(self, command: RecordSecurityIncidentCommand) -> str:
-        """Creates and persists an incident, publishing its domain events."""
+        """Creates and persists an incident, publishing its domain events.
+
+        Args:
+            command: RecordSecurityIncidentCommand payload.
+
+        Returns:
+            str: Unique identifier of the persisted security incident.
+        """
         incident_id = f"inc-{secrets.token_hex(6)}"
         tenant_id = TenantId(command.tenant_id)
         severity = IncidentSeverity(command.severity.upper())
@@ -57,3 +70,9 @@ class RecordSecurityIncidentHandler:
                 self._event_publisher.publish(event)
 
         return incident.id
+
+
+__all__ = [
+    "RecordSecurityIncidentCommand",
+    "RecordSecurityIncidentCommandHandler",
+]

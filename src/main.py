@@ -7,7 +7,7 @@ easy to replace when moving between local in-memory adapters and MSSQL/PostgreSQ
 from fastapi import FastAPI
 
 from src.application.shared.ports.llm_client import LlmClientPort
-from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.shared.ports.unit_of_work import UnitOfWorkPort
 from src.container import create_app_container
 from src.infrastructure.shared.config.settings import (
     Settings,
@@ -15,7 +15,7 @@ from src.infrastructure.shared.config.settings import (
 
 
 def create_app(
-    unit_of_work: UnitOfWork | None = None,
+    unit_of_work: UnitOfWorkPort | None = None,
     llm_client: LlmClientPort | None = None,
     settings: Settings | None = None,
 ) -> FastAPI:

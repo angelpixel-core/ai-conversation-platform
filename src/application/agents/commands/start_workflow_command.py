@@ -78,3 +78,10 @@ class StartWorkflowCommandHandler:
             current_node=executed_instance.current_node,
             version=executed_instance.version,
         )
+
+
+__all__ = [
+    "StartWorkflowCommand",
+    "StartWorkflowCommandHandler",
+    "StartWorkflowResult",
+]

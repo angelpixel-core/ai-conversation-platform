@@ -8,7 +8,7 @@ from src.application.shared.ports.message_broker_port import MessageBrokerPort
 from src.domain.shared.events.event_envelope import EventEnvelope
 
 
-class InMemoryMessageBroker(MessageBrokerPort, EventConsumerPort):
+class InMemoryMessageBrokerAdapter(MessageBrokerPort, EventConsumerPort):
     """In-memory event broker for tests, simulations and fast local workflows."""
 
     def __init__(self) -> None:
@@ -51,3 +51,6 @@ class InMemoryMessageBroker(MessageBrokerPort, EventConsumerPort):
         self._handlers.clear()
         self._is_consuming = False
         self._dispatched_indices.clear()
+
+
+__all__ = ["InMemoryMessageBrokerAdapter"]

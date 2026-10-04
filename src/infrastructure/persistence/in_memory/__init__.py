@@ -15,23 +15,27 @@ from src.infrastructure.persistence.in_memory.in_memory_stream_buffer_repository
 from src.infrastructure.persistence.in_memory.in_memory_tool_approval_repository import (
     InMemoryToolApprovalRepositoryAdapter,
 )
+from src.infrastructure.persistence.in_memory.knowledge_repository import (
+    InMemoryKnowledgeRepositoryAdapter,
+)
 from src.infrastructure.persistence.in_memory.repository import (
-    InMemoryConversationRepository,
+    InMemoryConversationRepositoryAdapter,
 )
 from src.infrastructure.persistence.in_memory.tenant_repository import (
     InMemoryTenantRepositoryAdapter,
 )
 from src.infrastructure.persistence.in_memory.unit_of_work import (
-    InMemoryUnitOfWork,
+    InMemoryUnitOfWorkAdapter,
 )
 
 __all__ = [
     "InMemoryAuditRepositoryAdapter",
-    "InMemoryConversationRepository",
+    "InMemoryConversationRepositoryAdapter",
     "InMemoryIdempotencyRepositoryAdapter",
     "InMemoryIncidentRepositoryAdapter",
+    "InMemoryKnowledgeRepositoryAdapter",
     "InMemoryStreamBufferRepositoryAdapter",
     "InMemoryTenantRepositoryAdapter",
     "InMemoryToolApprovalRepositoryAdapter",
-    "InMemoryUnitOfWork",
+    "InMemoryUnitOfWorkAdapter",
 ]

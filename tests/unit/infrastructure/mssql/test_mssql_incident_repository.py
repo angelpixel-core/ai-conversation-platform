@@ -1,4 +1,4 @@
-"""Unit tests for MssqlIncidentRepository adapter."""
+"""Unit tests for MssqlIncidentRepositoryAdapter adapter."""
 
 from collections.abc import Iterator
 
@@ -10,7 +10,7 @@ from src.domain.governance.value_objects.incident_severity import IncidentSeveri
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.infrastructure.persistence.mssql.models import TenantModel
 from src.infrastructure.persistence.mssql.mssql_incident_repository import (
-    MssqlIncidentRepository,
+    MssqlIncidentRepositoryAdapter,
 )
 
 
@@ -29,7 +29,7 @@ def fixture_sqlite_session() -> Iterator[Session]:
 
 @pytest.mark.anyio
 async def test_mssql_incident_repo_crud_and_isolation(sqlite_session: Session) -> None:
-    repo = MssqlIncidentRepository(session=sqlite_session)
+    repo = MssqlIncidentRepositoryAdapter(session=sqlite_session)
     tenant_acme = TenantId("corp-acme")
     tenant_other = TenantId("corp-other")
 
@@ -61,7 +61,7 @@ async def test_mssql_incident_repo_crud_and_isolation(sqlite_session: Session) -
 
 @pytest.mark.anyio
 async def test_mssql_incident_repo_listing_and_metrics(sqlite_session: Session) -> None:
-    repo = MssqlIncidentRepository(session=sqlite_session)
+    repo = MssqlIncidentRepositoryAdapter(session=sqlite_session)
     tenant_acme = TenantId("corp-acme")
 
     inc1 = SecurityIncident.create(

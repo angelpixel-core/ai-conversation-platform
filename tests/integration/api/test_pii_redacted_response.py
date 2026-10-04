@@ -5,10 +5,10 @@ from httpx import ASGITransport, AsyncClient
 
 from src.application.conversations.commands.create_conversation import (
     CreateConversationCommand,
-    CreateConversationHandler,
+    CreateConversationCommandHandler,
 )
 from src.application.conversations.commands.send_message import (
-    SendMessageHandler,
+    SendMessageCommandHandler,
 )
 from src.application.governance.services.guardrail_pipeline_service import (
     SafetyGuardrailPipelineService,
@@ -26,14 +26,14 @@ from src.infrastructure.persistence.in_memory.in_memory_incident_repository impo
     InMemoryIncidentRepositoryAdapter,
 )
 from src.infrastructure.persistence.in_memory.unit_of_work import (
-    InMemoryUnitOfWork,
+    InMemoryUnitOfWorkAdapter,
 )
 from src.interfaces.http.api import build_api
 
 
 @pytest.fixture
-def client_and_repo() -> tuple[AsyncClient, InMemoryUnitOfWork]:
-    uow = InMemoryUnitOfWork()
+def client_and_repo() -> tuple[AsyncClient, InMemoryUnitOfWorkAdapter]:
+    uow = InMemoryUnitOfWorkAdapter()
     incident_repo = InMemoryIncidentRepositoryAdapter()
     pipeline = SafetyGuardrailPipelineService(
         safety_guardrail=HeuristicInjectionDetectorAdapter(),
@@ -43,8 +43,8 @@ def client_and_repo() -> tuple[AsyncClient, InMemoryUnitOfWork]:
         pipeline=pipeline,
         incident_repo=incident_repo,
     )
-    create_handler = CreateConversationHandler(uow)
-    send_handler = SendMessageHandler(uow)
+    create_handler = CreateConversationCommandHandler(uow)
+    send_handler = SendMessageCommandHandler(uow)
 
     app = build_api(
         create_conversation_handler=create_handler,
@@ -57,10 +57,10 @@ def client_and_repo() -> tuple[AsyncClient, InMemoryUnitOfWork]:
 
 @pytest.mark.anyio
 async def test_pii_redacted_in_message_payload(
-    client_and_repo: tuple[AsyncClient, InMemoryUnitOfWork],
+    client_and_repo: tuple[AsyncClient, InMemoryUnitOfWorkAdapter],
 ) -> None:
     client, uow = client_and_repo
-    create_res = CreateConversationHandler(uow).handle(
+    create_res = CreateConversationCommandHandler(uow).handle(
         CreateConversationCommand(title="PII Redaction Test")
     )
     conv_id = create_res.conversation_id

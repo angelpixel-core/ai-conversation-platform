@@ -25,7 +25,7 @@ from src.application.routing.services.model_router_service import (
 )
 from src.application.shared.ports.event_consumer_port import EventConsumerPort
 from src.application.shared.ports.llm_client import LlmClientPort
-from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.shared.ports.unit_of_work import UnitOfWorkPort
 from src.application.tenants.commands.settle_quota_command import (
     SettleQuotaCommandHandler,
 )
@@ -57,7 +57,7 @@ from src.infrastructure.embeddings.fake_embedding_client import (
     FakeEmbeddingClientAdapter,
 )
 from src.infrastructure.governance.anyio_stream_guardrail_filter import (
-    AnyioStreamGuardrailFilter,
+    AnyioStreamGuardrailFilterAdapter,
 )
 from src.infrastructure.governance.heuristic_injection_detector_adapter import (
     HeuristicInjectionDetectorAdapter,
@@ -67,7 +67,7 @@ from src.infrastructure.governance.regex_pii_scanner_adapter import (
 )
 from src.infrastructure.llm.fake_llm_client import FakeLlmClientAdapter
 from src.infrastructure.messaging.in_memory.in_memory_message_broker import (
-    InMemoryMessageBroker,
+    InMemoryMessageBrokerAdapter,
 )
 from src.infrastructure.messaging.rabbitmq.anyio_subagent_worker import (
     AnyioSubagentWorker,
@@ -92,25 +92,25 @@ from src.infrastructure.persistence.in_memory import (
     InMemoryIdempotencyRepositoryAdapter,
     InMemoryStreamBufferRepositoryAdapter,
     InMemoryToolApprovalRepositoryAdapter,
-    InMemoryUnitOfWork,
+    InMemoryUnitOfWorkAdapter,
 )
 from src.infrastructure.persistence.in_memory.in_memory_incident_repository import (
     InMemoryIncidentRepositoryAdapter,
 )
 from src.infrastructure.persistence.mssql import (
     InMemoryWorkflowCheckpointRepositoryAdapter,
-    MssqlAuditRepository,
-    MssqlIdempotencyRepository,
-    MssqlKnowledgeRepository,
-    MssqlStreamBufferRepository,
-    MssqlToolApprovalRepository,
-    MssqlUnitOfWork,
-    MssqlWorkflowCheckpointRepository,
+    MssqlAuditRepositoryAdapter,
+    MssqlIdempotencyRepositoryAdapter,
+    MssqlKnowledgeRepositoryAdapter,
+    MssqlStreamBufferRepositoryAdapter,
+    MssqlToolApprovalRepositoryAdapter,
+    MssqlUnitOfWorkAdapter,
+    MssqlWorkflowCheckpointRepositoryAdapter,
     create_mssql_engine,
     create_session_factory,
 )
 from src.infrastructure.persistence.mssql.mssql_incident_repository import (
-    MssqlIncidentRepository,
+    MssqlIncidentRepositoryAdapter,
 )
 from src.infrastructure.persistence.outbox.outbox_relay_service import (
     OutboxRelayService,
@@ -126,7 +126,7 @@ from src.infrastructure.shared.config.settings import (
 )
 from src.infrastructure.telemetry.opentelemetry_config import setup_opentelemetry
 from src.infrastructure.tools.anyio_sandboxed_tool_runner import (
-    AnyioSandboxedToolRunner,
+    AnyioSandboxedToolRunnerAdapter,
 )
 
 logger = logging.getLogger(__name__)
@@ -136,7 +136,7 @@ logger = logging.getLogger(__name__)
 class WorkerContainer:
     """Encapsulates wired components and handles startup / shutdown lifecycle."""
 
-    unit_of_work: UnitOfWork
+    unit_of_work: UnitOfWorkPort
     llm_client: LlmClientPort
     consumer: EventConsumerPort
     worker_handler: LlmMessageProcessingWorker
@@ -156,7 +156,7 @@ class WorkerContainer:
     incident_repo: IncidentRepositoryPort | None = None
     pii_scanner: PiiScannerPort | None = None
     safety_guardrail: SafetyGuardrailPort | None = None
-    stream_guardrail_filter: AnyioStreamGuardrailFilter | None = None
+    stream_guardrail_filter: AnyioStreamGuardrailFilterAdapter | None = None
     outbox_relay: OutboxRelayService | None = None
 
     async def start(self, task_group: anyio.abc.TaskGroup | None = None) -> None:
@@ -187,10 +187,10 @@ class WorkerContainer:
 
 def _wire_worker_persistence(
     settings: Settings,
-    unit_of_work: UnitOfWork | None,
+    unit_of_work: UnitOfWorkPort | None,
     incident_repo: IncidentRepositoryPort | None = None,
 ) -> tuple[
-    UnitOfWork,
+    UnitOfWorkPort,
     Any,
     Any,
     Any,
@@ -211,16 +211,18 @@ def _wire_worker_persistence(
             read_knowledge_repo = uow.knowledge
         except RuntimeError:
             if session_factory is not None:
-                read_knowledge_repo = MssqlKnowledgeRepository(session=session_factory())
+                read_knowledge_repo = MssqlKnowledgeRepositoryAdapter(session=session_factory())
         try:
             read_tool_approval_repo = uow.tool_approvals
         except RuntimeError:
             if session_factory is not None:
-                read_tool_approval_repo = MssqlToolApprovalRepository(session=session_factory())
+                read_tool_approval_repo = MssqlToolApprovalRepositoryAdapter(
+                    session=session_factory()
+                )
         resolved_incident_repo = incident_repo or (
             getattr(uow, "incidents", None)
             or (
-                MssqlIncidentRepository(session=session_factory)
+                MssqlIncidentRepositoryAdapter(session=session_factory)
                 if session_factory is not None
                 else InMemoryIncidentRepositoryAdapter()
             )
@@ -228,18 +230,20 @@ def _wire_worker_persistence(
     elif settings.PERSISTENCE_DRIVER == PersistenceDriver.MSSQL:
         engine = create_mssql_engine(settings.get_database_url())
         session_factory = create_session_factory(engine)
-        uow = MssqlUnitOfWork(session_factory=session_factory)
-        stream_buffer_repo = MssqlStreamBufferRepository(session=session_factory)
-        audit_repo = MssqlAuditRepository(session=session_factory)
-        idempotency_repo = MssqlIdempotencyRepository(session=session_factory)
-        read_knowledge_repo = MssqlKnowledgeRepository(session=session_factory())
-        read_tool_approval_repo = MssqlToolApprovalRepository(session=session_factory())
-        resolved_incident_repo = incident_repo or MssqlIncidentRepository(session=session_factory)
+        uow = MssqlUnitOfWorkAdapter(session_factory=session_factory)
+        stream_buffer_repo = MssqlStreamBufferRepositoryAdapter(session=session_factory)
+        audit_repo = MssqlAuditRepositoryAdapter(session=session_factory)
+        idempotency_repo = MssqlIdempotencyRepositoryAdapter(session=session_factory)
+        read_knowledge_repo = MssqlKnowledgeRepositoryAdapter(session=session_factory())
+        read_tool_approval_repo = MssqlToolApprovalRepositoryAdapter(session=session_factory())
+        resolved_incident_repo = incident_repo or MssqlIncidentRepositoryAdapter(
+            session=session_factory
+        )
         from src.container import _seed_default_demo_tenant
 
         _seed_default_demo_tenant(uow)
     else:
-        uow = InMemoryUnitOfWork()
+        uow = InMemoryUnitOfWorkAdapter()
         stream_buffer_repo = InMemoryStreamBufferRepositoryAdapter()
         audit_repo = InMemoryAuditRepositoryAdapter()
         idempotency_repo = InMemoryIdempotencyRepositoryAdapter()
@@ -294,12 +298,12 @@ def _wire_worker_consumer(
         )
         return cons, conn_mgr, topo
 
-    return InMemoryMessageBroker(), conn_mgr, topo
+    return InMemoryMessageBrokerAdapter(), conn_mgr, topo
 
 
 def create_worker_container(
     settings: Settings | None = None,
-    unit_of_work: UnitOfWork | None = None,
+    unit_of_work: UnitOfWorkPort | None = None,
     llm_client: LlmClientPort | None = None,
     consumer: EventConsumerPort | None = None,
     connection_manager: RabbitMQConnectionManager | None = None,
@@ -312,7 +316,7 @@ def create_worker_container(
     incident_repo: IncidentRepositoryPort | None = None,
     pii_scanner: PiiScannerPort | None = None,
     safety_guardrail: SafetyGuardrailPort | None = None,
-    stream_guardrail_filter: AnyioStreamGuardrailFilter | None = None,
+    stream_guardrail_filter: AnyioStreamGuardrailFilterAdapter | None = None,
     outbox_relay: OutboxRelayService | None = None,
     *,
     enable_opentelemetry: bool | None = None,
@@ -384,7 +388,7 @@ def create_worker_container(
         if read_tool_approval_repo is not None
         else getattr(uow, "tool_approvals", None) or InMemoryToolApprovalRepositoryAdapter()
     )
-    tool_runner = AnyioSandboxedToolRunner()
+    tool_runner = AnyioSandboxedToolRunnerAdapter()
     tool_policy_evaluator = ToolPolicyEvaluatorService()
 
     if workflow_checkpoint_repo is not None:
@@ -392,7 +396,7 @@ def create_worker_container(
     elif current_settings.PERSISTENCE_DRIVER == PersistenceDriver.MSSQL:
         engine = create_mssql_engine(current_settings.get_database_url())
         session_factory = create_session_factory(engine)
-        resolved_workflow_repo = MssqlWorkflowCheckpointRepository(session=session_factory)
+        resolved_workflow_repo = MssqlWorkflowCheckpointRepositoryAdapter(session=session_factory)
     else:
         resolved_workflow_repo = InMemoryWorkflowCheckpointRepositoryAdapter()
 
@@ -413,7 +417,7 @@ def create_worker_container(
     stream_filter = (
         stream_guardrail_filter
         if stream_guardrail_filter is not None
-        else AnyioStreamGuardrailFilter(guardrail=safety_guardrail_adapter)
+        else AnyioStreamGuardrailFilterAdapter(guardrail=safety_guardrail_adapter)
     )
 
     return WorkerContainer(
@@ -439,3 +443,9 @@ def create_worker_container(
         stream_guardrail_filter=stream_filter,
         outbox_relay=outbox_relay_service,
     )
+
+
+__all__ = [
+    "WorkerContainer",
+    "create_worker_container",
+]

@@ -1,4 +1,4 @@
-"""Unit tests for InMemoryToolApprovalRepository adapter."""
+"""Unit tests for InMemoryToolApprovalRepositoryAdapter adapter."""
 
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.domain.tools.entities.tool_approval_request import (
@@ -7,12 +7,12 @@ from src.domain.tools.entities.tool_approval_request import (
 )
 from src.domain.tools.value_objects.tool_call import ToolCall
 from src.infrastructure.persistence.in_memory.in_memory_tool_approval_repository import (
-    InMemoryToolApprovalRepository,
+    InMemoryToolApprovalRepositoryAdapter,
 )
 
 
 def test_in_memory_tool_approval_repo_lifecycle() -> None:
-    repo = InMemoryToolApprovalRepository()
+    repo = InMemoryToolApprovalRepositoryAdapter()
     tid = TenantId("corp-acme")
     other_tid = TenantId("corp-other")
 

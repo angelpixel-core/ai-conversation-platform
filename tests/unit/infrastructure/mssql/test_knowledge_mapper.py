@@ -1,10 +1,10 @@
-"""Unit tests for KnowledgeDataMapper."""
+"""Unit tests for KnowledgeMapper."""
 
 from src.domain.knowledge.entities.document import Document, DocumentStatus
 from src.domain.knowledge.entities.document_chunk import DocumentChunk
 from src.domain.knowledge.value_objects.embedding_vector import EmbeddingVector
 from src.domain.tenants.value_objects.tenant_id import TenantId
-from src.infrastructure.persistence.mssql.knowledge_mapper import KnowledgeDataMapper
+from src.infrastructure.persistence.mssql.knowledge_mapper import KnowledgeMapper
 
 
 def test_mapper_document_roundtrip() -> None:
@@ -18,7 +18,7 @@ def test_mapper_document_roundtrip() -> None:
     original.mark_processing()
     original.mark_indexed(total_chunks=5)
 
-    model = KnowledgeDataMapper.to_model_document(original)
+    model = KnowledgeMapper.to_model_document(original)
     assert model.id == "doc-xyz"
     assert model.tenant_id == "corp-acme"
     assert model.filename == "handbook.pdf"
@@ -26,7 +26,7 @@ def test_mapper_document_roundtrip() -> None:
     assert model.status == "INDEXED"
     assert model.total_chunks == 5
 
-    domain_doc = KnowledgeDataMapper.to_domain_document(model)
+    domain_doc = KnowledgeMapper.to_domain_document(model)
     assert domain_doc.id == "doc-xyz"
     assert domain_doc.tenant_id == tenant_id
     assert domain_doc.filename == "handbook.pdf"
@@ -47,7 +47,7 @@ def test_mapper_chunk_roundtrip() -> None:
         page_number=3,
     )
 
-    model = KnowledgeDataMapper.to_model_chunk(chunk)
+    model = KnowledgeMapper.to_model_chunk(chunk)
     assert model.id == "chk-456"
     assert model.tenant_id == "corp-acme"
     assert model.document_id == "doc-xyz"
@@ -56,7 +56,7 @@ def test_mapper_chunk_roundtrip() -> None:
     assert model.page_number == 3
     assert "[0.6" in model.embedding_json
 
-    domain_chunk = KnowledgeDataMapper.to_domain_chunk(model)
+    domain_chunk = KnowledgeMapper.to_domain_chunk(model)
     assert domain_chunk.id == "chk-456"
     assert domain_chunk.document_id == "doc-xyz"
     assert domain_chunk.tenant_id == tenant_id

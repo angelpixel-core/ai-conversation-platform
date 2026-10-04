@@ -10,7 +10,7 @@ from src.domain.tools.ports.tool_approval_repository_port import (
 )
 
 
-class InMemoryToolApprovalRepository(ToolApprovalRepositoryPort):
+class InMemoryToolApprovalRepositoryAdapter(ToolApprovalRepositoryPort):
     """Fast in-memory dictionary-backed repository for tool approval requests."""
 
     def __init__(self) -> None:
@@ -33,5 +33,4 @@ class InMemoryToolApprovalRepository(ToolApprovalRepositoryPort):
         ]
 
 
-# Alias for naming consistency across adapters
-InMemoryToolApprovalRepositoryAdapter = InMemoryToolApprovalRepository
+__all__ = ["InMemoryToolApprovalRepositoryAdapter"]

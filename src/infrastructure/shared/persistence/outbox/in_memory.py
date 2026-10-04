@@ -63,7 +63,7 @@ class OutboxMessage:
         self.error_message = error
 
 
-class InMemoryOutboxRepository:
+class InMemoryOutboxRepositoryAdapter:
     """In-memory repository adapter for Outbox messages."""
 
     def __init__(self) -> None:
@@ -95,5 +95,8 @@ class InMemoryOutboxRepository:
         return list(self._messages.values())
 
 
-# Alias for backward compatibility
-InMemoryOutbox = InMemoryOutboxRepository
+__all__ = [
+    "InMemoryOutboxRepositoryAdapter",
+    "OutboxMessage",
+    "OutboxStatus",
+]

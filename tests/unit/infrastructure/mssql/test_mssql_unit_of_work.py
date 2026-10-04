@@ -1,17 +1,17 @@
-"""Unit tests for MssqlUnitOfWork adapter."""
+"""Unit tests for MssqlUnitOfWorkAdapter adapter."""
 
 import pytest
 from sqlmodel import Session, SQLModel, create_engine
 
 from src.domain.conversations.entities.conversation import Conversation
 from src.infrastructure.persistence.mssql.models import ConversationModel, OutboxMessageModel
-from src.infrastructure.persistence.mssql.unit_of_work import MssqlUnitOfWork
+from src.infrastructure.persistence.mssql.unit_of_work import MssqlUnitOfWorkAdapter
 from src.infrastructure.shared.persistence.outbox.in_memory import OutboxMessage
 
 
 def test_unit_of_work_unstarted_access_raises_runtime_error() -> None:
     engine = create_engine("sqlite:///:memory:")
-    uow = MssqlUnitOfWork(session_factory=lambda: Session(engine))
+    uow = MssqlUnitOfWorkAdapter(session_factory=lambda: Session(engine))
 
     with pytest.raises(RuntimeError, match="UnitOfWork has not been started"):
         _ = uow.conversations
@@ -33,7 +33,7 @@ def test_unit_of_work_atomic_commit_persists_conversation_and_outbox() -> None:
     engine = create_engine("sqlite:///:memory:")
     SQLModel.metadata.create_all(engine)
 
-    uow = MssqlUnitOfWork(session_factory=lambda: Session(engine))
+    uow = MssqlUnitOfWorkAdapter(session_factory=lambda: Session(engine))
 
     conversation = Conversation.create(title="UoW Commit Test")
     conversation.append_user_message("First message")
@@ -65,7 +65,7 @@ def test_unit_of_work_rollback_on_exception_discards_changes() -> None:
     engine = create_engine("sqlite:///:memory:")
     SQLModel.metadata.create_all(engine)
 
-    uow = MssqlUnitOfWork(session_factory=lambda: Session(engine))
+    uow = MssqlUnitOfWorkAdapter(session_factory=lambda: Session(engine))
 
     conversation = Conversation.create(title="UoW Rollback Test")
     outbox = OutboxMessage.create(
@@ -90,7 +90,7 @@ def test_unit_of_work_explicit_rollback() -> None:
     engine = create_engine("sqlite:///:memory:")
     SQLModel.metadata.create_all(engine)
 
-    uow = MssqlUnitOfWork(session_factory=lambda: Session(engine))
+    uow = MssqlUnitOfWorkAdapter(session_factory=lambda: Session(engine))
 
     conversation = Conversation.create(title="Explicit Rollback")
 
@@ -104,7 +104,7 @@ def test_unit_of_work_explicit_rollback() -> None:
 
 def test_unit_of_work_commit_and_rollback_outside_context_raises() -> None:
     engine = create_engine("sqlite:///:memory:")
-    uow = MssqlUnitOfWork(session_factory=lambda: Session(engine))
+    uow = MssqlUnitOfWorkAdapter(session_factory=lambda: Session(engine))
 
     with pytest.raises(RuntimeError, match="Cannot commit: No active session"):
         uow.commit()

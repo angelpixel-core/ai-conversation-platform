@@ -1,4 +1,4 @@
-"""Integration tests for MssqlUnitOfWork against live SQL Server 2022."""
+"""Integration tests for MssqlUnitOfWorkAdapter against live SQL Server 2022."""
 
 import pytest
 from sqlalchemy.engine import Engine
@@ -7,13 +7,13 @@ from sqlmodel import select
 from src.domain.conversations.entities.conversation import Conversation
 from src.infrastructure.persistence.mssql.connection import create_session_factory
 from src.infrastructure.persistence.mssql.models import ConversationModel, OutboxMessageModel
-from src.infrastructure.persistence.mssql.unit_of_work import MssqlUnitOfWork
+from src.infrastructure.persistence.mssql.unit_of_work import MssqlUnitOfWorkAdapter
 from src.infrastructure.shared.persistence.outbox.in_memory import OutboxMessage
 
 
 def test_mssql_uow_atomic_commit(mssql_engine: Engine, clean_db: None) -> None:
     session_factory = create_session_factory(mssql_engine)
-    uow = MssqlUnitOfWork(session_factory=session_factory)
+    uow = MssqlUnitOfWorkAdapter(session_factory=session_factory)
 
     conversation = Conversation.create(title="Integration UoW Commit")
     conversation.append_user_message("UoW User Msg")
@@ -44,7 +44,7 @@ def test_mssql_uow_atomic_commit(mssql_engine: Engine, clean_db: None) -> None:
 
 def test_mssql_uow_atomic_rollback_on_exception(mssql_engine: Engine, clean_db: None) -> None:
     session_factory = create_session_factory(mssql_engine)
-    uow = MssqlUnitOfWork(session_factory=session_factory)
+    uow = MssqlUnitOfWorkAdapter(session_factory=session_factory)
 
     conversation = Conversation.create(title="Integration UoW Rollback")
     outbox = OutboxMessage.create(
@@ -70,7 +70,7 @@ def test_mssql_uow_atomic_rollback_on_exception(mssql_engine: Engine, clean_db: 
 
 def test_mssql_uow_explicit_rollback(mssql_engine: Engine, clean_db: None) -> None:
     session_factory = create_session_factory(mssql_engine)
-    uow = MssqlUnitOfWork(session_factory=session_factory)
+    uow = MssqlUnitOfWorkAdapter(session_factory=session_factory)
 
     conversation = Conversation.create(title="Explicit Rollback")
 
@@ -87,7 +87,7 @@ def test_mssql_uow_auto_persists_outbox_events_atomically(
     mssql_engine: Engine, clean_db: None
 ) -> None:
     session_factory = create_session_factory(mssql_engine)
-    uow = MssqlUnitOfWork(session_factory=session_factory)
+    uow = MssqlUnitOfWorkAdapter(session_factory=session_factory)
 
     conversation = Conversation.create(title="Auto Outbox Persist")
     conversation.append_user_message("Test message for auto outbox")

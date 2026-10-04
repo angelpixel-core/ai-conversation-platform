@@ -12,7 +12,7 @@ from src.domain.conversations.value_objects.stream_chunk import StreamChunk
 from src.infrastructure.persistence.mssql.models import StreamBufferChunkModel
 
 
-class MssqlStreamBufferRepository(StreamBufferRepositoryPort):
+class MssqlStreamBufferRepositoryAdapter(StreamBufferRepositoryPort):
     """Relational adapter for stream buffer chunk persistence backed by SQLModel."""
 
     def __init__(self, session: Session | Callable[[], Session]) -> None:
@@ -75,3 +75,6 @@ class MssqlStreamBufferRepository(StreamBufferRepositoryPort):
         with self._get_session() as session:
             result = session.exec(stmt).first()
             return result is not None
+
+
+__all__ = ["MssqlStreamBufferRepositoryAdapter"]

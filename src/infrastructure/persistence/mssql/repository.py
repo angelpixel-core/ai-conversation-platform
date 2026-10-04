@@ -8,15 +8,17 @@ from sqlmodel import Session, select
 
 from src.application.shared.tenancy.tenant_context import get_current_tenant_id
 from src.domain.conversations.entities.conversation import Conversation
-from src.domain.conversations.ports.conversation_repository import ConversationRepository
+from src.domain.conversations.ports.conversation_repository import (
+    ConversationRepositoryPort,
+)
 from src.domain.shared.events.event_envelope import EventEnvelope
-from src.infrastructure.persistence.mssql.mapper import ConversationDataMapper
+from src.infrastructure.persistence.mssql.mapper import ConversationMapper
 from src.infrastructure.persistence.mssql.models import ConversationModel, OutboxMessageModel
 from src.infrastructure.shared.persistence.outbox.in_memory import OutboxStatus
 
 
-class MssqlConversationRepository(ConversationRepository):
-    """Relational persistence adapter implementing the ConversationRepository port."""
+class MssqlConversationRepositoryAdapter(ConversationRepositoryPort):
+    """Relational persistence adapter implementing the ConversationRepositoryPort."""
 
     def __init__(self, session: Session) -> None:
         self._session = session
@@ -29,7 +31,7 @@ class MssqlConversationRepository(ConversationRepository):
         existing = self._session.get(ConversationModel, conversation.id)
         target_model: ConversationModel
         if existing is None:
-            target_model = ConversationDataMapper.to_model(conversation)
+            target_model = ConversationMapper.to_model(conversation)
             self._session.add(target_model)
         else:
             target_model = existing
@@ -40,7 +42,7 @@ class MssqlConversationRepository(ConversationRepository):
             existing_count = len(target_model.messages)
             new_messages = conversation.messages[existing_count:]
             for msg in new_messages:
-                msg_model = ConversationDataMapper.message_to_model(
+                msg_model = ConversationMapper.message_to_model(
                     msg, conversation_id=conversation.id
                 )
                 self._session.add(msg_model)
@@ -72,10 +74,13 @@ class MssqlConversationRepository(ConversationRepository):
         result = self._session.exec(statement).first()
         if result is None:
             return None
-        return ConversationDataMapper.to_domain(result)
+        return ConversationMapper.to_domain(result)
 
     def list(self) -> list[Conversation]:
         """List all conversations ordered by creation date."""
         statement = select(ConversationModel).order_by(ConversationModel.created_at)  # type: ignore[arg-type]
         results = self._session.exec(statement).all()
-        return [ConversationDataMapper.to_domain(model) for model in results]
+        return [ConversationMapper.to_domain(model) for model in results]
+
+
+__all__ = ["MssqlConversationRepositoryAdapter"]

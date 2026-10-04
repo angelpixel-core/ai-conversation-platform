@@ -14,7 +14,7 @@ from src.domain.shared.events.event_envelope import EventEnvelope
 from src.infrastructure.messaging.rabbitmq.rabbitmq_topology_config import (
     RabbitMQTopologyConfig,
 )
-from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWork
+from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWorkAdapter
 
 
 def test_format_tenant_routing_key() -> None:
@@ -51,7 +51,7 @@ async def test_topology_declares_tenant_routing_bindings() -> None:
 
 @pytest.mark.anyio
 async def test_worker_processes_routed_tenant_event_envelope() -> None:
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     conv = Conversation.create(title="Routed Tenant Query")
     conv.append_user_message("Show dashboard stats")
     uow.conversations.add(conv)

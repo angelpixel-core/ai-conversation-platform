@@ -6,10 +6,10 @@ from src.domain.tenants.entities.tenant import Tenant
 from src.domain.tenants.ports.tenant_repository_port import TenantRepositoryPort
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.infrastructure.persistence.mssql.models import TenantModel
-from src.infrastructure.persistence.mssql.tenant_mapper import TenantDataMapper
+from src.infrastructure.persistence.mssql.tenant_mapper import TenantMapper
 
 
-class MssqlTenantRepository(TenantRepositoryPort):
+class MssqlTenantRepositoryAdapter(TenantRepositoryPort):
     """Relational persistence adapter for tenants backed by Microsoft SQL Server."""
 
     def __init__(self, session: Session) -> None:
@@ -17,7 +17,7 @@ class MssqlTenantRepository(TenantRepositoryPort):
 
     def add(self, tenant: Tenant) -> None:
         """Persist or update a tenant and its policy."""
-        model = TenantDataMapper.to_model(tenant)
+        model = TenantMapper.to_model(tenant)
         self._session.merge(model)
         self._session.flush()
 
@@ -27,7 +27,7 @@ class MssqlTenantRepository(TenantRepositoryPort):
         model = self._session.exec(statement).first()
         if model is None:
             return None
-        return TenantDataMapper.to_domain(model)
+        return TenantMapper.to_domain(model)
 
     def get_for_update(self, tenant_id: TenantId) -> Tenant | None:
         """Retrieve a tenant acquiring a pessimistic row lock in MSSQL (UPDLOCK, ROWLOCK)."""
@@ -35,10 +35,13 @@ class MssqlTenantRepository(TenantRepositoryPort):
         model = self._session.exec(statement).first()
         if model is None:
             return None
-        return TenantDataMapper.to_domain(model)
+        return TenantMapper.to_domain(model)
 
     def list(self) -> list[Tenant]:
         """List all tenants registered in the platform."""
         statement = select(TenantModel)
         models = self._session.exec(statement).all()
-        return [TenantDataMapper.to_domain(m) for m in models]
+        return [TenantMapper.to_domain(m) for m in models]
+
+
+__all__ = ["MssqlTenantRepositoryAdapter"]

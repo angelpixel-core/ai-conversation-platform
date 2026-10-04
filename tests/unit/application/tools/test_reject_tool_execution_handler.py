@@ -2,10 +2,10 @@
 
 import pytest
 
-from src.application.shared.ports.event_publisher import EventPublisher
+from src.application.shared.ports.event_publisher import EventPublisherPort
 from src.application.tools.commands.reject_tool_execution import (
     RejectToolExecutionCommand,
-    RejectToolExecutionHandler,
+    RejectToolExecutionCommandHandler,
 )
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.domain.tools.entities.tool_approval_request import (
@@ -37,7 +37,7 @@ class FakeApprovalRepository(ToolApprovalRepositoryPort):
         ]
 
 
-class FakeEventPublisher(EventPublisher):
+class FakeEventPublisher(EventPublisherPort):
     def __init__(self) -> None:
         self.events: list[object] = []
 
@@ -48,7 +48,7 @@ class FakeEventPublisher(EventPublisher):
 def test_reject_tool_execution_handler_success() -> None:
     repo = FakeApprovalRepository()
     publisher = FakeEventPublisher()
-    handler = RejectToolExecutionHandler(
+    handler = RejectToolExecutionCommandHandler(
         tool_approval_repo=repo,
         event_publisher=publisher,
     )
@@ -92,7 +92,7 @@ def test_reject_tool_execution_handler_success() -> None:
 
 def test_reject_tool_execution_not_found_raises_value_error() -> None:
     repo = FakeApprovalRepository()
-    handler = RejectToolExecutionHandler(tool_approval_repo=repo)
+    handler = RejectToolExecutionCommandHandler(tool_approval_repo=repo)
 
     cmd = RejectToolExecutionCommand(
         approval_id="missing",
@@ -105,7 +105,7 @@ def test_reject_tool_execution_not_found_raises_value_error() -> None:
 
 def test_reject_tool_execution_empty_operator_raises_value_error() -> None:
     repo = FakeApprovalRepository()
-    handler = RejectToolExecutionHandler(tool_approval_repo=repo)
+    handler = RejectToolExecutionCommandHandler(tool_approval_repo=repo)
 
     tid = TenantId("corp-acme")
     call = ToolCall(call_id="c-1", tool_name="refund_order", arguments={"amount": 100})

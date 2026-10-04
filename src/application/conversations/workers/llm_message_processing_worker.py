@@ -7,7 +7,7 @@ from uuid import UUID
 
 from src.application.conversations.commands.append_assistant_message import (
     AppendAssistantMessageCommand,
-    AppendAssistantMessageHandler,
+    AppendAssistantMessageCommandHandler,
 )
 from src.application.knowledge.services.hybrid_retriever_service import (
     HybridRetrieverService,
@@ -20,7 +20,7 @@ from src.application.shared.ports.llm_client import LlmClientPort
 from src.application.shared.ports.stream_buffer_repository_port import (
     StreamBufferRepositoryPort,
 )
-from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.shared.ports.unit_of_work import UnitOfWorkPort
 from src.application.shared.tenancy.tenant_context import tenant_context
 from src.application.tenants.commands.settle_quota_command import (
     SettleQuotaCommand,
@@ -41,9 +41,9 @@ class LlmMessageProcessingWorker:
 
     def __init__(
         self,
-        unit_of_work: UnitOfWork,
+        unit_of_work: UnitOfWorkPort,
         llm_client: LlmClientPort,
-        append_handler: AppendAssistantMessageHandler | None = None,
+        append_handler: AppendAssistantMessageCommandHandler | None = None,
         stream_buffer_repo: StreamBufferRepositoryPort | None = None,
         audit_repo: AuditRepositoryPort | None = None,
         idempotency_repo: IdempotencyRepositoryPort | None = None,
@@ -54,7 +54,7 @@ class LlmMessageProcessingWorker:
     ) -> None:
         self._unit_of_work = unit_of_work
         self._llm_client = llm_client
-        self._append_handler = append_handler or AppendAssistantMessageHandler(
+        self._append_handler = append_handler or AppendAssistantMessageCommandHandler(
             unit_of_work=unit_of_work
         )
         self._stream_buffer_repo = stream_buffer_repo

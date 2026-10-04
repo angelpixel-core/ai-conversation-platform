@@ -29,3 +29,6 @@ class InMemoryAuditRepositoryAdapter(AuditRepositoryPort):
     def all_records(self) -> list[AuditLogRecord]:
         """Inspection helper for unit tests."""
         return list(self._records)
+
+
+__all__ = ["InMemoryAuditRepositoryAdapter"]

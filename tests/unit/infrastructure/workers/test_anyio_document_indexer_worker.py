@@ -16,7 +16,7 @@ from src.infrastructure.embeddings.fake_embedding_client import (
 from src.infrastructure.messaging.rabbitmq.anyio_document_indexer_worker import (
     AnyioDocumentIndexerWorker,
 )
-from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWork
+from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWorkAdapter
 
 
 class FailingEmbeddingClient(EmbeddingClientPort):
@@ -27,13 +27,13 @@ class FailingEmbeddingClient(EmbeddingClientPort):
 
 
 @pytest.fixture
-def uow() -> InMemoryUnitOfWork:
-    return InMemoryUnitOfWork()
+def uow() -> InMemoryUnitOfWorkAdapter:
+    return InMemoryUnitOfWorkAdapter()
 
 
 def test_split_text_into_chunks_logic() -> None:
     worker = AnyioDocumentIndexerWorker(
-        unit_of_work=InMemoryUnitOfWork(),
+        unit_of_work=InMemoryUnitOfWorkAdapter(),
         embedding_client=FakeEmbeddingClientAdapter(dimension=4),
         chunk_size=20,
         chunk_overlap=5,
@@ -47,7 +47,7 @@ def test_split_text_into_chunks_logic() -> None:
 
 
 @pytest.mark.anyio
-async def test_worker_indexes_document_success(uow: InMemoryUnitOfWork) -> None:
+async def test_worker_indexes_document_success(uow: InMemoryUnitOfWorkAdapter) -> None:
     tenant_id = TenantId("tenant-acme")
     document_id = "doc-99"
 
@@ -103,7 +103,7 @@ async def test_worker_indexes_document_success(uow: InMemoryUnitOfWork) -> None:
 
 
 @pytest.mark.anyio
-async def test_worker_fails_gracefully_when_embedding_fails(uow: InMemoryUnitOfWork) -> None:
+async def test_worker_fails_gracefully_when_embedding_fails(uow: InMemoryUnitOfWorkAdapter) -> None:
     tenant_id = TenantId("tenant-acme")
     document_id = "doc-fail"
 
@@ -142,7 +142,7 @@ async def test_worker_fails_gracefully_when_embedding_fails(uow: InMemoryUnitOfW
 
 
 @pytest.mark.anyio
-async def test_worker_raises_for_missing_document(uow: InMemoryUnitOfWork) -> None:
+async def test_worker_raises_for_missing_document(uow: InMemoryUnitOfWorkAdapter) -> None:
     worker = AnyioDocumentIndexerWorker(
         unit_of_work=uow,
         embedding_client=FakeEmbeddingClientAdapter(dimension=4),

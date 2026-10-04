@@ -4,9 +4,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from src.application.conversations.commands.create_conversation import (
-    CreateConversationHandler,
+    CreateConversationCommandHandler,
 )
-from src.application.conversations.commands.send_message import SendMessageHandler
+from src.application.conversations.commands.send_message import SendMessageCommandHandler
 from src.application.conversations.queries.stream_conversation import (
     StreamConversationQueryHandler,
 )
@@ -19,7 +19,7 @@ from src.infrastructure.llm.fake_llm_client import FakeLlmClientAdapter
 from src.infrastructure.persistence.in_memory.in_memory_stream_buffer_repository import (
     InMemoryStreamBufferRepositoryAdapter,
 )
-from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWork
+from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWorkAdapter
 from src.interfaces.http.api import build_api
 
 
@@ -27,7 +27,7 @@ from src.interfaces.http.api import build_api
 async def test_stream_endpoint_falls_back_to_buffered_chunks_when_assistant_already_replied() -> (
     None
 ):
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     buffer_repo = InMemoryStreamBufferRepositoryAdapter()
     recovery_service = StreamRecoveryService(buffer_repo=buffer_repo)
 
@@ -53,8 +53,8 @@ async def test_stream_endpoint_falls_back_to_buffered_chunks_when_assistant_alre
     )
 
     app = build_api(
-        create_conversation_handler=CreateConversationHandler(unit_of_work=uow),
-        send_message_handler=SendMessageHandler(unit_of_work=uow),
+        create_conversation_handler=CreateConversationCommandHandler(unit_of_work=uow),
+        send_message_handler=SendMessageCommandHandler(unit_of_work=uow),
         stream_conversation_handler=stream_handler,
         stream_recovery_service=recovery_service,
         unit_of_work=uow,
@@ -78,7 +78,7 @@ async def test_stream_endpoint_falls_back_to_buffered_chunks_when_assistant_alre
 
 @pytest.mark.anyio
 async def test_stream_endpoint_falls_back_to_persisted_assistant_message_if_no_buffer() -> None:
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
 
     conversation = Conversation.create("Test Conversation Without Buffer")
     conversation.append_user_message("What is AI?")
@@ -94,8 +94,8 @@ async def test_stream_endpoint_falls_back_to_persisted_assistant_message_if_no_b
     )
 
     app = build_api(
-        create_conversation_handler=CreateConversationHandler(unit_of_work=uow),
-        send_message_handler=SendMessageHandler(unit_of_work=uow),
+        create_conversation_handler=CreateConversationCommandHandler(unit_of_work=uow),
+        send_message_handler=SendMessageCommandHandler(unit_of_work=uow),
         stream_conversation_handler=stream_handler,
         unit_of_work=uow,
     )

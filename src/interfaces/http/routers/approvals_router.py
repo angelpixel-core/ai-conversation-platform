@@ -2,15 +2,15 @@ from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, status
 
-from src.application.shared.ports.event_publisher import EventPublisher
-from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.shared.ports.event_publisher import EventPublisherPort
+from src.application.shared.ports.unit_of_work import UnitOfWorkPort
 from src.application.tools.commands.approve_tool_execution import (
     ApproveToolExecutionCommand,
-    ApproveToolExecutionHandler,
+    ApproveToolExecutionCommandHandler,
 )
 from src.application.tools.commands.reject_tool_execution import (
     RejectToolExecutionCommand,
-    RejectToolExecutionHandler,
+    RejectToolExecutionCommandHandler,
 )
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.domain.tools.entities.tool_approval_request import ApprovalStatus, ToolApprovalRequest
@@ -23,8 +23,8 @@ from src.interfaces.http.tools_schemas import (
 
 
 def create_approvals_router(
-    unit_of_work: UnitOfWork,
-    event_publisher: EventPublisher | None = None,
+    unit_of_work: UnitOfWorkPort,
+    event_publisher: EventPublisherPort | None = None,
 ) -> APIRouter:
     """Factory creating APIRouter for Human-in-the-Loop tool approvals."""
     router = APIRouter(tags=["Approvals"])
@@ -132,7 +132,7 @@ def create_approvals_router(
                 )
 
             if decision in ("approve", "approved"):
-                handler = ApproveToolExecutionHandler(
+                handler = ApproveToolExecutionCommandHandler(
                     tool_approval_repo=uow.tool_approvals,
                     event_publisher=event_publisher,
                 )
@@ -150,7 +150,7 @@ def create_approvals_router(
                         status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
                     ) from exc
             else:
-                reject_handler = RejectToolExecutionHandler(
+                reject_handler = RejectToolExecutionCommandHandler(
                     tool_approval_repo=uow.tool_approvals,
                     event_publisher=event_publisher,
                 )

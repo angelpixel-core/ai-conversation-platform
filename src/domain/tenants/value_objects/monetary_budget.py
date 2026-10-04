@@ -3,6 +3,11 @@
 from dataclasses import dataclass
 from decimal import Decimal
 
+from src.domain.tenants.exceptions import (
+    InsufficientBudgetError,
+    InvalidBudgetOperationError,
+)
+
 
 @dataclass(frozen=True)
 class MonetaryBudget:
@@ -19,16 +24,61 @@ class MonetaryBudget:
             object.__setattr__(self, "reserved_amount", Decimal(str(self.reserved_amount)))
 
         if self.balance < Decimal("0.00"):
-            raise ValueError(f"El saldo monetario no puede ser negativo: {self.balance}")
+            raise InvalidBudgetOperationError(
+                f"El saldo monetario no puede ser negativo: {self.balance}"
+            )
         if self.reserved_amount < Decimal("0.00"):
-            raise ValueError(f"El monto reservado no puede ser negativo: {self.reserved_amount}")
+            raise InvalidBudgetOperationError(
+                f"El monto reservado no puede ser negativo: {self.reserved_amount}"
+            )
         if self.reserved_amount > self.balance:
-            raise ValueError(
+            raise InvalidBudgetOperationError(
                 f"El monto reservado ({self.reserved_amount}) "
                 f"no puede exceder el saldo total ({self.balance})"
             )
         if len(self.currency) != 3:
-            raise ValueError(f"Código de moneda ISO 4217 inválido: {self.currency}")
+            raise InvalidBudgetOperationError(
+                f"Código de moneda ISO 4217 inválido: {self.currency}"
+            )
+
+    @classmethod
+    def zero(cls, currency: str = "USD") -> "MonetaryBudget":
+        """Factory method creating an empty budget with 0.00 balance and reservation.
+
+        Args:
+            currency: ISO 4217 currency code.
+
+        Returns:
+            Zeroed MonetaryBudget instance.
+        """
+        return cls(
+            balance=Decimal("0.00"),
+            currency=currency,
+            reserved_amount=Decimal("0.00"),
+        )
+
+    @classmethod
+    def create(
+        cls,
+        balance: Decimal | str | float | int,
+        currency: str = "USD",
+        reserved_amount: Decimal | str | float | int = Decimal("0.00"),
+    ) -> "MonetaryBudget":
+        """Semantic factory method creating a MonetaryBudget from mixed numerical types.
+
+        Args:
+            balance: Initial total balance.
+            currency: ISO 4217 currency code.
+            reserved_amount: Initial reserved amount.
+
+        Returns:
+            Validated MonetaryBudget instance.
+        """
+        return cls(
+            balance=Decimal(str(balance)),
+            currency=currency,
+            reserved_amount=Decimal(str(reserved_amount)),
+        )
 
     @property
     def available_balance(self) -> Decimal:
@@ -44,7 +94,7 @@ class MonetaryBudget:
         """Returns a new MonetaryBudget with increased reserved amount."""
         cost = Decimal(str(estimated_cost))
         if not self.can_reserve(cost):
-            raise ValueError(
+            raise InsufficientBudgetError(
                 f"Saldo insuficiente para reservar {cost} {self.currency}. "
                 f"Disponible: {self.available_balance}"
             )
@@ -60,7 +110,7 @@ class MonetaryBudget:
         act = Decimal(str(actual_cost))
 
         if res > self.reserved_amount:
-            raise ValueError(
+            raise InvalidBudgetOperationError(
                 f"No se puede liquidar una reserva mayor a la activa: "
                 f"{res} > {self.reserved_amount}"
             )
@@ -69,7 +119,7 @@ class MonetaryBudget:
         new_balance = self.balance - act
 
         if new_balance < Decimal("0.00"):
-            raise ValueError(
+            raise InvalidBudgetOperationError(
                 f"El costo real ({act}) sobrepasa el saldo total disponible ({self.balance})"
             )
 
@@ -83,7 +133,7 @@ class MonetaryBudget:
         """Adds funds to the balance."""
         amt = Decimal(str(amount))
         if amt <= Decimal("0.00"):
-            raise ValueError("El monto de recarga debe ser positivo.")
+            raise InvalidBudgetOperationError("El monto de recarga debe ser positivo.")
         return MonetaryBudget(
             balance=self.balance + amt,
             currency=self.currency,

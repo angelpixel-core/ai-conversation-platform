@@ -1,4 +1,4 @@
-"""Unit tests for AnyioStreamGuardrailFilter."""
+"""Unit tests for AnyioStreamGuardrailFilterAdapter."""
 
 from collections.abc import AsyncIterator
 
@@ -9,7 +9,7 @@ from src.domain.governance.ports.safety_guardrail_port import SafetyGuardrailPor
 from src.domain.governance.value_objects.safety_verdict import SafetyVerdict
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.infrastructure.governance.anyio_stream_guardrail_filter import (
-    AnyioStreamGuardrailFilter,
+    AnyioStreamGuardrailFilterAdapter,
 )
 
 
@@ -42,7 +42,7 @@ async def sample_generator(chunks: list[str]) -> AsyncIterator[str]:
 @pytest.mark.anyio
 async def test_stream_filter_passes_safe_chunks() -> None:
     guardrail = DummySafetyGuardrail()
-    stream_filter = AnyioStreamGuardrailFilter(guardrail=guardrail)
+    stream_filter = AnyioStreamGuardrailFilterAdapter(guardrail=guardrail)
 
     chunks = ["Hello", " world", ", how", " are you?"]
     output = []
@@ -55,7 +55,7 @@ async def test_stream_filter_passes_safe_chunks() -> None:
 @pytest.mark.anyio
 async def test_stream_filter_aborts_on_violation() -> None:
     guardrail = DummySafetyGuardrail(block_on_text="FORBIDDEN_TOKEN")
-    stream_filter = AnyioStreamGuardrailFilter(guardrail=guardrail)
+    stream_filter = AnyioStreamGuardrailFilterAdapter(guardrail=guardrail)
 
     chunks = ["Processing: ", "here is ", "FORBIDDEN_", "TOKEN_EXPLOIT"]
 

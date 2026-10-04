@@ -1,4 +1,4 @@
-"""Unit tests for MssqlToolApprovalRepository adapter."""
+"""Unit tests for MssqlToolApprovalRepositoryAdapter adapter."""
 
 from collections.abc import Iterator
 
@@ -12,7 +12,7 @@ from src.domain.tools.entities.tool_approval_request import (
 )
 from src.domain.tools.value_objects.tool_call import ToolCall
 from src.infrastructure.persistence.mssql.mssql_tool_approval_repository import (
-    MssqlToolApprovalRepository,
+    MssqlToolApprovalRepositoryAdapter,
 )
 
 
@@ -25,7 +25,7 @@ def fixture_sqlite_session() -> Iterator[Session]:
 
 
 def test_mssql_tool_approval_repo_save_and_get(sqlite_session: Session) -> None:
-    repo = MssqlToolApprovalRepository(session=sqlite_session)
+    repo = MssqlToolApprovalRepositoryAdapter(session=sqlite_session)
     tid = TenantId("tenant-acme")
     other_tid = TenantId("tenant-other")
 
@@ -50,7 +50,7 @@ def test_mssql_tool_approval_repo_save_and_get(sqlite_session: Session) -> None:
 
 
 def test_mssql_tool_approval_repo_get_pending(sqlite_session: Session) -> None:
-    repo = MssqlToolApprovalRepository(session=sqlite_session)
+    repo = MssqlToolApprovalRepositoryAdapter(session=sqlite_session)
     tid = TenantId("tenant-acme")
 
     call1 = ToolCall(call_id="c-1", tool_name="refund_order", arguments={})
@@ -79,7 +79,7 @@ def test_mssql_tool_approval_repo_get_pending(sqlite_session: Session) -> None:
 
 
 def test_mssql_tool_approval_repo_update_resolution(sqlite_session: Session) -> None:
-    repo = MssqlToolApprovalRepository(session=sqlite_session)
+    repo = MssqlToolApprovalRepositoryAdapter(session=sqlite_session)
     tid = TenantId("tenant-acme")
 
     call = ToolCall(call_id="c-1", tool_name="refund_order", arguments={"amount": 50})

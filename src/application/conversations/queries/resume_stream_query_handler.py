@@ -25,3 +25,9 @@ class ResumeStreamQueryHandler:
             since_sequence=since_seq,
         ):
             yield chunk
+
+
+__all__ = [
+    "ResumeStreamQuery",
+    "ResumeStreamQueryHandler",
+]

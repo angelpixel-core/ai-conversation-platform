@@ -1,4 +1,4 @@
-"""Unit tests for InMemoryMessageBroker adapter (Infrastructure Layer)."""
+"""Unit tests for InMemoryMessageBrokerAdapter adapter (Infrastructure Layer)."""
 
 from uuid import uuid4
 
@@ -8,19 +8,19 @@ from src.application.shared.ports.event_consumer_port import EventConsumerPort
 from src.application.shared.ports.message_broker_port import MessageBrokerPort
 from src.domain.shared.events.event_envelope import EventEnvelope
 from src.infrastructure.messaging.in_memory.in_memory_message_broker import (
-    InMemoryMessageBroker,
+    InMemoryMessageBrokerAdapter,
 )
 
 
 def test_in_memory_message_broker_implements_ports() -> None:
-    broker = InMemoryMessageBroker()
+    broker = InMemoryMessageBrokerAdapter()
     assert isinstance(broker, MessageBrokerPort)
     assert isinstance(broker, EventConsumerPort)
 
 
 @pytest.mark.anyio
 async def test_publish_and_consume_active_lifecycle() -> None:
-    broker = InMemoryMessageBroker()
+    broker = InMemoryMessageBrokerAdapter()
     received: list[EventEnvelope] = []
 
     async def message_handler(envelope: EventEnvelope) -> None:
@@ -47,7 +47,7 @@ async def test_publish_and_consume_active_lifecycle() -> None:
 
 @pytest.mark.anyio
 async def test_buffered_messages_dispatched_on_start_consuming() -> None:
-    broker = InMemoryMessageBroker()
+    broker = InMemoryMessageBrokerAdapter()
     received: list[EventEnvelope] = []
 
     async def message_handler(envelope: EventEnvelope) -> None:
@@ -78,7 +78,7 @@ async def test_buffered_messages_dispatched_on_start_consuming() -> None:
 
 @pytest.mark.anyio
 async def test_multiple_handlers_for_same_topic() -> None:
-    broker = InMemoryMessageBroker()
+    broker = InMemoryMessageBrokerAdapter()
     handler1_calls: list[EventEnvelope] = []
     handler2_calls: list[EventEnvelope] = []
 
@@ -108,7 +108,7 @@ async def test_multiple_handlers_for_same_topic() -> None:
 
 @pytest.mark.anyio
 async def test_different_topic_does_not_trigger_unsubscribed_handler() -> None:
-    broker = InMemoryMessageBroker()
+    broker = InMemoryMessageBrokerAdapter()
     received: list[EventEnvelope] = []
 
     async def handler(envelope: EventEnvelope) -> None:
@@ -131,7 +131,7 @@ async def test_different_topic_does_not_trigger_unsubscribed_handler() -> None:
 
 @pytest.mark.anyio
 async def test_clear_resets_broker_state() -> None:
-    broker = InMemoryMessageBroker()
+    broker = InMemoryMessageBrokerAdapter()
     envelope = EventEnvelope.create(
         event_type="test.event",
         payload={"foo": "bar"},

@@ -1,4 +1,4 @@
-"""Unit tests for TenantDataMapper."""
+"""Unit tests for TenantMapper."""
 
 from decimal import Decimal
 
@@ -7,7 +7,7 @@ from src.domain.tenants.entities.tenant_policy import TenantPolicy, TenantTier
 from src.domain.tenants.value_objects.monetary_budget import MonetaryBudget
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.infrastructure.persistence.mssql.models import TenantModel, TenantPolicyModel
-from src.infrastructure.persistence.mssql.tenant_mapper import TenantDataMapper
+from src.infrastructure.persistence.mssql.tenant_mapper import TenantMapper
 
 
 def test_mapper_to_model_and_back_roundtrip() -> None:
@@ -28,7 +28,7 @@ def test_mapper_to_model_and_back_roundtrip() -> None:
         status=TenantStatus.ACTIVE,
     )
 
-    model = TenantDataMapper.to_model(original)
+    model = TenantMapper.to_model(original)
     assert model.id == "corp-xyz"
     assert model.name == "XYZ Corp"
     assert model.balance_usd == Decimal("200.5000")
@@ -41,7 +41,7 @@ def test_mapper_to_model_and_back_roundtrip() -> None:
     assert model.policy.max_tokens_per_request == 16384
     assert model.policy.monthly_budget_usd == Decimal("1000.0000")
 
-    reconstituted = TenantDataMapper.to_domain(model)
+    reconstituted = TenantMapper.to_domain(model)
     assert reconstituted.id == original.id
     assert reconstituted.name == original.name
     assert reconstituted.budget.balance == original.budget.balance
@@ -65,7 +65,7 @@ def test_mapper_to_domain_with_none_policy() -> None:
         policy=None,
     )
 
-    domain = TenantDataMapper.to_domain(model)
+    domain = TenantMapper.to_domain(model)
     assert domain.id.value == "orphan-tenant"
     assert domain.policy.tier == TenantTier.FREE
     assert domain.policy.max_tokens_per_request == 4096
@@ -90,6 +90,6 @@ def test_mapper_to_domain_suspended_status() -> None:
         ),
     )
 
-    domain = TenantDataMapper.to_domain(model)
+    domain = TenantMapper.to_domain(model)
     assert domain.status == TenantStatus.SUSPENDED
     assert not domain.is_active

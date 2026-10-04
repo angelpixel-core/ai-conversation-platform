@@ -1,4 +1,4 @@
-"""Integration tests for MssqlIncidentRepository against live SQL Server."""
+"""Integration tests for MssqlIncidentRepositoryAdapter against live SQL Server."""
 
 import pytest
 from sqlalchemy.engine import Engine
@@ -9,7 +9,7 @@ from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.infrastructure.persistence.mssql.connection import create_session_factory
 from src.infrastructure.persistence.mssql.models import TenantModel
 from src.infrastructure.persistence.mssql.mssql_incident_repository import (
-    MssqlIncidentRepository,
+    MssqlIncidentRepositoryAdapter,
 )
 
 
@@ -36,11 +36,11 @@ async def test_mssql_incident_repository_integration_live_db(
     )
 
     with session_factory() as session:
-        repo = MssqlIncidentRepository(session=session)
+        repo = MssqlIncidentRepositoryAdapter(session=session)
         await repo.save_incident(incident)
 
     with session_factory() as session:
-        repo = MssqlIncidentRepository(session=session)
+        repo = MssqlIncidentRepositoryAdapter(session=session)
         retrieved = await repo.get_incident(tenant_id, "inc-live-01")
         assert retrieved is not None
         assert retrieved.id == "inc-live-01"

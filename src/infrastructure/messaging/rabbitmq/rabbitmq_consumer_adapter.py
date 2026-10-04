@@ -119,3 +119,6 @@ class RabbitMQConsumerAdapter(EventConsumerPort):
 
         self._is_consuming = False
         self._consumer_tag = None
+
+
+__all__ = ["RabbitMQConsumerAdapter"]

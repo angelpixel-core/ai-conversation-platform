@@ -1,4 +1,4 @@
-"""Unit tests for MssqlConversationRepository adapter."""
+"""Unit tests for MssqlConversationRepositoryAdapter adapter."""
 
 import json
 from uuid import uuid4
@@ -8,7 +8,7 @@ from sqlmodel import Session, SQLModel, create_engine, select
 from src.domain.conversations.entities.conversation import Conversation
 from src.domain.shared.events.event_envelope import EventEnvelope
 from src.infrastructure.persistence.mssql.models import OutboxMessageModel
-from src.infrastructure.persistence.mssql.repository import MssqlConversationRepository
+from src.infrastructure.persistence.mssql.repository import MssqlConversationRepositoryAdapter
 
 
 def test_repository_add_and_get_conversation_without_messages() -> None:
@@ -18,12 +18,12 @@ def test_repository_add_and_get_conversation_without_messages() -> None:
     conversation = Conversation.create(title="Empty Conversation")
 
     with Session(engine) as session:
-        repo = MssqlConversationRepository(session=session)
+        repo = MssqlConversationRepositoryAdapter(session=session)
         repo.add(conversation)
         session.commit()
 
     with Session(engine) as session:
-        repo = MssqlConversationRepository(session=session)
+        repo = MssqlConversationRepositoryAdapter(session=session)
         retrieved = repo.get(conversation.id)
 
         assert retrieved is not None
@@ -41,12 +41,12 @@ def test_repository_add_and_get_conversation_with_messages() -> None:
     conversation.append_assistant_message("Hello back from assistant")
 
     with Session(engine) as session:
-        repo = MssqlConversationRepository(session=session)
+        repo = MssqlConversationRepositoryAdapter(session=session)
         repo.add(conversation)
         session.commit()
 
     with Session(engine) as session:
-        repo = MssqlConversationRepository(session=session)
+        repo = MssqlConversationRepositoryAdapter(session=session)
         retrieved = repo.get(conversation.id)
 
         assert retrieved is not None
@@ -67,7 +67,7 @@ def test_repository_update_existing_conversation_and_append_new_messages() -> No
     conversation.append_user_message("Message 1")
 
     with Session(engine) as session:
-        repo = MssqlConversationRepository(session=session)
+        repo = MssqlConversationRepositoryAdapter(session=session)
         repo.add(conversation)
         session.commit()
 
@@ -76,12 +76,12 @@ def test_repository_update_existing_conversation_and_append_new_messages() -> No
     conversation.append_assistant_message("Message 2")
 
     with Session(engine) as session:
-        repo = MssqlConversationRepository(session=session)
+        repo = MssqlConversationRepositoryAdapter(session=session)
         repo.add(conversation)
         session.commit()
 
     with Session(engine) as session:
-        repo = MssqlConversationRepository(session=session)
+        repo = MssqlConversationRepositoryAdapter(session=session)
         retrieved = repo.get(conversation.id)
 
         assert retrieved is not None
@@ -96,7 +96,7 @@ def test_repository_get_nonexistent_returns_none() -> None:
     SQLModel.metadata.create_all(engine)
 
     with Session(engine) as session:
-        repo = MssqlConversationRepository(session=session)
+        repo = MssqlConversationRepositoryAdapter(session=session)
         assert repo.get(uuid4()) is None
 
 
@@ -108,13 +108,13 @@ def test_repository_list_conversations() -> None:
     conv2 = Conversation.create(title="Second Conv")
 
     with Session(engine) as session:
-        repo = MssqlConversationRepository(session=session)
+        repo = MssqlConversationRepositoryAdapter(session=session)
         repo.add(conv1)
         repo.add(conv2)
         session.commit()
 
     with Session(engine) as session:
-        repo = MssqlConversationRepository(session=session)
+        repo = MssqlConversationRepositoryAdapter(session=session)
         all_convs = repo.list()
         assert len(all_convs) == 2
         titles = {c.title for c in all_convs}
@@ -129,7 +129,7 @@ def test_repository_add_automatically_drains_and_persists_domain_events_to_outbo
     conversation.append_user_message("Hello transactional outbox")
 
     with Session(engine) as session:
-        repo = MssqlConversationRepository(session=session)
+        repo = MssqlConversationRepositoryAdapter(session=session)
         repo.add(conversation)
         session.commit()
 

@@ -2,10 +2,10 @@
 
 import pytest
 
-from src.application.shared.ports.event_publisher import EventPublisher
+from src.application.shared.ports.event_publisher import EventPublisherPort
 from src.application.tools.commands.execute_sandboxed_tool import (
     ExecuteSandboxedToolCommand,
-    ExecuteSandboxedToolHandler,
+    ExecuteSandboxedToolCommandHandler,
 )
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.domain.tools.events.tool_events import ToolExecutionCompletedDomainEvent
@@ -51,7 +51,7 @@ class FakeRegistry(ToolRegistryPort):
         return tool_name in self.allowed.get(str(tenant_id), set())
 
 
-class FakePublisher(EventPublisher):
+class FakePublisher(EventPublisherPort):
     def __init__(self) -> None:
         self.events: list[object] = []
 
@@ -71,7 +71,7 @@ async def test_execute_sandboxed_tool_handler_success() -> None:
     registry.allowed["corp-acme"] = {"get_weather"}
     publisher = FakePublisher()
 
-    handler = ExecuteSandboxedToolHandler(
+    handler = ExecuteSandboxedToolCommandHandler(
         runner=runner,
         tool_registry=registry,
         event_publisher=publisher,
@@ -107,7 +107,7 @@ async def test_execute_sandboxed_tool_handler_success() -> None:
 async def test_execute_sandboxed_tool_not_found_raises_tool_not_found_error() -> None:
     runner = FakeSandboxedRunner()
     registry = FakeRegistry()
-    handler = ExecuteSandboxedToolHandler(
+    handler = ExecuteSandboxedToolCommandHandler(
         runner=runner,
         tool_registry=registry,
     )
@@ -133,7 +133,7 @@ async def test_execute_sandboxed_tool_not_allowed_for_tenant_raises_value_error(
         parameters_schema={},
     )
     # Not adding to registry.allowed["corp-acme"]
-    handler = ExecuteSandboxedToolHandler(
+    handler = ExecuteSandboxedToolCommandHandler(
         runner=runner,
         tool_registry=registry,
     )

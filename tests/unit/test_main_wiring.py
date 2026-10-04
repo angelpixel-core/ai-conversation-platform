@@ -2,7 +2,9 @@
 
 from fastapi import FastAPI
 
-from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWork
+from src.infrastructure.persistence.in_memory.unit_of_work import (
+    InMemoryUnitOfWorkAdapter,
+)
 from src.infrastructure.shared.config.settings import PersistenceDriver, Settings
 from src.main import create_app
 
@@ -22,6 +24,6 @@ def test_create_app_with_mssql_driver_wires_mssql_uow() -> None:
 
 
 def test_create_app_with_explicit_uow() -> None:
-    custom_uow = InMemoryUnitOfWork()
+    custom_uow = InMemoryUnitOfWorkAdapter()
     app = create_app(unit_of_work=custom_uow)
     assert isinstance(app, FastAPI)

@@ -68,3 +68,6 @@ class RabbitMQPublisherAdapter(MessageBrokerPort):
         )
 
         await exchange.publish(message, routing_key=topic)
+
+
+__all__ = ["RabbitMQPublisherAdapter"]

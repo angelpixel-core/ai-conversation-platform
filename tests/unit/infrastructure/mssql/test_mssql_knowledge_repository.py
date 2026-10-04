@@ -1,4 +1,4 @@
-"""Unit tests for MssqlKnowledgeRepository adapter."""
+"""Unit tests for MssqlKnowledgeRepositoryAdapter adapter."""
 
 from collections.abc import Iterator
 
@@ -10,7 +10,7 @@ from src.domain.knowledge.entities.document_chunk import DocumentChunk
 from src.domain.knowledge.value_objects.embedding_vector import EmbeddingVector
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.infrastructure.persistence.mssql.mssql_knowledge_repository import (
-    MssqlKnowledgeRepository,
+    MssqlKnowledgeRepositoryAdapter,
 )
 
 
@@ -23,7 +23,7 @@ def fixture_sqlite_session() -> Iterator[Session]:
 
 
 def test_mssql_knowledge_repo_save_and_get_document(sqlite_session: Session) -> None:
-    repo = MssqlKnowledgeRepository(session=sqlite_session)
+    repo = MssqlKnowledgeRepositoryAdapter(session=sqlite_session)
     tid = TenantId("tenant-acme")
     other_tid = TenantId("tenant-other")
 
@@ -41,7 +41,7 @@ def test_mssql_knowledge_repo_save_and_get_document(sqlite_session: Session) -> 
 
 
 def test_mssql_knowledge_repo_chunks_and_hybrid_search(sqlite_session: Session) -> None:
-    repo = MssqlKnowledgeRepository(session=sqlite_session)
+    repo = MssqlKnowledgeRepositoryAdapter(session=sqlite_session)
     tid = TenantId("tenant-acme")
     other_tid = TenantId("tenant-other")
 

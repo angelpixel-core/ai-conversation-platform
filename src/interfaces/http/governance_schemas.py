@@ -25,3 +25,9 @@ class GovernanceMetricsResponse(BaseModel):
     total_incidents: int = Field(description="Total count of security incidents")
     by_severity: dict[str, int] = Field(description="Breakdown by severity level")
     by_rule: dict[str, int] = Field(description="Breakdown by rule violation type")
+
+
+__all__ = [
+    "GovernanceMetricsResponse",
+    "IncidentResponse",
+]

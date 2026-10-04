@@ -3,7 +3,8 @@
 from dataclasses import dataclass
 from decimal import Decimal
 
-from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.shared.ports.unit_of_work import UnitOfWorkPort
+from src.domain.tenants.exceptions import TenantNotFoundError
 from src.domain.tenants.value_objects.tenant_id import TenantId
 
 
@@ -29,15 +30,32 @@ class ReserveQuotaResult:
 class ReserveQuotaCommandHandler:
     """Application use case for processing tenant quota reservations."""
 
-    def __init__(self, unit_of_work: UnitOfWork) -> None:
+    def __init__(self, unit_of_work: UnitOfWorkPort) -> None:
+        """Initializes the handler with a transactional unit of work.
+
+        Args:
+            unit_of_work: Transactional boundary port managing repository state.
+        """
         self._unit_of_work = unit_of_work
 
     def handle(self, command: ReserveQuotaCommand) -> ReserveQuotaResult:
+        """Processes atomic budget reservation for a tenant.
+
+        Args:
+            command: ReserveQuotaCommand payload.
+
+        Returns:
+            ReserveQuotaResult with reserved amount and updated available balance.
+
+        Raises:
+            TenantNotFoundError: If tenant does not exist.
+            InsufficientBudgetError: If available balance is less than estimated cost.
+        """
         tenant_vo = TenantId(command.tenant_id)
         with self._unit_of_work as uow:
             tenant = uow.tenants.get_for_update(tenant_vo)
             if tenant is None:
-                raise ValueError(f"Tenant '{command.tenant_id}' no encontrado.")
+                raise TenantNotFoundError(f"Tenant '{command.tenant_id}' no encontrado.")
 
             tenant.reserve_budget(
                 estimated_cost=command.estimated_cost,
@@ -53,3 +71,10 @@ class ReserveQuotaCommandHandler:
                 remaining_balance=tenant.budget.available_balance,
                 model_id=command.model_id,
             )
+
+
+__all__ = [
+    "ReserveQuotaCommand",
+    "ReserveQuotaCommandHandler",
+    "ReserveQuotaResult",
+]
