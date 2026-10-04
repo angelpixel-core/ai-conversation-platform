@@ -11,11 +11,11 @@ from fastapi.responses import StreamingResponse
 
 from src.application.conversations.commands.create_conversation import (
     CreateConversationCommand,
-    CreateConversationHandler,
+    CreateConversationCommandHandler,
 )
 from src.application.conversations.commands.send_message import (
     SendMessageCommand,
-    SendMessageHandler,
+    SendMessageCommandHandler,
 )
 from src.application.conversations.queries.stream_conversation import (
     StreamConversationQuery,
@@ -34,7 +34,7 @@ from src.application.shared.idempotency.idempotent_command_executor import (
     IdempotencyConflictError,
     IdempotentCommandExecutor,
 )
-from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.shared.ports.unit_of_work import UnitOfWorkPort
 from src.application.shared.tenancy.tenant_context import tenant_context
 from src.domain.conversations.exceptions import ConversationNotFoundError
 from src.domain.conversations.value_objects.message import MessageRole
@@ -57,7 +57,7 @@ from src.interfaces.http.schemas import (
 
 async def _fetch_streaming_citations(
     retriever_service: HybridRetrieverService | None,
-    unit_of_work: UnitOfWork | None,
+    unit_of_work: UnitOfWorkPort | None,
     conversation_id: UUID,
     tenant_id_str: str | None,
 ) -> list[Citation]:
@@ -79,7 +79,7 @@ async def _fetch_streaming_citations(
 
 
 def _fetch_streaming_tool_events(
-    unit_of_work: UnitOfWork | None,
+    unit_of_work: UnitOfWorkPort | None,
     conversation_id: UUID,
     tenant_id_str: str | None,
 ) -> list[tuple[str, dict[str, Any]]]:
@@ -124,7 +124,7 @@ async def _sse_event_stream(
 
 
 def _fetch_persisted_assistant_tokens(
-    unit_of_work: UnitOfWork | None,
+    unit_of_work: UnitOfWorkPort | None,
     conversation_id: UUID,
 ) -> AsyncIterator[str] | None:
     if unit_of_work is None:
@@ -147,7 +147,7 @@ async def _resolve_assistant_stream_fallback(
     conversation_id: UUID,
     error: DomainError,
     stream_recovery_service: StreamRecoveryService | None = None,
-    unit_of_work: UnitOfWork | None = None,
+    unit_of_work: UnitOfWorkPort | None = None,
     has_metadata_events: bool = False,
 ) -> AsyncIterator[str]:
     error_str = str(error).lower()
@@ -182,7 +182,7 @@ async def _resolve_assistant_stream_fallback(
 
 def _register_conversation_routes(
     router: APIRouter,
-    create_conversation_handler: CreateConversationHandler | None,
+    create_conversation_handler: CreateConversationCommandHandler | None,
     idempotent_executor: IdempotentCommandExecutor | None,
 ) -> None:
     @router.post(
@@ -202,7 +202,7 @@ def _register_conversation_routes(
         if handler is None:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="CreateConversationHandler not configured.",
+                detail="CreateConversationCommandHandler not configured.",
             )
 
         async def _execute() -> ConversationResponse:
@@ -234,7 +234,7 @@ def _register_conversation_routes(
 
 def _register_message_routes(
     router: APIRouter,
-    send_message_handler: SendMessageHandler | None,
+    send_message_handler: SendMessageCommandHandler | None,
     idempotent_executor: IdempotentCommandExecutor | None,
     guarded_executor: GuardedCommandExecutor | None,
 ) -> None:
@@ -256,7 +256,7 @@ def _register_message_routes(
         if handler is None:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="SendMessageHandler not configured.",
+                detail="SendMessageCommandHandler not configured.",
             )
 
         async def _execute_with_text(text: str) -> MessageResponse:
@@ -317,7 +317,7 @@ def _register_streaming_routes(
     stream_conversation_handler: StreamConversationQueryHandler | None,
     stream_recovery_service: StreamRecoveryService | None,
     retriever_service: HybridRetrieverService | None,
-    unit_of_work: UnitOfWork | None,
+    unit_of_work: UnitOfWorkPort | None,
 ) -> None:
     @router.get(
         "/conversations/{conversation_id}/stream",
@@ -386,13 +386,13 @@ def _register_streaming_routes(
 
 
 def create_conversations_router(
-    create_conversation_handler: CreateConversationHandler | None = None,
-    send_message_handler: SendMessageHandler | None = None,
+    create_conversation_handler: CreateConversationCommandHandler | None = None,
+    send_message_handler: SendMessageCommandHandler | None = None,
     stream_conversation_handler: StreamConversationQueryHandler | None = None,
     idempotent_executor: IdempotentCommandExecutor | None = None,
     stream_recovery_service: StreamRecoveryService | None = None,
     retriever_service: HybridRetrieverService | None = None,
-    unit_of_work: UnitOfWork | None = None,
+    unit_of_work: UnitOfWorkPort | None = None,
     guarded_executor: GuardedCommandExecutor | None = None,
 ) -> APIRouter:
     """Create modular APIRouter handling conversations, messages, and streaming."""

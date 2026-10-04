@@ -68,5 +68,8 @@ class AppendAssistantMessageCommandHandler:
             )
 
 
-# Alias for backward compatibility
-AppendAssistantMessageHandler = AppendAssistantMessageCommandHandler
+__all__ = [
+    "AppendAssistantMessageCommand",
+    "AppendAssistantMessageCommandHandler",
+    "AppendAssistantMessageResult",
+]

@@ -4,10 +4,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 from src.application.conversations.commands.create_conversation import (
-    CreateConversationHandler,
+    CreateConversationCommandHandler,
 )
 from src.application.conversations.commands.send_message import (
-    SendMessageHandler,
+    SendMessageCommandHandler,
 )
 from src.application.shared.idempotency.idempotent_command_executor import (
     IdempotentCommandExecutor,
@@ -15,18 +15,18 @@ from src.application.shared.idempotency.idempotent_command_executor import (
 from src.infrastructure.persistence.in_memory.in_memory_idempotency_repository import (
     InMemoryIdempotencyRepositoryAdapter,
 )
-from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWork
+from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWorkAdapter
 from src.interfaces.http.api import build_api
 
 
 @pytest.fixture
 def app_with_idempotency() -> TestClient:
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     idempotency_repo = InMemoryIdempotencyRepositoryAdapter()
     executor = IdempotentCommandExecutor(idempotency_repo=idempotency_repo)
 
-    create_handler = CreateConversationHandler(unit_of_work=uow)
-    send_handler = SendMessageHandler(unit_of_work=uow)
+    create_handler = CreateConversationCommandHandler(unit_of_work=uow)
+    send_handler = SendMessageCommandHandler(unit_of_work=uow)
 
     app = build_api(
         create_conversation_handler=create_handler,

@@ -192,7 +192,7 @@ graph TD
         FakeLlmClient["FakeLlmClientAdapter"]
         HttpxLlmClient["HttpxLlmClientAdapter"]
         MssqlModels["MSSQL Models (SQLModel)"]
-        ConversationMapper["ConversationMapper (DataMapper)"]
+        ConversationMapper["ConversationMapper"]
         MssqlConnection["MSSQL Connection & SessionFactory"]
         MssqlRepo["MssqlConversationRepositoryAdapter"]
         MssqlOutbox["MssqlOutboxRepositoryAdapter"]
@@ -208,28 +208,28 @@ graph TD
         MssqlIdempotencyRepo["MssqlIdempotencyRepositoryAdapter"]
         MssqlAuditRepo["MssqlAuditRepositoryAdapter"]
         MssqlStreamBufferRepo["MssqlStreamBufferRepositoryAdapter"]
-        TenantDataMapperNode["TenantMapper (DataMapper)"]
+        TenantMapperNode["TenantMapper"]
         MssqlTenantRepoNode["MssqlTenantRepositoryAdapter"]
         InMemoryTenantRepoNode["InMemoryTenantRepositoryAdapter"]
         InMemoryModelCatalogNode["InMemoryModelCatalogAdapter"]
-        KnowledgeDataMapperNode["KnowledgeMapper (DataMapper)"]
+        KnowledgeMapperNode["KnowledgeMapper"]
         MssqlKnowledgeRepoNode["MssqlKnowledgeRepositoryAdapter"]
         FakeEmbeddingClientNode["FakeEmbeddingClientAdapter"]
         HttpxEmbeddingClientNode["HttpxEmbeddingClientAdapter"]
         KnowledgeTopologyNode["KnowledgeTopologyConfig"]
         AnyioDocumentIndexerWorkerNode["AnyioDocumentIndexerWorker"]
-        ToolApprovalDataMapperNode["ToolApprovalMapper (DataMapper)"]
+        ToolApprovalMapperNode["ToolApprovalMapper"]
         MssqlToolApprovalRepoNode["MssqlToolApprovalRepositoryAdapter"]
         InMemoryToolApprovalRepoNode["InMemoryToolApprovalRepositoryAdapter"]
         AnyioSandboxedToolRunnerNode["AnyioSandboxedToolRunnerAdapter"]
         ToolsTopologyNode["ToolsTopologyConfig"]
         AnyioToolExecutionWorkerNode["AnyioToolExecutionWorker"]
-        WorkflowMapperNode["WorkflowMapper (DataMapper)"]
+        WorkflowMapperNode["WorkflowMapper"]
         MssqlWorkflowCheckpointRepoNode["MssqlWorkflowCheckpointRepositoryAdapter"]
         InMemoryWorkflowCheckpointRepoNode["InMemoryWorkflowCheckpointRepositoryAdapter"]
         MultiAgentTopologyNode["MultiAgentTopologyConfig"]
         AnyioSubagentWorkerNode["AnyioSubagentWorker"]
-        GovernanceMapperNode["GovernanceMapper (DataMapper)"]
+        GovernanceMapperNode["GovernanceMapper"]
         MssqlIncidentRepoNode["MssqlIncidentRepositoryAdapter"]
         InMemoryIncidentRepoNode["InMemoryIncidentRepositoryAdapter"]
         RegexPiiScannerAdapterNode["RegexPiiScannerAdapter"]
@@ -395,10 +395,10 @@ graph TD
     ModelRouterServiceNode --> TenantAggregate
     MssqlTenantRepoNode -- Implementa --> TenantRepoPort
     InMemoryTenantRepoNode -- Implementa --> TenantRepoPort
-    MssqlTenantRepoNode --> TenantDataMapperNode
+    MssqlTenantRepoNode --> TenantMapperNode
     MssqlTenantRepoNode --> MssqlModels
-    TenantDataMapperNode --> TenantAggregate
-    TenantDataMapperNode --> MssqlModels
+    TenantMapperNode --> TenantAggregate
+    TenantMapperNode --> MssqlModels
     MssqlUOW --> MssqlTenantRepoNode
     InMemoryUOW --> InMemoryTenantRepoNode
     AppContainerNode --> ModelCatalogPortNode
@@ -436,11 +436,11 @@ graph TD
     InMemoryUOW --> InMemoryKnowledgeRepoNode
     MssqlKnowledgeRepoNode -- Implementa --> KnowledgeRepoPortNode
     MssqlUOW --> MssqlKnowledgeRepoNode
-    MssqlKnowledgeRepoNode --> KnowledgeDataMapperNode
+    MssqlKnowledgeRepoNode --> KnowledgeMapperNode
     MssqlKnowledgeRepoNode --> MssqlModels
-    KnowledgeDataMapperNode --> DocumentAggregate
-    KnowledgeDataMapperNode --> DocumentChunkEntity
-    KnowledgeDataMapperNode --> MssqlModels
+    KnowledgeMapperNode --> DocumentAggregate
+    KnowledgeMapperNode --> DocumentChunkEntity
+    KnowledgeMapperNode --> MssqlModels
     FakeEmbeddingClientNode -- Implementa --> EmbeddingClientPortNode
     HttpxEmbeddingClientNode -- Implementa --> EmbeddingClientPortNode
     AnyioDocumentIndexerWorkerNode --> UOWPort
@@ -458,10 +458,10 @@ graph TD
     MssqlToolApprovalRepoNode -- Implementa --> ToolApprovalRepoPortNode
     InMemoryToolApprovalRepoNode -- Implementa --> ToolApprovalRepoPortNode
     AnyioSandboxedToolRunnerNode -- Implementa --> SandboxedToolRunnerPortNode
-    MssqlToolApprovalRepoNode --> ToolApprovalDataMapperNode
+    MssqlToolApprovalRepoNode --> ToolApprovalMapperNode
     MssqlToolApprovalRepoNode --> MssqlModels
-    ToolApprovalDataMapperNode --> ToolApprovalRequestAggregate
-    ToolApprovalDataMapperNode --> MssqlModels
+    ToolApprovalMapperNode --> ToolApprovalRequestAggregate
+    ToolApprovalMapperNode --> MssqlModels
     MssqlUOW --> MssqlToolApprovalRepoNode
     InMemoryUOW --> InMemoryToolApprovalRepoNode
     UOWPort --> ToolApprovalRepoPortNode

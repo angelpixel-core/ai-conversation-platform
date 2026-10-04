@@ -27,7 +27,7 @@ from src.infrastructure.messaging.rabbitmq.rabbitmq_publisher_adapter import (
 from src.infrastructure.messaging.rabbitmq.rabbitmq_topology_config import (
     RabbitMQTopologyConfig,
 )
-from src.infrastructure.persistence.mssql.unit_of_work import MssqlUnitOfWork
+from src.infrastructure.persistence.mssql.unit_of_work import MssqlUnitOfWorkAdapter
 from src.worker_container import WorkerContainer
 
 
@@ -85,7 +85,7 @@ async def test_worker_e2e_full_cycle_with_real_mssql_and_rabbitmq(
 
     try:
         # 1. Prepare conversation in MSSQL using test UoW
-        test_uow = MssqlUnitOfWork(session_factory=mssql_session_factory)
+        test_uow = MssqlUnitOfWorkAdapter(session_factory=mssql_session_factory)
         conversation = Conversation.create(title="E2E Architecture Session")
         conversation.append_user_message("Explain DDD tactical patterns.")
         with test_uow:
@@ -93,7 +93,7 @@ async def test_worker_e2e_full_cycle_with_real_mssql_and_rabbitmq(
             test_uow.commit()
 
         # 2. Wire Worker Container with dedicated worker UoW
-        worker_uow = MssqlUnitOfWork(session_factory=mssql_session_factory)
+        worker_uow = MssqlUnitOfWorkAdapter(session_factory=mssql_session_factory)
         llm = RealStubLlmClient(["Entities", ", Value Objects", " and Aggregates."])
         consumer = RabbitMQConsumerAdapter(
             connection_manager=rabbitmq_connection_manager,
@@ -186,14 +186,14 @@ async def test_worker_routes_to_dlq_on_fatal_llm_failure(
     declared = await topo.declare_topology(channel)
 
     try:
-        test_uow = MssqlUnitOfWork(session_factory=mssql_session_factory)
+        test_uow = MssqlUnitOfWorkAdapter(session_factory=mssql_session_factory)
         conversation = Conversation.create(title="Failing LLM Session")
         conversation.append_user_message("Will fail.")
         with test_uow:
             test_uow.conversations.add(conversation)
             test_uow.commit()
 
-        worker_uow = MssqlUnitOfWork(session_factory=mssql_session_factory)
+        worker_uow = MssqlUnitOfWorkAdapter(session_factory=mssql_session_factory)
         failing_llm = FatalErrorLlmClient()
         consumer = RabbitMQConsumerAdapter(
             connection_manager=rabbitmq_connection_manager,

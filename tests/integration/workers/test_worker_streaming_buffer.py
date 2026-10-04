@@ -13,14 +13,14 @@ from src.application.shared.ports.llm_client import LlmClientPort
 from src.domain.conversations.entities.conversation import Conversation
 from src.domain.conversations.value_objects.message import MessageRole
 from src.domain.shared.events.event_envelope import EventEnvelope
-from src.infrastructure.persistence.mssql.audit_repository import MssqlAuditRepository
+from src.infrastructure.persistence.mssql.audit_repository import MssqlAuditRepositoryAdapter
 from src.infrastructure.persistence.mssql.idempotency_repository import (
-    MssqlIdempotencyRepository,
+    MssqlIdempotencyRepositoryAdapter,
 )
 from src.infrastructure.persistence.mssql.stream_buffer_repository import (
-    MssqlStreamBufferRepository,
+    MssqlStreamBufferRepositoryAdapter,
 )
-from src.infrastructure.persistence.mssql.unit_of_work import MssqlUnitOfWork
+from src.infrastructure.persistence.mssql.unit_of_work import MssqlUnitOfWorkAdapter
 
 
 class RealStubLlmClient(LlmClientPort):
@@ -47,7 +47,7 @@ async def test_worker_persists_streaming_buffer_and_audit_log_in_mssql(
     mssql_session_factory: Callable[[], Session],
 ) -> None:
     # 1. Arrange: Create conversation in real MSSQL
-    uow = MssqlUnitOfWork(session_factory=mssql_session_factory)
+    uow = MssqlUnitOfWorkAdapter(session_factory=mssql_session_factory)
     conversation = Conversation.create(title="Streaming Buffer Worker Integration")
     conversation.append_user_message("Stream to buffer test")
     conversation.pull_events()  # Clear events to avoid outbox dispatch to external running worker
@@ -56,9 +56,9 @@ async def test_worker_persists_streaming_buffer_and_audit_log_in_mssql(
         uow.commit()
 
     # 2. Wire Worker with real MSSQL repositories backed by session factory
-    stream_buffer_repo = MssqlStreamBufferRepository(session=mssql_session_factory)
-    audit_repo = MssqlAuditRepository(session=mssql_session_factory)
-    idempotency_repo = MssqlIdempotencyRepository(session=mssql_session_factory)
+    stream_buffer_repo = MssqlStreamBufferRepositoryAdapter(session=mssql_session_factory)
+    audit_repo = MssqlAuditRepositoryAdapter(session=mssql_session_factory)
+    idempotency_repo = MssqlIdempotencyRepositoryAdapter(session=mssql_session_factory)
     llm = RealStubLlmClient(["Chunk A", ", ", "Chunk B."])
 
     worker = LlmMessageProcessingWorker(

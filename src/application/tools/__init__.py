@@ -2,17 +2,17 @@
 
 from src.application.tools.commands.approve_tool_execution import (
     ApproveToolExecutionCommand,
-    ApproveToolExecutionHandler,
+    ApproveToolExecutionCommandHandler,
     ApproveToolExecutionResult,
 )
 from src.application.tools.commands.execute_sandboxed_tool import (
     ExecuteSandboxedToolCommand,
-    ExecuteSandboxedToolHandler,
+    ExecuteSandboxedToolCommandHandler,
     ExecuteSandboxedToolResult,
 )
 from src.application.tools.commands.reject_tool_execution import (
     RejectToolExecutionCommand,
-    RejectToolExecutionHandler,
+    RejectToolExecutionCommandHandler,
     RejectToolExecutionResult,
 )
 from src.application.tools.services.tool_policy_evaluator_service import (
@@ -21,13 +21,13 @@ from src.application.tools.services.tool_policy_evaluator_service import (
 
 __all__ = [
     "ApproveToolExecutionCommand",
-    "ApproveToolExecutionHandler",
+    "ApproveToolExecutionCommandHandler",
     "ApproveToolExecutionResult",
     "ExecuteSandboxedToolCommand",
-    "ExecuteSandboxedToolHandler",
+    "ExecuteSandboxedToolCommandHandler",
     "ExecuteSandboxedToolResult",
     "RejectToolExecutionCommand",
-    "RejectToolExecutionHandler",
+    "RejectToolExecutionCommandHandler",
     "RejectToolExecutionResult",
     "ToolPolicyEvaluatorService",
 ]

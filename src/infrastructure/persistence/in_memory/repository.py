@@ -1,10 +1,12 @@
 from uuid import UUID
 
 from src.domain.conversations.entities.conversation import Conversation
-from src.domain.conversations.ports.conversation_repository import ConversationRepository
+from src.domain.conversations.ports.conversation_repository import (
+    ConversationRepositoryPort,
+)
 
 
-class InMemoryConversationRepository(ConversationRepository):
+class InMemoryConversationRepositoryAdapter(ConversationRepositoryPort):
     """Simple adapter used for the first local vertical slice."""
 
     def __init__(self) -> None:
@@ -20,5 +22,4 @@ class InMemoryConversationRepository(ConversationRepository):
         return list(self._items.values())
 
 
-# Canonical adapter alias conforming to <Technology><Port>Adapter
-InMemoryConversationRepositoryAdapter = InMemoryConversationRepository
+__all__ = ["InMemoryConversationRepositoryAdapter"]

@@ -4,7 +4,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 
-from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.shared.ports.unit_of_work import UnitOfWorkPort
 from src.domain.knowledge.entities.document import Document
 from src.domain.shared.events.event_envelope import EventEnvelope
 from src.domain.tenants.value_objects.tenant_id import TenantId
@@ -19,7 +19,7 @@ from src.interfaces.http.knowledge_schemas import (
 
 
 def create_knowledge_router(
-    unit_of_work: UnitOfWork,
+    unit_of_work: UnitOfWorkPort,
     indexer_worker: AnyioDocumentIndexerWorker | None = None,
 ) -> APIRouter:
     """Creates FastAPI APIRouter for tenant-scoped knowledge documents."""

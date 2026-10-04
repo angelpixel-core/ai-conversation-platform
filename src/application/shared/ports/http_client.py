@@ -14,5 +14,4 @@ class HttpClientPort(ABC):
         raise NotImplementedError
 
 
-# Alias for backward compatibility
-HttpClient = HttpClientPort
+__all__ = ["HttpClientPort"]

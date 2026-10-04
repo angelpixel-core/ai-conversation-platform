@@ -9,7 +9,7 @@ from typing import Any
 import anyio
 
 from src.application.agents.ports.subagent_executor_port import SubAgentExecutorPort
-from src.application.shared.ports.event_publisher import EventPublisher
+from src.application.shared.ports.event_publisher import EventPublisherPort
 from src.domain.agents.events.workflow_events import SubAgentTaskDelegatedDomainEvent
 from src.domain.agents.value_objects.agent_role import AgentRole
 from src.domain.shared.events.event_envelope import EventEnvelope
@@ -23,7 +23,7 @@ class AnyioSubagentWorker:
     def __init__(
         self,
         executor: SubAgentExecutorPort,
-        event_publisher: EventPublisher | None = None,
+        event_publisher: EventPublisherPort | None = None,
         concurrency_limit: int = 5,
     ) -> None:
         self._executor = executor

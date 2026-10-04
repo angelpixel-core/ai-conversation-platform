@@ -9,7 +9,7 @@ from src.infrastructure.persistence.mssql.models import OutboxMessageModel
 from src.infrastructure.shared.persistence.outbox.in_memory import OutboxMessage, OutboxStatus
 
 
-class MssqlOutboxRepository:
+class MssqlOutboxRepositoryAdapter:
     """Relational adapter for transactional persistence of domain events in the outbox."""
 
     def __init__(self, session: Session) -> None:
@@ -109,5 +109,4 @@ class MssqlOutboxRepository:
         )
 
 
-# Canonical adapter alias conforming to <Technology><Port>Adapter
-MssqlOutboxRepositoryAdapter = MssqlOutboxRepository
+__all__ = ["MssqlOutboxRepositoryAdapter"]

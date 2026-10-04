@@ -5,7 +5,7 @@ from typing import Any
 
 import anyio
 
-from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.shared.ports.unit_of_work import UnitOfWorkPort
 from src.domain.knowledge.entities.document import Document
 from src.domain.knowledge.entities.document_chunk import DocumentChunk
 from src.domain.knowledge.exceptions import DocumentNotFoundError
@@ -22,7 +22,7 @@ class AnyioDocumentIndexerWorker:
 
     def __init__(
         self,
-        unit_of_work: UnitOfWork,
+        unit_of_work: UnitOfWorkPort,
         embedding_client: EmbeddingClientPort,
         chunk_size: int = 500,
         chunk_overlap: int = 50,

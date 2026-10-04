@@ -87,5 +87,8 @@ class ResumeWorkflowCommandHandler:
         )
 
 
-# Alias for backward compatibility
-ResumeWorkflowHandler = ResumeWorkflowCommandHandler
+__all__ = [
+    "ResumeWorkflowCommand",
+    "ResumeWorkflowCommandHandler",
+    "ResumeWorkflowResult",
+]

@@ -38,5 +38,4 @@ class InMemoryStreamBufferRepositoryAdapter(StreamBufferRepositoryPort):
         return list(self._buffers.get(stream_id, []))
 
 
-# Backward compatible alias
-InMemoryStreamBufferRepository = InMemoryStreamBufferRepositoryAdapter
+__all__ = ["InMemoryStreamBufferRepositoryAdapter"]

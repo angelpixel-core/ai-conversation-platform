@@ -55,5 +55,4 @@ class InMemoryIncidentRepositoryAdapter(IncidentRepositoryPort):
         }
 
 
-# Backward compatible alias
-InMemoryIncidentRepository = InMemoryIncidentRepositoryAdapter
+__all__ = ["InMemoryIncidentRepositoryAdapter"]

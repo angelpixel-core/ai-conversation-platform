@@ -7,10 +7,10 @@ from src.application.agents.services.graph_execution_engine import (
     GraphExecutionEngine,
 )
 from src.application.conversations.commands.create_conversation import (
-    CreateConversationHandler,
+    CreateConversationCommandHandler,
 )
 from src.application.conversations.commands.send_message import (
-    SendMessageHandler,
+    SendMessageCommandHandler,
 )
 from src.application.conversations.queries.stream_conversation import (
     StreamConversationQueryHandler,
@@ -28,7 +28,7 @@ from src.application.shared.idempotency.idempotent_command_executor import (
     IdempotencyConflictError,
     IdempotentCommandExecutor,
 )
-from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.shared.ports.unit_of_work import UnitOfWorkPort
 from src.domain.agents.ports.workflow_checkpoint_repository_port import (
     WorkflowCheckpointRepositoryPort,
 )
@@ -81,10 +81,10 @@ def _register_health_routes(app: FastAPI) -> None:
 
 def _register_conversation_routes(
     app: FastAPI,
-    create_handler: CreateConversationHandler | None,
+    create_handler: CreateConversationCommandHandler | None,
     idempotent_executor: IdempotentCommandExecutor | None = None,
 ) -> None:
-    """Backward-compatible helper to mount conversation creation routes."""
+    """Helper to mount conversation creation routes."""
     app.include_router(
         create_conversations_router(
             create_conversation_handler=create_handler,
@@ -95,11 +95,11 @@ def _register_conversation_routes(
 
 def _register_message_routes(
     app: FastAPI,
-    send_handler: SendMessageHandler | None,
+    send_handler: SendMessageCommandHandler | None,
     idempotent_executor: IdempotentCommandExecutor | None = None,
     guarded_executor: GuardedCommandExecutor | None = None,
 ) -> None:
-    """Backward-compatible helper to mount conversation message routes."""
+    """Helper to mount conversation message routes."""
     app.include_router(
         create_conversations_router(
             send_message_handler=send_handler,
@@ -114,9 +114,9 @@ def _register_streaming_routes(
     stream_handler: StreamConversationQueryHandler | None,
     stream_recovery_service: StreamRecoveryService | None = None,
     retriever_service: HybridRetrieverService | None = None,
-    unit_of_work: UnitOfWork | None = None,
+    unit_of_work: UnitOfWorkPort | None = None,
 ) -> None:
-    """Backward-compatible helper to mount conversation streaming routes."""
+    """Helper to mount conversation streaming routes."""
     app.include_router(
         create_conversations_router(
             stream_conversation_handler=stream_handler,
@@ -247,16 +247,16 @@ def _register_exception_handlers(app: FastAPI) -> None:
 
 
 def build_api(
-    create_conversation_handler: CreateConversationHandler | None = None,
-    send_message_handler: SendMessageHandler | None = None,
+    create_conversation_handler: CreateConversationCommandHandler | None = None,
+    send_message_handler: SendMessageCommandHandler | None = None,
     stream_conversation_handler: StreamConversationQueryHandler | None = None,
     idempotent_executor: IdempotentCommandExecutor | None = None,
     stream_recovery_service: StreamRecoveryService | None = None,
-    unit_of_work: UnitOfWork | None = None,
+    unit_of_work: UnitOfWorkPort | None = None,
     guarded_executor: GuardedCommandExecutor | None = None,
     incident_repo: IncidentRepositoryPort | None = None,
     *,
-    handler: CreateConversationHandler | None = None,
+    handler: CreateConversationCommandHandler | None = None,
     enable_tenant_middleware: bool = False,
     enable_opentelemetry_middleware: bool = False,
     retriever_service: HybridRetrieverService | None = None,

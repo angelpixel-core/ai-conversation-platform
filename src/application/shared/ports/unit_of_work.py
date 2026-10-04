@@ -2,7 +2,9 @@ from abc import ABC, abstractmethod
 from types import TracebackType
 from typing import Self
 
-from src.domain.conversations.ports.conversation_repository import ConversationRepository
+from src.domain.conversations.ports.conversation_repository import (
+    ConversationRepositoryPort,
+)
 from src.domain.knowledge.ports.knowledge_repository_port import KnowledgeRepositoryPort
 from src.domain.tenants.ports.tenant_repository_port import TenantRepositoryPort
 from src.domain.tools.ports.tool_approval_repository_port import (
@@ -17,7 +19,7 @@ class UnitOfWorkPort(ABC):
     domain aggregate repositories, ensuring atomic commits and outbox event dispatch.
     """
 
-    conversations: ConversationRepository
+    conversations: ConversationRepositoryPort
     tenants: TenantRepositoryPort
     knowledge: KnowledgeRepositoryPort
     tool_approvals: ToolApprovalRepositoryPort
@@ -44,5 +46,4 @@ class UnitOfWorkPort(ABC):
         raise NotImplementedError
 
 
-# Alias for backward compatibility
-UnitOfWork = UnitOfWorkPort
+__all__ = ["UnitOfWorkPort"]

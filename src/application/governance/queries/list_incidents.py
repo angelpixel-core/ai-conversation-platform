@@ -32,5 +32,7 @@ class ListIncidentsQueryHandler:
         )
 
 
-# Alias for backward compatibility
-ListIncidentsHandler = ListIncidentsQueryHandler
+__all__ = [
+    "ListIncidentsQuery",
+    "ListIncidentsQueryHandler",
+]

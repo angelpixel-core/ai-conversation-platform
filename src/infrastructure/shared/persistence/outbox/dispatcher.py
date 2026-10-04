@@ -3,25 +3,25 @@
 import inspect
 from typing import Any
 
-from src.application.shared.ports.event_publisher import EventPublisher
+from src.application.shared.ports.event_publisher import EventPublisherPort
 from src.infrastructure.shared.persistence.outbox.in_memory import (
-    InMemoryOutboxRepository,
+    InMemoryOutboxRepositoryAdapter,
 )
 
 
-class OutboxDispatcher:
+class OutboxDispatcherAdapter:
     """Asynchronous worker for dispatching pending outbox messages."""
 
     def __init__(
         self,
-        repository: InMemoryOutboxRepository,
-        event_publisher: EventPublisher,
+        repository: InMemoryOutboxRepositoryAdapter,
+        event_publisher: EventPublisherPort,
     ) -> None:
         self._repository = repository
         self._publisher = event_publisher
 
     async def dispatch_pending(self) -> int:
-        """Process all pending outbox messages and publish them via EventPublisher.
+        """Process all pending outbox messages and publish them via EventPublisherPort.
 
         Returns:
             int: Number of pending messages processed.
@@ -41,5 +41,4 @@ class OutboxDispatcher:
         return len(pending)
 
 
-# Canonical adapter alias conforming to <Technology><Port>Adapter standard
-OutboxDispatcherAdapter = OutboxDispatcher
+__all__ = ["OutboxDispatcherAdapter"]

@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.application.shared.ports.event_publisher import EventPublisher
+from src.application.shared.ports.event_publisher import EventPublisherPort
 from src.domain.shared.events.event_envelope import EventEnvelope
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.domain.tools.events.tool_events import ToolExecutionCompletedDomainEvent
@@ -53,7 +53,7 @@ class FakeRegistry(ToolRegistryPort):
         return tool_name in self.allowed.get(str(tenant_id), set())
 
 
-class FakePublisher(EventPublisher):
+class FakePublisher(EventPublisherPort):
     def __init__(self) -> None:
         self.events: list[object] = []
 

@@ -1,4 +1,4 @@
-"""WorkflowDataMapper for converting between domain entities and SQLModel models."""
+"""WorkflowMapper for converting between domain entities and SQLModel models."""
 
 import json
 
@@ -80,5 +80,4 @@ class WorkflowMapper:
     to_persistence_checkpoint = to_model_checkpoint
 
 
-# Alias for naming consistency
-WorkflowDataMapper = WorkflowMapper
+__all__ = ["WorkflowMapper"]

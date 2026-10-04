@@ -1,11 +1,11 @@
-"""Integration tests for MssqlAuditRepository against live SQL Server."""
+"""Integration tests for MssqlAuditRepositoryAdapter against live SQL Server."""
 
 import pytest
 from sqlalchemy.engine import Engine
 
 from src.domain.audit.audit_log_entity import AuditLogRecord
 from src.infrastructure.persistence.mssql.audit_repository import (
-    MssqlAuditRepository,
+    MssqlAuditRepositoryAdapter,
 )
 from src.infrastructure.persistence.mssql.connection import (
     create_session_factory,
@@ -37,12 +37,12 @@ async def test_mssql_audit_repository_record_and_query_real_db(
     )
 
     with session_factory() as session:
-        repo = MssqlAuditRepository(session=session)
+        repo = MssqlAuditRepositoryAdapter(session=session)
         await repo.record(entry1)
         await repo.record(entry2)
 
     with session_factory() as session:
-        repo = MssqlAuditRepository(session=session)
+        repo = MssqlAuditRepositoryAdapter(session=session)
         audits = await repo.list_by_resource("chat", "conv-int-100")
         assert len(audits) == 1
         assert audits[0].id == entry1.id

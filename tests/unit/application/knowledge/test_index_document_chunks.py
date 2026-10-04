@@ -1,4 +1,4 @@
-"""Unit tests for IndexDocumentChunksCommand and IndexDocumentChunksHandler."""
+"""Unit tests for IndexDocumentChunksCommand and IndexDocumentChunksCommandHandler."""
 
 from collections.abc import Sequence
 from typing import Self
@@ -8,9 +8,9 @@ import pytest
 from src.application.knowledge.commands.index_document_chunks import (
     ChunkInput,
     IndexDocumentChunksCommand,
-    IndexDocumentChunksHandler,
+    IndexDocumentChunksCommandHandler,
 )
-from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.shared.ports.unit_of_work import UnitOfWorkPort
 from src.domain.knowledge.entities.document import Document, DocumentStatus
 from src.domain.knowledge.entities.document_chunk import DocumentChunk
 from src.domain.knowledge.exceptions import DocumentNotFoundError
@@ -54,7 +54,7 @@ class FakeKnowledgeRepo(KnowledgeRepositoryPort):
         return []
 
 
-class FakeUnitOfWork(UnitOfWork):
+class FakeUnitOfWork(UnitOfWorkPort):
     def __init__(self) -> None:
         self.knowledge = FakeKnowledgeRepo()  # type: ignore[attr-defined]
         self.committed = False
@@ -83,7 +83,7 @@ async def test_index_document_chunks_success() -> None:
     doc = Document.create("doc-1", tid, "handbook.pdf")
     uow.knowledge.save_document(doc)
 
-    handler = IndexDocumentChunksHandler(
+    handler = IndexDocumentChunksCommandHandler(
         unit_of_work=uow,
         embedding_client=embedding_client,
     )
@@ -118,7 +118,7 @@ async def test_index_document_chunks_success() -> None:
 @pytest.mark.anyio
 async def test_index_document_chunks_document_not_found() -> None:
     uow = FakeUnitOfWork()
-    handler = IndexDocumentChunksHandler(
+    handler = IndexDocumentChunksCommandHandler(
         unit_of_work=uow,
         embedding_client=FakeEmbeddingClient(),
     )
@@ -140,7 +140,7 @@ async def test_index_document_chunks_empty_chunks_raises_error() -> None:
     doc = Document.create("doc-1", tid, "handbook.pdf")
     uow.knowledge.save_document(doc)
 
-    handler = IndexDocumentChunksHandler(
+    handler = IndexDocumentChunksCommandHandler(
         unit_of_work=uow,
         embedding_client=FakeEmbeddingClient(),
     )
@@ -167,7 +167,7 @@ async def test_index_document_chunks_embedding_failure_marks_document_failed() -
     doc = Document.create("doc-1", tid, "handbook.pdf")
     uow.knowledge.save_document(doc)
 
-    handler = IndexDocumentChunksHandler(
+    handler = IndexDocumentChunksCommandHandler(
         unit_of_work=uow,
         embedding_client=FailingEmbeddingClient(),
     )

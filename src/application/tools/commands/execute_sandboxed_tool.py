@@ -105,5 +105,8 @@ class ExecuteSandboxedToolCommandHandler:
         )
 
 
-# Alias for backward compatibility
-ExecuteSandboxedToolHandler = ExecuteSandboxedToolCommandHandler
+__all__ = [
+    "ExecuteSandboxedToolCommand",
+    "ExecuteSandboxedToolCommandHandler",
+    "ExecuteSandboxedToolResult",
+]

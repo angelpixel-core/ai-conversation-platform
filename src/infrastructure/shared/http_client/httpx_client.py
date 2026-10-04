@@ -2,10 +2,10 @@ from typing import Any
 
 import httpx
 
-from src.application.shared.ports.http_client import HttpClient
+from src.application.shared.ports.http_client import HttpClientPort
 
 
-class HttpxClient(HttpClient):
+class HttpxHttpClientAdapter(HttpClientPort):
     """HTTP adapter used for external network requests and service integrations."""
 
     def __init__(self, timeout: float = 30.0) -> None:
@@ -17,6 +17,4 @@ class HttpxClient(HttpClient):
             return await client.request(method, url, **kwargs)
 
 
-# Canonical adapter aliases conforming to <Technology><Port>Adapter standard
-HttpxHttpClientAdapter = HttpxClient
-HttpxClientAdapter = HttpxClient
+__all__ = ["HttpxHttpClientAdapter"]

@@ -56,5 +56,4 @@ class ToolApprovalMapper:
     to_persistence = to_model
 
 
-# Alias for naming consistency
-ToolApprovalDataMapper = ToolApprovalMapper
+__all__ = ["ToolApprovalMapper"]

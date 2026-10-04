@@ -11,7 +11,7 @@ from src.domain.audit.ports.audit_repository_port import AuditRepositoryPort
 from src.infrastructure.persistence.mssql.models import AuditLogModel
 
 
-class MssqlAuditRepository(AuditRepositoryPort):
+class MssqlAuditRepositoryAdapter(AuditRepositoryPort):
     """Relational adapter for audit log persistence backed by SQLModel."""
 
     def __init__(self, session: Session | Callable[[], Session]) -> None:
@@ -68,5 +68,4 @@ class MssqlAuditRepository(AuditRepositoryPort):
             ]
 
 
-# Canonical adapter alias conforming to <Technology><Port>Adapter
-MssqlAuditRepositoryAdapter = MssqlAuditRepository
+__all__ = ["MssqlAuditRepositoryAdapter"]

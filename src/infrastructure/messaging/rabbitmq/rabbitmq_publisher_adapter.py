@@ -70,6 +70,4 @@ class RabbitMQPublisherAdapter(MessageBrokerPort):
         await exchange.publish(message, routing_key=topic)
 
 
-# Canonical aliases conforming to <Technology><Port>Adapter standard
-RabbitMqPublisherAdapter = RabbitMQPublisherAdapter
-RabbitMqEventPublisherAdapter = RabbitMQPublisherAdapter
+__all__ = ["RabbitMQPublisherAdapter"]

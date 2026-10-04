@@ -89,5 +89,8 @@ class RejectToolExecutionCommandHandler:
         )
 
 
-# Alias for backward compatibility
-RejectToolExecutionHandler = RejectToolExecutionCommandHandler
+__all__ = [
+    "RejectToolExecutionCommand",
+    "RejectToolExecutionCommandHandler",
+    "RejectToolExecutionResult",
+]

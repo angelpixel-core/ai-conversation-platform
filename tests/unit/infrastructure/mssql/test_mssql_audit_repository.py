@@ -1,4 +1,4 @@
-"""Unit tests for MssqlAuditRepository adapter."""
+"""Unit tests for MssqlAuditRepositoryAdapter adapter."""
 
 from collections.abc import Iterator
 
@@ -8,7 +8,7 @@ from sqlmodel import Session, SQLModel, create_engine
 from src.domain.audit.audit_log_entity import AuditLogRecord
 from src.domain.audit.ports.audit_repository_port import AuditRepositoryPort
 from src.infrastructure.persistence.mssql.audit_repository import (
-    MssqlAuditRepository,
+    MssqlAuditRepositoryAdapter,
 )
 
 
@@ -22,7 +22,7 @@ def fixture_session() -> Iterator[Session]:
 
 @pytest.mark.anyio
 async def test_mssql_audit_repository_records_and_queries(session: Session) -> None:
-    repo = MssqlAuditRepository(session=session)
+    repo = MssqlAuditRepositoryAdapter(session=session)
     assert isinstance(repo, AuditRepositoryPort)
 
     entry1 = AuditLogRecord.create(

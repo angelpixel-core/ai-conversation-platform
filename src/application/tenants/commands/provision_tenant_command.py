@@ -101,5 +101,8 @@ class ProvisionTenantCommandHandler:
             )
 
 
-# Alias for backward compatibility
-ProvisionTenantHandler = ProvisionTenantCommandHandler
+__all__ = [
+    "ProvisionTenantCommand",
+    "ProvisionTenantCommandHandler",
+    "ProvisionTenantResult",
+]

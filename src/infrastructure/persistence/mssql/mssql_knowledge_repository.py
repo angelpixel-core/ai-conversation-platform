@@ -9,11 +9,11 @@ from src.domain.knowledge.entities.document_chunk import DocumentChunk
 from src.domain.knowledge.ports.knowledge_repository_port import KnowledgeRepositoryPort
 from src.domain.knowledge.value_objects.embedding_vector import EmbeddingVector
 from src.domain.tenants.value_objects.tenant_id import TenantId
-from src.infrastructure.persistence.mssql.knowledge_mapper import KnowledgeDataMapper
+from src.infrastructure.persistence.mssql.knowledge_mapper import KnowledgeMapper
 from src.infrastructure.persistence.mssql.models import DocumentChunkModel, DocumentModel
 
 
-class MssqlKnowledgeRepository(KnowledgeRepositoryPort):
+class MssqlKnowledgeRepositoryAdapter(KnowledgeRepositoryPort):
     """SQLModel-backed repository for knowledge documents with hybrid vector retrieval."""
 
     def __init__(self, session: Session) -> None:
@@ -21,7 +21,7 @@ class MssqlKnowledgeRepository(KnowledgeRepositoryPort):
 
     def save_document(self, document: Document) -> None:
         """Persists or updates a knowledge document aggregate."""
-        model = KnowledgeDataMapper.to_model_document(document)
+        model = KnowledgeMapper.to_model_document(document)
         self._session.merge(model)
 
     def get_document(self, tenant_id: TenantId, document_id: str) -> Document | None:
@@ -33,12 +33,12 @@ class MssqlKnowledgeRepository(KnowledgeRepositoryPort):
         model = self._session.exec(statement).first()
         if model is None:
             return None
-        return KnowledgeDataMapper.to_domain_document(model)
+        return KnowledgeMapper.to_domain_document(model)
 
     def save_chunks(self, chunks: Sequence[DocumentChunk]) -> None:
         """Persists a batch of document chunks with their vector embeddings."""
         for chunk in chunks:
-            model = KnowledgeDataMapper.to_model_chunk(chunk)
+            model = KnowledgeMapper.to_model_chunk(chunk)
             self._session.merge(model)
 
     def get_chunks_by_document(self, tenant_id: TenantId, document_id: str) -> list[DocumentChunk]:
@@ -52,7 +52,7 @@ class MssqlKnowledgeRepository(KnowledgeRepositoryPort):
             .order_by(DocumentChunkModel.sequence_number)  # pyright: ignore[reportArgumentType]
         )
         models = self._session.exec(statement).all()
-        return [KnowledgeDataMapper.to_domain_chunk(m) for m in models]
+        return [KnowledgeMapper.to_domain_chunk(m) for m in models]
 
     def search_hybrid(
         self,
@@ -73,7 +73,7 @@ class MssqlKnowledgeRepository(KnowledgeRepositoryPort):
         results: list[tuple[DocumentChunk, float]] = []
 
         for model in chunk_models:
-            chunk = KnowledgeDataMapper.to_domain_chunk(model)
+            chunk = KnowledgeMapper.to_domain_chunk(model)
             v_score = query_vector.cosine_similarity(chunk.embedding)
             content_lower = chunk.content.lower()
             matches = sum(1 for t in tokens if t in content_lower)
@@ -87,5 +87,4 @@ class MssqlKnowledgeRepository(KnowledgeRepositoryPort):
         return results[:top_k]
 
 
-# Canonical adapter alias conforming to <Technology><Port>Adapter
-MssqlKnowledgeRepositoryAdapter = MssqlKnowledgeRepository
+__all__ = ["MssqlKnowledgeRepositoryAdapter"]

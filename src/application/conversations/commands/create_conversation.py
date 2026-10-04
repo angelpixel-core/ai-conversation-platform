@@ -51,5 +51,8 @@ class CreateConversationCommandHandler:
             )
 
 
-# Alias for backward compatibility
-CreateConversationHandler = CreateConversationCommandHandler
+__all__ = [
+    "CreateConversationCommand",
+    "CreateConversationCommandHandler",
+    "CreateConversationResult",
+]

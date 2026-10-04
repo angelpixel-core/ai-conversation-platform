@@ -7,7 +7,7 @@ from typing import Any
 
 import anyio
 
-from src.application.shared.ports.event_publisher import EventPublisher
+from src.application.shared.ports.event_publisher import EventPublisherPort
 from src.domain.shared.events.event_envelope import EventEnvelope
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.domain.tools.events.tool_events import ToolExecutionCompletedDomainEvent
@@ -28,7 +28,7 @@ class AnyioToolExecutionWorker:
         self,
         runner: SandboxedToolRunnerPort,
         tool_registry: ToolRegistryPort,
-        event_publisher: EventPublisher | None = None,
+        event_publisher: EventPublisherPort | None = None,
         concurrency_limit: int = 5,
     ) -> None:
         self._runner = runner

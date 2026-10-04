@@ -59,5 +59,4 @@ class InMemoryKnowledgeRepositoryAdapter(KnowledgeRepositoryPort):
         return results[:top_k]
 
 
-# Backward compatible alias
-InMemoryKnowledgeRepository = InMemoryKnowledgeRepositoryAdapter
+__all__ = ["InMemoryKnowledgeRepositoryAdapter"]

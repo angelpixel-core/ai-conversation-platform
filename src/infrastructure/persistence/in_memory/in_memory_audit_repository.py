@@ -31,5 +31,4 @@ class InMemoryAuditRepositoryAdapter(AuditRepositoryPort):
         return list(self._records)
 
 
-# Backward compatible alias
-InMemoryAuditRepository = InMemoryAuditRepositoryAdapter
+__all__ = ["InMemoryAuditRepositoryAdapter"]

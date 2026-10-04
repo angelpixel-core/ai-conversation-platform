@@ -64,5 +64,4 @@ class InMemoryIdempotencyRepositoryAdapter(IdempotencyRepositoryPort):
             )
 
 
-# Backward compatible alias
-InMemoryIdempotencyRepository = InMemoryIdempotencyRepositoryAdapter
+__all__ = ["InMemoryIdempotencyRepositoryAdapter"]

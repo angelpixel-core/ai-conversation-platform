@@ -1,4 +1,4 @@
-"""Unit tests for MssqlIdempotencyRepository adapter."""
+"""Unit tests for MssqlIdempotencyRepositoryAdapter adapter."""
 
 from collections.abc import Iterator
 
@@ -10,7 +10,7 @@ from src.application.shared.ports.idempotency_repository_port import (
     IdempotencyStatus,
 )
 from src.infrastructure.persistence.mssql.idempotency_repository import (
-    MssqlIdempotencyRepository,
+    MssqlIdempotencyRepositoryAdapter,
 )
 
 
@@ -24,7 +24,7 @@ def fixture_session() -> Iterator[Session]:
 
 @pytest.mark.anyio
 async def test_mssql_idempotency_repository_lifecycle(session: Session) -> None:
-    repo = MssqlIdempotencyRepository(session=session)
+    repo = MssqlIdempotencyRepositoryAdapter(session=session)
     assert isinstance(repo, IdempotencyRepositoryPort)
 
     key = "idem-mssql-123"
@@ -53,7 +53,7 @@ async def test_mssql_idempotency_repository_lifecycle(session: Session) -> None:
 
 @pytest.mark.anyio
 async def test_mssql_idempotency_repository_mark_failed(session: Session) -> None:
-    repo = MssqlIdempotencyRepository(session=session)
+    repo = MssqlIdempotencyRepositoryAdapter(session=session)
     key = "idem-fail-mssql"
 
     await repo.try_acquire(key)

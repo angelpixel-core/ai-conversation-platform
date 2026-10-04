@@ -121,6 +121,4 @@ class RabbitMQConsumerAdapter(EventConsumerPort):
         self._consumer_tag = None
 
 
-# Canonical aliases conforming to <Technology><Port>Adapter standard
-RabbitMqConsumerAdapter = RabbitMQConsumerAdapter
-RabbitMqEventConsumerAdapter = RabbitMQConsumerAdapter
+__all__ = ["RabbitMQConsumerAdapter"]

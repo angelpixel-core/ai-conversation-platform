@@ -18,7 +18,7 @@ from src.infrastructure.persistence.mssql.models import (
 from src.infrastructure.persistence.mssql.workflow_mapper import WorkflowMapper
 
 
-class MssqlWorkflowCheckpointRepository(WorkflowCheckpointRepositoryPort):
+class MssqlWorkflowCheckpointRepositoryAdapter(WorkflowCheckpointRepositoryPort):
     """MSSQL 2022 persistent adapter for workflow instances and immutable checkpoints."""
 
     def __init__(self, session: Session | Callable[[], Session]) -> None:
@@ -89,5 +89,4 @@ class MssqlWorkflowCheckpointRepository(WorkflowCheckpointRepositoryPort):
             return [WorkflowMapper.to_domain_checkpoint(m) for m in models]
 
 
-# Canonical adapter alias conforming to <Technology><Port>Adapter
-MssqlWorkflowCheckpointRepositoryAdapter = MssqlWorkflowCheckpointRepository
+__all__ = ["MssqlWorkflowCheckpointRepositoryAdapter"]

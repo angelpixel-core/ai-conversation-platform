@@ -89,5 +89,8 @@ class ApproveToolExecutionCommandHandler:
         )
 
 
-# Alias for backward compatibility
-ApproveToolExecutionHandler = ApproveToolExecutionCommandHandler
+__all__ = [
+    "ApproveToolExecutionCommand",
+    "ApproveToolExecutionCommandHandler",
+    "ApproveToolExecutionResult",
+]

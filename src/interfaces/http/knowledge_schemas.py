@@ -57,10 +57,7 @@ class CitationSchema(BaseModel):
     snippet: str
 
 
-CitationResponse = CitationSchema
-
 __all__ = [
-    "CitationResponse",
     "CitationSchema",
     "DocumentStatusResponse",
     "DocumentUploadRequest",

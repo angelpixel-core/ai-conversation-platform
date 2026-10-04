@@ -11,7 +11,7 @@ from src.domain.tenants.entities.tenant import Tenant
 from src.domain.tenants.value_objects.monetary_budget import MonetaryBudget
 from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.infrastructure.persistence.mssql.connection import create_session_factory
-from src.infrastructure.persistence.mssql.tenant_repository import MssqlTenantRepository
+from src.infrastructure.persistence.mssql.tenant_repository import MssqlTenantRepositoryAdapter
 
 
 def test_concurrent_reservations_prevent_overdraft_sqlite() -> None:
@@ -21,7 +21,7 @@ def test_concurrent_reservations_prevent_overdraft_sqlite() -> None:
 
     # 1. Initialize tenant with $10.00 balance
     with Session(engine) as session:
-        repo = MssqlTenantRepository(session=session)
+        repo = MssqlTenantRepositoryAdapter(session=session)
         tenant = Tenant(
             tenant_id=TenantId("race-tenant"),
             name="Race Tenant",
@@ -35,7 +35,7 @@ def test_concurrent_reservations_prevent_overdraft_sqlite() -> None:
 
     def attempt_reservation(cost: Decimal) -> None:
         with Session(engine) as session:
-            repo = MssqlTenantRepository(session=session)
+            repo = MssqlTenantRepositoryAdapter(session=session)
             t = repo.get_for_update(TenantId("race-tenant"))
             if t is None:
                 results.append(False)
@@ -57,7 +57,7 @@ def test_concurrent_reservations_prevent_overdraft_sqlite() -> None:
 
     # Verify final state: balance $10.00, reserved $8.00, available $2.00
     with Session(engine) as session:
-        repo = MssqlTenantRepository(session=session)
+        repo = MssqlTenantRepositoryAdapter(session=session)
         final_t = repo.get(TenantId("race-tenant"))
         assert final_t is not None
         assert final_t.budget.balance == Decimal("10.0000")
@@ -75,7 +75,7 @@ def test_concurrent_threads_reservation_simulation() -> None:
     SQLModel.metadata.create_all(engine)
 
     with Session(engine) as session:
-        repo = MssqlTenantRepository(session=session)
+        repo = MssqlTenantRepositoryAdapter(session=session)
         tenant = Tenant(
             tenant_id=TenantId("threaded-tenant"),
             name="Threaded Tenant",
@@ -89,7 +89,7 @@ def test_concurrent_threads_reservation_simulation() -> None:
 
     def worker_reserve() -> None:
         with Session(engine) as session:
-            repo = MssqlTenantRepository(session=session)
+            repo = MssqlTenantRepositoryAdapter(session=session)
             with lock:
                 t = repo.get_for_update(TenantId("threaded-tenant"))
                 if t and t.budget.can_reserve(Decimal("10.0000")):
@@ -117,7 +117,7 @@ def test_concurrent_reservations_live_mssql(mssql_engine: Engine, clean_db: None
     session_factory = create_session_factory(mssql_engine)
 
     with session_factory() as session:
-        repo = MssqlTenantRepository(session=session)
+        repo = MssqlTenantRepositoryAdapter(session=session)
         tenant = Tenant(
             tenant_id=TenantId("mssql-lock-tenant"),
             name="MSSQL Lock Tenant",
@@ -131,7 +131,7 @@ def test_concurrent_reservations_live_mssql(mssql_engine: Engine, clean_db: None
     failures = 0
     for _ in range(2):
         with session_factory() as session:
-            repo = MssqlTenantRepository(session=session)
+            repo = MssqlTenantRepositoryAdapter(session=session)
             t = repo.get_for_update(TenantId("mssql-lock-tenant"))
             if t and t.budget.can_reserve(Decimal("7.0000")):
                 t.reserve_budget(Decimal("7.0000"), "gpt-4o-mini")

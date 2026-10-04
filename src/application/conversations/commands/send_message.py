@@ -68,5 +68,8 @@ class SendMessageCommandHandler:
             )
 
 
-# Alias for backward compatibility
-SendMessageHandler = SendMessageCommandHandler
+__all__ = [
+    "SendMessageCommand",
+    "SendMessageCommandHandler",
+    "SendMessageResult",
+]

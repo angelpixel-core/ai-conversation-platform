@@ -3,17 +3,19 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWork
+from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWorkAdapter
 from src.interfaces.http.api import build_api
 
 
 @pytest.fixture
-def uow() -> InMemoryUnitOfWork:
-    return InMemoryUnitOfWork()
+def uow() -> InMemoryUnitOfWorkAdapter:
+    return InMemoryUnitOfWorkAdapter()
 
 
 @pytest.mark.anyio
-async def test_upload_document_endpoint_returns_202_accepted(uow: InMemoryUnitOfWork) -> None:
+async def test_upload_document_endpoint_returns_202_accepted(
+    uow: InMemoryUnitOfWorkAdapter,
+) -> None:
     app = build_api(unit_of_work=uow)
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -34,7 +36,7 @@ async def test_upload_document_endpoint_returns_202_accepted(uow: InMemoryUnitOf
 
 
 @pytest.mark.anyio
-async def test_get_document_status_endpoint(uow: InMemoryUnitOfWork) -> None:
+async def test_get_document_status_endpoint(uow: InMemoryUnitOfWorkAdapter) -> None:
     app = build_api(unit_of_work=uow)
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -64,7 +66,7 @@ async def test_get_document_status_endpoint(uow: InMemoryUnitOfWork) -> None:
 
 
 @pytest.mark.anyio
-async def test_get_nonexistent_document_status_returns_404(uow: InMemoryUnitOfWork) -> None:
+async def test_get_nonexistent_document_status_returns_404(uow: InMemoryUnitOfWorkAdapter) -> None:
     app = build_api(unit_of_work=uow)
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:

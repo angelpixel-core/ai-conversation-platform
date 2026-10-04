@@ -38,5 +38,7 @@ class GetGovernanceMetricsQueryHandler:
         return await self._incident_repo.get_metrics(tenant_id=tenant_id)
 
 
-# Alias for backward compatibility
-GetGovernanceMetricsHandler = GetGovernanceMetricsQueryHandler
+__all__ = [
+    "GetGovernanceMetricsQuery",
+    "GetGovernanceMetricsQueryHandler",
+]

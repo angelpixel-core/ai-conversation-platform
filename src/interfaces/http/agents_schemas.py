@@ -83,10 +83,7 @@ class AgentActivityEventSchema(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
-AgentActivityEventResponse = AgentActivityEventSchema
-
 __all__ = [
-    "AgentActivityEventResponse",
     "AgentActivityEventSchema",
     "ResumeWorkflowRequest",
     "StartWorkflowRequest",

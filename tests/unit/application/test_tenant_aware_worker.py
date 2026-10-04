@@ -16,7 +16,7 @@ from src.domain.shared.events.event_envelope import EventEnvelope
 from src.domain.tenants.entities.tenant import Tenant
 from src.domain.tenants.value_objects.monetary_budget import MonetaryBudget
 from src.domain.tenants.value_objects.tenant_id import TenantId
-from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWork
+from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWorkAdapter
 
 
 class ContextInspectingLlmClient(LlmClientPort):
@@ -67,12 +67,12 @@ class FallbackLlmClient(LlmClientPort):
 
 
 @pytest.fixture
-def uow() -> InMemoryUnitOfWork:
-    return InMemoryUnitOfWork()
+def uow() -> InMemoryUnitOfWorkAdapter:
+    return InMemoryUnitOfWorkAdapter()
 
 
 @pytest.fixture
-def active_conversation(uow: InMemoryUnitOfWork) -> Conversation:
+def active_conversation(uow: InMemoryUnitOfWorkAdapter) -> Conversation:
     conversation = Conversation.create(title="Tenant Support")
     conversation.append_user_message("Need billing report")
     uow.conversations.add(conversation)
@@ -82,7 +82,7 @@ def active_conversation(uow: InMemoryUnitOfWork) -> Conversation:
 
 @pytest.mark.anyio
 async def test_worker_propagates_tenant_context_during_inference(
-    uow: InMemoryUnitOfWork, active_conversation: Conversation
+    uow: InMemoryUnitOfWorkAdapter, active_conversation: Conversation
 ) -> None:
     llm = ContextInspectingLlmClient(["Your ", "report ", "is ready."])
     worker = LlmMessageProcessingWorker(unit_of_work=uow, llm_client=llm)
@@ -105,7 +105,7 @@ async def test_worker_propagates_tenant_context_during_inference(
 
 @pytest.mark.anyio
 async def test_worker_settles_quota_after_inference(
-    uow: InMemoryUnitOfWork, active_conversation: Conversation
+    uow: InMemoryUnitOfWorkAdapter, active_conversation: Conversation
 ) -> None:
     # 1. Setup tenant with $100 balance and $10 reserved
     tenant = Tenant(
@@ -147,7 +147,7 @@ async def test_worker_settles_quota_after_inference(
 
 @pytest.mark.anyio
 async def test_worker_fallback_llm_on_primary_failure(
-    uow: InMemoryUnitOfWork, active_conversation: Conversation
+    uow: InMemoryUnitOfWorkAdapter, active_conversation: Conversation
 ) -> None:
     primary_llm = FailingLlmClient()
     fallback_llm = FallbackLlmClient(["Fallback ", "response ", "delivered."])

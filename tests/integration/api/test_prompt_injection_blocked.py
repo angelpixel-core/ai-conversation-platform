@@ -5,10 +5,10 @@ from httpx import ASGITransport, AsyncClient
 
 from src.application.conversations.commands.create_conversation import (
     CreateConversationCommand,
-    CreateConversationHandler,
+    CreateConversationCommandHandler,
 )
 from src.application.conversations.commands.send_message import (
-    SendMessageHandler,
+    SendMessageCommandHandler,
 )
 from src.application.governance.services.guardrail_pipeline_service import (
     SafetyGuardrailPipelineService,
@@ -27,14 +27,14 @@ from src.infrastructure.persistence.in_memory.in_memory_incident_repository impo
     InMemoryIncidentRepositoryAdapter,
 )
 from src.infrastructure.persistence.in_memory.unit_of_work import (
-    InMemoryUnitOfWork,
+    InMemoryUnitOfWorkAdapter,
 )
 from src.interfaces.http.api import build_api
 
 
 @pytest.fixture
-def api_app() -> tuple[AsyncClient, InMemoryIncidentRepositoryAdapter, InMemoryUnitOfWork]:
-    uow = InMemoryUnitOfWork()
+def api_app() -> tuple[AsyncClient, InMemoryIncidentRepositoryAdapter, InMemoryUnitOfWorkAdapter]:
+    uow = InMemoryUnitOfWorkAdapter()
     incident_repo = InMemoryIncidentRepositoryAdapter()
     pipeline = SafetyGuardrailPipelineService(
         safety_guardrail=HeuristicInjectionDetectorAdapter(),
@@ -44,8 +44,8 @@ def api_app() -> tuple[AsyncClient, InMemoryIncidentRepositoryAdapter, InMemoryU
         pipeline=pipeline,
         incident_repo=incident_repo,
     )
-    create_handler = CreateConversationHandler(uow)
-    send_handler = SendMessageHandler(uow)
+    create_handler = CreateConversationCommandHandler(uow)
+    send_handler = SendMessageCommandHandler(uow)
 
     app = build_api(
         create_conversation_handler=create_handler,
@@ -59,10 +59,12 @@ def api_app() -> tuple[AsyncClient, InMemoryIncidentRepositoryAdapter, InMemoryU
 
 @pytest.mark.anyio
 async def test_prompt_injection_blocked_with_incident_audit(
-    api_app: tuple[AsyncClient, InMemoryIncidentRepositoryAdapter, InMemoryUnitOfWork],
+    api_app: tuple[AsyncClient, InMemoryIncidentRepositoryAdapter, InMemoryUnitOfWorkAdapter],
 ) -> None:
     client, incident_repo, uow = api_app
-    create_res = CreateConversationHandler(uow).handle(CreateConversationCommand(title="Test Conv"))
+    create_res = CreateConversationCommandHandler(uow).handle(
+        CreateConversationCommand(title="Test Conv")
+    )
     conv_id = create_res.conversation_id
 
     injection_payload = {

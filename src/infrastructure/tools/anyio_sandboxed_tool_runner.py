@@ -17,7 +17,7 @@ from src.domain.tools.value_objects.tool_result import ToolResult
 logger = logging.getLogger(__name__)
 
 
-class AnyioSandboxedToolRunner(SandboxedToolRunnerPort):
+class AnyioSandboxedToolRunnerAdapter(SandboxedToolRunnerPort):
     """Executes external tools with strict timeout guards using AnyIO."""
 
     def __init__(self, registry_handlers: dict[str, Callable[..., Any]] | None = None) -> None:
@@ -66,5 +66,4 @@ class AnyioSandboxedToolRunner(SandboxedToolRunnerPort):
             )
 
 
-# Canonical adapter alias conforming to <Technology><Port>Adapter standard
-AnyioSandboxedToolRunnerAdapter = AnyioSandboxedToolRunner
+__all__ = ["AnyioSandboxedToolRunnerAdapter"]

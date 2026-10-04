@@ -73,5 +73,8 @@ class ReserveQuotaCommandHandler:
             )
 
 
-# Alias for backward compatibility
-ReserveQuotaHandler = ReserveQuotaCommandHandler
+__all__ = [
+    "ReserveQuotaCommand",
+    "ReserveQuotaCommandHandler",
+    "ReserveQuotaResult",
+]

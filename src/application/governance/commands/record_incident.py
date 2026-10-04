@@ -72,5 +72,7 @@ class RecordSecurityIncidentCommandHandler:
         return incident.id
 
 
-# Alias for backward compatibility
-RecordSecurityIncidentHandler = RecordSecurityIncidentCommandHandler
+__all__ = [
+    "RecordSecurityIncidentCommand",
+    "RecordSecurityIncidentCommandHandler",
+]

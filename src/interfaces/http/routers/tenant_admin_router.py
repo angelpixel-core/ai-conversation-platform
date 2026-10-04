@@ -6,7 +6,7 @@ from typing import NoReturn
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
-from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.shared.ports.unit_of_work import UnitOfWorkPort
 from src.application.tenants.commands.provision_tenant_command import (
     ProvisionTenantCommand,
     ProvisionTenantCommandHandler,
@@ -157,7 +157,7 @@ def _handle_create_tenant_error(exc: ValueError) -> NoReturn:
 
 
 def _get_tenant_or_404(
-    unit_of_work: UnitOfWork, tenant_id: str, for_update: bool = False
+    unit_of_work: UnitOfWorkPort, tenant_id: str, for_update: bool = False
 ) -> Tenant:
     tenant = (
         unit_of_work.tenants.get_for_update(TenantId(tenant_id))
@@ -177,7 +177,7 @@ def _get_tenant_or_404(
     return tenant
 
 
-def create_tenant_admin_router(unit_of_work: UnitOfWork) -> APIRouter:
+def create_tenant_admin_router(unit_of_work: UnitOfWorkPort) -> APIRouter:
     """Factory creating the administration APIRouter for tenants."""
     router = APIRouter(prefix="/admin/tenants", tags=["Tenant Administration"])
 

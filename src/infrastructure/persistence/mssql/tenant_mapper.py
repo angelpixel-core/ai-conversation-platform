@@ -10,7 +10,7 @@ from src.domain.tenants.value_objects.tenant_id import TenantId
 from src.infrastructure.persistence.mssql.models import TenantModel, TenantPolicyModel
 
 
-class TenantDataMapper:
+class TenantMapper:
     """Bidirectional data mapper between domain entities and SQLModel database models."""
 
     @staticmethod
@@ -75,8 +75,7 @@ class TenantDataMapper:
     @staticmethod
     def to_persistence(entity: Tenant) -> TenantModel:
         """Map Tenant aggregate root to SQLModel physical database records for persistence."""
-        return TenantDataMapper.to_model(entity)
+        return TenantMapper.to_model(entity)
 
 
-# Canonical alias conforming to <Entity>Mapper standard
-TenantMapper = TenantDataMapper
+__all__ = ["TenantMapper"]

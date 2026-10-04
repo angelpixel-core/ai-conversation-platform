@@ -124,5 +124,9 @@ class IndexDocumentChunksCommandHandler:
             raise
 
 
-# Alias for backward compatibility
-IndexDocumentChunksHandler = IndexDocumentChunksCommandHandler
+__all__ = [
+    "ChunkInput",
+    "IndexDocumentChunksCommand",
+    "IndexDocumentChunksCommandHandler",
+    "IndexDocumentChunksResult",
+]

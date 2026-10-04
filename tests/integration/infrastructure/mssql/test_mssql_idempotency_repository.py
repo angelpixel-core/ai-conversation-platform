@@ -1,4 +1,4 @@
-"""Integration tests for MssqlIdempotencyRepository against live SQL Server."""
+"""Integration tests for MssqlIdempotencyRepositoryAdapter against live SQL Server."""
 
 import pytest
 from sqlalchemy.engine import Engine
@@ -10,7 +10,7 @@ from src.infrastructure.persistence.mssql.connection import (
     create_session_factory,
 )
 from src.infrastructure.persistence.mssql.idempotency_repository import (
-    MssqlIdempotencyRepository,
+    MssqlIdempotencyRepositoryAdapter,
 )
 
 
@@ -22,24 +22,24 @@ async def test_mssql_idempotency_repository_lifecycle_real_db(
     key = "real-mssql-idem-key"
 
     with session_factory() as session:
-        repo = MssqlIdempotencyRepository(session=session)
+        repo = MssqlIdempotencyRepositoryAdapter(session=session)
         acquired = await repo.try_acquire(key)
         assert acquired is True
 
     # Duplicate acquisition in new session fails
     with session_factory() as session:
-        repo = MssqlIdempotencyRepository(session=session)
+        repo = MssqlIdempotencyRepositoryAdapter(session=session)
         second_acquire = await repo.try_acquire(key)
         assert second_acquire is False
 
     # Mark completed in new session
     with session_factory() as session:
-        repo = MssqlIdempotencyRepository(session=session)
+        repo = MssqlIdempotencyRepositoryAdapter(session=session)
         await repo.mark_completed(key, 201, {"resource_id": "abc-123"})
 
     # Query completed in new session
     with session_factory() as session:
-        repo = MssqlIdempotencyRepository(session=session)
+        repo = MssqlIdempotencyRepositoryAdapter(session=session)
         rec = await repo.get(key)
         assert rec is not None
         assert rec.status == IdempotencyStatus.COMPLETED

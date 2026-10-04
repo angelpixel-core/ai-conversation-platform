@@ -16,7 +16,7 @@ from src.application.shared.ports.idempotency_repository_port import (
 from src.infrastructure.persistence.mssql.models import IdempotencyRecordModel
 
 
-class MssqlIdempotencyRepository(IdempotencyRepositoryPort):
+class MssqlIdempotencyRepositoryAdapter(IdempotencyRepositoryPort):
     """Relational adapter for idempotency persistence backed by SQLModel."""
 
     def __init__(self, session: Session | Callable[[], Session]) -> None:
@@ -85,5 +85,4 @@ class MssqlIdempotencyRepository(IdempotencyRepositoryPort):
                 session.commit()
 
 
-# Canonical adapter alias conforming to <Technology><Port>Adapter
-MssqlIdempotencyRepositoryAdapter = MssqlIdempotencyRepository
+__all__ = ["MssqlIdempotencyRepositoryAdapter"]

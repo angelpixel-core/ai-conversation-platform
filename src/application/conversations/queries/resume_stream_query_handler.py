@@ -27,5 +27,7 @@ class ResumeStreamQueryHandler:
             yield chunk
 
 
-# Alias for backward compatibility
-ResumeStreamHandler = ResumeStreamQueryHandler
+__all__ = [
+    "ResumeStreamQuery",
+    "ResumeStreamQueryHandler",
+]

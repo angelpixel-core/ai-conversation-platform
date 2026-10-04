@@ -9,11 +9,11 @@ from src.application.tenants.commands.provision_tenant_command import (
     ProvisionTenantCommandHandler,
 )
 from src.domain.tenants.entities.tenant_policy import TenantTier
-from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWork
+from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWorkAdapter
 
 
 def test_provision_tenant_success() -> None:
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     handler = ProvisionTenantCommandHandler(unit_of_work=uow)
 
     command = ProvisionTenantCommand(
@@ -44,7 +44,7 @@ def test_provision_tenant_success() -> None:
 
 
 def test_provision_tenant_duplicate_fails() -> None:
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     handler = ProvisionTenantCommandHandler(unit_of_work=uow)
 
     command = ProvisionTenantCommand(

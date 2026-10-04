@@ -6,12 +6,10 @@ from fastapi.testclient import TestClient
 
 from src.domain.governance.exceptions import SafetyPolicyViolationError
 from src.interfaces.http.agents_schemas import (
-    AgentActivityEventResponse,
     AgentActivityEventSchema,
 )
 from src.interfaces.http.api import build_api
 from src.interfaces.http.knowledge_schemas import (
-    CitationResponse,
     CitationSchema,
 )
 from src.interfaces.http.problem_details import (
@@ -154,7 +152,15 @@ def test_api_exception_handler__conversation_not_found() -> None:
     assert data["code"] == "CONVERSATION_NOT_FOUND"
 
 
-def test_schema_aliases_conformance() -> None:
-    """Verifies Pydantic v2 DTO backward-compatible schema aliases."""
-    assert CitationResponse is CitationSchema
-    assert AgentActivityEventResponse is AgentActivityEventSchema
+def test_schemas_conformance() -> None:
+    """Verifies Pydantic v2 DTO schemas instantiate correctly."""
+    citation = CitationSchema(
+        source_document_id="doc-1",
+        document_name="guide.pdf",
+        chunk_id="chunk-1",
+        similarity_score=0.95,
+        snippet="test text",
+    )
+    assert citation.source_document_id == "doc-1"
+    event = AgentActivityEventSchema(event_type="test", data={"k": "v"})
+    assert event.event_type == "test"

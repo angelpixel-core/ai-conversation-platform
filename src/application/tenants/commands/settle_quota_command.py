@@ -70,5 +70,8 @@ class SettleQuotaCommandHandler:
             )
 
 
-# Alias for backward compatibility
-SettleQuotaHandler = SettleQuotaCommandHandler
+__all__ = [
+    "SettleQuotaCommand",
+    "SettleQuotaCommandHandler",
+    "SettleQuotaResult",
+]

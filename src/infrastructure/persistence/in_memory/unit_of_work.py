@@ -1,31 +1,33 @@
 from types import TracebackType
 from typing import Self
 
-from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.shared.ports.unit_of_work import UnitOfWorkPort
 from src.infrastructure.persistence.in_memory.in_memory_tool_approval_repository import (
-    InMemoryToolApprovalRepository,
+    InMemoryToolApprovalRepositoryAdapter,
 )
 from src.infrastructure.persistence.in_memory.knowledge_repository import (
     InMemoryKnowledgeRepositoryAdapter,
 )
-from src.infrastructure.persistence.in_memory.repository import InMemoryConversationRepository
+from src.infrastructure.persistence.in_memory.repository import (
+    InMemoryConversationRepositoryAdapter,
+)
 from src.infrastructure.persistence.in_memory.tenant_repository import (
     InMemoryTenantRepositoryAdapter,
 )
 
 
-class InMemoryUnitOfWork(UnitOfWork):
+class InMemoryUnitOfWorkAdapter(UnitOfWorkPort):
     """Transactional-looking local adapter.
 
-    It is intentionally lightweight. The PostgreSQL implementation will
-    provide the real ACID transaction boundary.
+    It is intentionally lightweight. The PostgreSQL/MSSQL implementation provides
+    the real ACID transaction boundary.
     """
 
     def __init__(self) -> None:
-        self.conversations = InMemoryConversationRepository()
+        self.conversations = InMemoryConversationRepositoryAdapter()
         self.tenants = InMemoryTenantRepositoryAdapter()
         self.knowledge = InMemoryKnowledgeRepositoryAdapter()
-        self.tool_approvals = InMemoryToolApprovalRepository()
+        self.tool_approvals = InMemoryToolApprovalRepositoryAdapter()
         self._committed = False
 
     def __enter__(self) -> Self:
@@ -47,5 +49,4 @@ class InMemoryUnitOfWork(UnitOfWork):
         self._committed = False
 
 
-# Canonical adapter alias conforming to <Technology><Port>Adapter
-InMemoryUnitOfWorkAdapter = InMemoryUnitOfWork
+__all__ = ["InMemoryUnitOfWorkAdapter"]

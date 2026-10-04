@@ -1,4 +1,4 @@
-"""Unit tests for SendMessageCommand and SendMessageHandler (TDD)."""
+"""Unit tests for SendMessageCommand and SendMessageCommandHandler (TDD)."""
 
 from uuid import uuid4
 
@@ -6,7 +6,7 @@ import pytest
 
 from src.application.conversations.commands.send_message import (
     SendMessageCommand,
-    SendMessageHandler,
+    SendMessageCommandHandler,
     SendMessageResult,
 )
 from src.domain.conversations.entities.conversation import Conversation
@@ -14,17 +14,17 @@ from src.domain.conversations.events.message_appended import MessageAppendedDoma
 from src.domain.conversations.exceptions import ConversationNotFoundError
 from src.domain.conversations.value_objects.message import MessageRole
 from src.domain.shared.domain_error import DomainError
-from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWork
+from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWorkAdapter
 
 
 def test_handle__valid_user_message__persists_message_and_commits() -> None:
     # Arrange
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     conversation = Conversation.create("Test Conversation")
     uow.conversations.add(conversation)
     uow.commit()
 
-    handler = SendMessageHandler(unit_of_work=uow)
+    handler = SendMessageCommandHandler(unit_of_work=uow)
     command = SendMessageCommand(
         conversation_id=conversation.id,
         content="Hello, AI!",
@@ -50,12 +50,12 @@ def test_handle__valid_user_message__persists_message_and_commits() -> None:
 
 def test_handle__valid_user_message__emits_message_appended_domain_event() -> None:
     # Arrange
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     conversation = Conversation.create("Test Conversation")
     conversation.pull_events()  # Clear initial creation event
     uow.conversations.add(conversation)
 
-    handler = SendMessageHandler(unit_of_work=uow)
+    handler = SendMessageCommandHandler(unit_of_work=uow)
     command = SendMessageCommand(
         conversation_id=conversation.id,
         content="Tell me a joke",
@@ -77,8 +77,8 @@ def test_handle__valid_user_message__emits_message_appended_domain_event() -> No
 
 def test_handle__conversation_not_found__raises_conversation_not_found_error() -> None:
     # Arrange
-    uow = InMemoryUnitOfWork()
-    handler = SendMessageHandler(unit_of_work=uow)
+    uow = InMemoryUnitOfWorkAdapter()
+    handler = SendMessageCommandHandler(unit_of_work=uow)
     non_existent_id = uuid4()
     command = SendMessageCommand(
         conversation_id=non_existent_id,
@@ -97,11 +97,11 @@ def test_handle__conversation_not_found__raises_conversation_not_found_error() -
 
 def test_handle__empty_content__raises_domain_error() -> None:
     # Arrange
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     conversation = Conversation.create("Test Conversation")
     uow.conversations.add(conversation)
 
-    handler = SendMessageHandler(unit_of_work=uow)
+    handler = SendMessageCommandHandler(unit_of_work=uow)
     command = SendMessageCommand(
         conversation_id=conversation.id,
         content="   ",
@@ -118,11 +118,11 @@ def test_handle__empty_content__raises_domain_error() -> None:
 
 def test_handle__content_exceeds_max_length__raises_domain_error() -> None:
     # Arrange
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     conversation = Conversation.create("Test Conversation")
     uow.conversations.add(conversation)
 
-    handler = SendMessageHandler(unit_of_work=uow)
+    handler = SendMessageCommandHandler(unit_of_work=uow)
     command = SendMessageCommand(
         conversation_id=conversation.id,
         content="x" * 4001,
@@ -139,11 +139,11 @@ def test_handle__content_exceeds_max_length__raises_domain_error() -> None:
 
 def test_handle__consecutive_user_message__raises_domain_error() -> None:
     # Arrange
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     conversation = Conversation.create("Test Conversation")
     uow.conversations.add(conversation)
 
-    handler = SendMessageHandler(unit_of_work=uow)
+    handler = SendMessageCommandHandler(unit_of_work=uow)
     first_command = SendMessageCommand(
         conversation_id=conversation.id,
         content="First message",
@@ -168,11 +168,11 @@ def test_handle__consecutive_user_message__raises_domain_error() -> None:
 
 def test_handle__when_error_occurs__rolls_back_unit_of_work() -> None:
     # Arrange
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     conversation = Conversation.create("Test Conversation")
     uow.conversations.add(conversation)
 
-    handler = SendMessageHandler(unit_of_work=uow)
+    handler = SendMessageCommandHandler(unit_of_work=uow)
     invalid_command = SendMessageCommand(
         conversation_id=conversation.id,
         content="",

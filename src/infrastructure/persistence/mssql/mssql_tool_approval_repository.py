@@ -16,7 +16,7 @@ from src.infrastructure.persistence.mssql.tool_approval_mapper import (
 )
 
 
-class MssqlToolApprovalRepository(ToolApprovalRepositoryPort):
+class MssqlToolApprovalRepositoryAdapter(ToolApprovalRepositoryPort):
     """Relational persistence adapter for tool approval requests in MSSQL."""
 
     def __init__(self, session: Session) -> None:
@@ -64,5 +64,4 @@ class MssqlToolApprovalRepository(ToolApprovalRepositoryPort):
         return [ToolApprovalMapper.to_entity(m) for m in models]
 
 
-# Canonical adapter alias conforming to <Technology><Port>Adapter
-MssqlToolApprovalRepositoryAdapter = MssqlToolApprovalRepository
+__all__ = ["MssqlToolApprovalRepositoryAdapter"]

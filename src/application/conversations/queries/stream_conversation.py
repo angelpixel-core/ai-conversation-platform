@@ -6,9 +6,11 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from src.application.shared.ports.llm_client import LlmClientPort
-from src.application.shared.ports.unit_of_work import UnitOfWork
+from src.application.shared.ports.unit_of_work import UnitOfWorkPort
 from src.domain.conversations.exceptions import ConversationNotFoundError
-from src.domain.conversations.ports.conversation_repository import ConversationRepository
+from src.domain.conversations.ports.conversation_repository import (
+    ConversationRepositoryPort,
+)
 from src.domain.conversations.value_objects.message import MessageRole
 from src.domain.shared.domain_error import DomainError
 
@@ -33,10 +35,10 @@ class StreamConversationQueryHandler:
 
     def __init__(
         self,
-        conversation_repository: ConversationRepository | None = None,
+        conversation_repository: ConversationRepositoryPort | None = None,
         llm_client: LlmClientPort | None = None,
         *,
-        unit_of_work: UnitOfWork | None = None,
+        unit_of_work: UnitOfWorkPort | None = None,
     ) -> None:
         if conversation_repository is None and unit_of_work is not None:
             conversation_repository = unit_of_work.conversations

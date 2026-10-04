@@ -44,5 +44,4 @@ class GovernanceMapper:
     to_persistence = to_model
 
 
-# Alias for naming consistency
-GovernanceDataMapper = GovernanceMapper
+__all__ = ["GovernanceMapper"]

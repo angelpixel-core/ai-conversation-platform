@@ -81,5 +81,8 @@ class UploadDocumentCommandHandler:
             )
 
 
-# Alias for backward compatibility
-UploadDocumentHandler = UploadDocumentCommandHandler
+__all__ = [
+    "UploadDocumentCommand",
+    "UploadDocumentCommandHandler",
+    "UploadDocumentResult",
+]

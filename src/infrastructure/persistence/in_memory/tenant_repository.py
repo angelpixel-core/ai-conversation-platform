@@ -28,5 +28,4 @@ class InMemoryTenantRepositoryAdapter(TenantRepositoryPort):
         return list(self._tenants.values())
 
 
-# Backward compatible alias
-InMemoryTenantRepository = InMemoryTenantRepositoryAdapter
+__all__ = ["InMemoryTenantRepositoryAdapter"]

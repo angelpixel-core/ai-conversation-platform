@@ -9,5 +9,4 @@ class EventPublisherPort(ABC):
         raise NotImplementedError
 
 
-# Alias for backward compatibility
-EventPublisher = EventPublisherPort
+__all__ = ["EventPublisherPort"]

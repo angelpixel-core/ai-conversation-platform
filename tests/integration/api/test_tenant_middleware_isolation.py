@@ -8,12 +8,12 @@ from src.domain.tenants.entities.tenant import Tenant
 from src.domain.tenants.entities.tenant_policy import TenantPolicy, TenantTier
 from src.domain.tenants.value_objects.monetary_budget import MonetaryBudget
 from src.domain.tenants.value_objects.tenant_id import TenantId
-from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWork
+from src.infrastructure.persistence.in_memory.unit_of_work import InMemoryUnitOfWorkAdapter
 from src.interfaces.http.api import build_api
 
 
 def test_tenant_middleware_enforcement_and_isolation() -> None:
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     app = build_api(unit_of_work=uow, enable_tenant_middleware=True)
     client = TestClient(app)
 
@@ -28,7 +28,7 @@ def test_tenant_middleware_enforcement_and_isolation() -> None:
 
 
 def test_tenant_admin_endpoints() -> None:
-    uow = InMemoryUnitOfWork()
+    uow = InMemoryUnitOfWorkAdapter()
     tenant = Tenant(
         tenant_id=TenantId("corp-acme"),
         name="Acme Corporation",

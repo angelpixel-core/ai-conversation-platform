@@ -80,5 +80,8 @@ class StartWorkflowCommandHandler:
         )
 
 
-# Alias for backward compatibility
-StartWorkflowHandler = StartWorkflowCommandHandler
+__all__ = [
+    "StartWorkflowCommand",
+    "StartWorkflowCommandHandler",
+    "StartWorkflowResult",
+]
