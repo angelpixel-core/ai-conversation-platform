@@ -18,6 +18,7 @@ tags: []
 8. [Secure Tool Calling & HITL Approvals](roadmap/08-secure-tool-calling-and-hitl.md)
 9. [Multi-Agent Orchestration & State Graphs](roadmap/09-multi-agent-orchestration-and-state-graphs.md)
 10. [Enterprise AI Governance & Observability](roadmap/10-ai-governance-and-observability.md)
+11. [CU-01: Health Observability Contract](roadmap/11-cu-01-get-health-observability-contract.md)
 
 ---
 

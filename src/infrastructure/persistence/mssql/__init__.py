@@ -37,6 +37,9 @@ from src.infrastructure.persistence.mssql.models import (
     WorkflowCheckpointModel,
     WorkflowInstanceModel,
 )
+from src.infrastructure.persistence.mssql.mssql_health_probe_adapter import (
+    MssqlHealthProbeAdapter,
+)
 from src.infrastructure.persistence.mssql.mssql_incident_repository import (
     MssqlIncidentRepositoryAdapter,
 )
@@ -86,6 +89,7 @@ __all__ = [
     "MessageModel",
     "MssqlAuditRepositoryAdapter",
     "MssqlConversationRepositoryAdapter",
+    "MssqlHealthProbeAdapter",
     "MssqlIdempotencyRepositoryAdapter",
     "MssqlIncidentRepositoryAdapter",
     "MssqlKnowledgeRepositoryAdapter",

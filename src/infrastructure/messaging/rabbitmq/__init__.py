@@ -21,6 +21,9 @@ from src.infrastructure.messaging.rabbitmq.rabbitmq_connection_manager import (
 from src.infrastructure.messaging.rabbitmq.rabbitmq_consumer_adapter import (
     RabbitMQConsumerAdapter,
 )
+from src.infrastructure.messaging.rabbitmq.rabbitmq_health_probe_adapter import (
+    RabbitMQHealthProbeAdapter,
+)
 from src.infrastructure.messaging.rabbitmq.rabbitmq_publisher_adapter import (
     RabbitMQPublisherAdapter,
 )
@@ -40,6 +43,7 @@ __all__ = [
     "MultiAgentTopologyConfig",
     "RabbitMQConnectionManager",
     "RabbitMQConsumerAdapter",
+    "RabbitMQHealthProbeAdapter",
     "RabbitMQPublisherAdapter",
     "RabbitMQTopologyConfig",
     "ToolsTopologyConfig",

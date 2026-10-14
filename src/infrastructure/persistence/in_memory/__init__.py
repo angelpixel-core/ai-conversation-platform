@@ -3,6 +3,9 @@
 from src.infrastructure.persistence.in_memory.in_memory_audit_repository import (
     InMemoryAuditRepositoryAdapter,
 )
+from src.infrastructure.persistence.in_memory.in_memory_database_health_probe_adapter import (
+    InMemoryDatabaseHealthProbeAdapter,
+)
 from src.infrastructure.persistence.in_memory.in_memory_idempotency_repository import (
     InMemoryIdempotencyRepositoryAdapter,
 )
@@ -31,6 +34,7 @@ from src.infrastructure.persistence.in_memory.unit_of_work import (
 __all__ = [
     "InMemoryAuditRepositoryAdapter",
     "InMemoryConversationRepositoryAdapter",
+    "InMemoryDatabaseHealthProbeAdapter",
     "InMemoryIdempotencyRepositoryAdapter",
     "InMemoryIncidentRepositoryAdapter",
     "InMemoryKnowledgeRepositoryAdapter",
