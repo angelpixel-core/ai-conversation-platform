@@ -29,6 +29,9 @@ from src.application.shared.idempotency.idempotent_command_executor import (
     IdempotentCommandExecutor,
 )
 from src.application.shared.ports.unit_of_work import UnitOfWorkPort
+from src.application.shared.queries.get_health_status import (
+    GetHealthStatusQueryHandler,
+)
 from src.domain.agents.ports.workflow_checkpoint_repository_port import (
     WorkflowCheckpointRepositoryPort,
 )
@@ -38,8 +41,17 @@ from src.domain.governance.ports.incident_repository_port import (
     IncidentRepositoryPort,
 )
 from src.domain.shared.domain_error import DomainError
+from src.infrastructure.llm.ai_engine_health_probe_adapter import (
+    AiEngineHealthProbeAdapter,
+)
+from src.infrastructure.messaging.in_memory.in_memory_broker_health_probe_adapter import (
+    InMemoryBrokerHealthProbeAdapter,
+)
 from src.infrastructure.messaging.rabbitmq.anyio_document_indexer_worker import (
     AnyioDocumentIndexerWorker,
+)
+from src.infrastructure.persistence.in_memory.in_memory_database_health_probe_adapter import (
+    InMemoryDatabaseHealthProbeAdapter,
 )
 from src.interfaces.http.middlewares.opentelemetry_middleware import (
     OpenTelemetryMiddleware,
@@ -57,6 +69,9 @@ from src.interfaces.http.routers.conversations_router import (
 from src.interfaces.http.routers.governance_router import (
     create_governance_router,
 )
+from src.interfaces.http.routers.health_router import (
+    create_health_router,
+)
 from src.interfaces.http.routers.knowledge_router import (
     create_knowledge_router,
 )
@@ -66,17 +81,6 @@ from src.interfaces.http.routers.tenant_admin_router import (
 from src.interfaces.http.routers.workflows_router import (
     create_workflows_router,
 )
-
-
-def _register_health_routes(app: FastAPI) -> None:
-    @app.get(
-        "/health",
-        tags=["Health"],
-        summary="Health check endpoint",
-        description="Returns current service availability status.",
-    )
-    def health() -> dict[str, str]:
-        return {"status": "ok"}
 
 
 def _register_conversation_routes(
@@ -255,6 +259,7 @@ def build_api(
     unit_of_work: UnitOfWorkPort | None = None,
     guarded_executor: GuardedCommandExecutor | None = None,
     incident_repo: IncidentRepositoryPort | None = None,
+    health_query_handler: GetHealthStatusQueryHandler | None = None,
     *,
     handler: CreateConversationCommandHandler | None = None,
     enable_tenant_middleware: bool = False,
@@ -301,7 +306,13 @@ def build_api(
         app.add_middleware(TenantContextMiddleware)
 
     _register_exception_handlers(app)
-    _register_health_routes(app)
+    resolved_health_handler = health_query_handler or GetHealthStatusQueryHandler(
+        database_probe=InMemoryDatabaseHealthProbeAdapter(engine_name="mssql"),
+        broker_probe=InMemoryBrokerHealthProbeAdapter(engine_name="rabbitmq"),
+        ai_engine_probe=AiEngineHealthProbeAdapter(),
+        version="1.0.0",
+    )
+    app.include_router(create_health_router(resolved_health_handler))
     app.include_router(
         create_conversations_router(
             create_conversation_handler=active_create_handler,

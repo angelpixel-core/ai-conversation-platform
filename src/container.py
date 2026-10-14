@@ -43,6 +43,9 @@ from src.application.shared.ports.stream_buffer_repository_port import (
     StreamBufferRepositoryPort,
 )
 from src.application.shared.ports.unit_of_work import UnitOfWorkPort
+from src.application.shared.queries.get_health_status import (
+    GetHealthStatusQueryHandler,
+)
 from src.application.tenants.commands.reserve_quota_command import (
     ReserveQuotaCommandHandler,
 )
@@ -88,7 +91,13 @@ from src.infrastructure.governance.heuristic_injection_detector_adapter import (
 from src.infrastructure.governance.regex_pii_scanner_adapter import (
     RegexPiiScannerAdapter,
 )
+from src.infrastructure.llm.ai_engine_health_probe_adapter import (
+    AiEngineHealthProbeAdapter,
+)
 from src.infrastructure.llm.fake_llm_client import FakeLlmClientAdapter
+from src.infrastructure.messaging.in_memory.in_memory_broker_health_probe_adapter import (
+    InMemoryBrokerHealthProbeAdapter,
+)
 from src.infrastructure.messaging.rabbitmq.anyio_document_indexer_worker import (
     AnyioDocumentIndexerWorker,
 )
@@ -98,6 +107,9 @@ from src.infrastructure.persistence.in_memory import (
     InMemoryStreamBufferRepositoryAdapter,
     InMemoryToolApprovalRepositoryAdapter,
     InMemoryUnitOfWorkAdapter,
+)
+from src.infrastructure.persistence.in_memory.in_memory_database_health_probe_adapter import (
+    InMemoryDatabaseHealthProbeAdapter,
 )
 from src.infrastructure.persistence.in_memory.in_memory_incident_repository import (
     InMemoryIncidentRepositoryAdapter,
@@ -114,6 +126,9 @@ from src.infrastructure.persistence.mssql import (
     MssqlWorkflowCheckpointRepositoryAdapter,
     create_mssql_engine,
     create_session_factory,
+)
+from src.infrastructure.persistence.mssql.mssql_health_probe_adapter import (
+    MssqlHealthProbeAdapter,
 )
 from src.infrastructure.persistence.mssql.mssql_incident_repository import (
     MssqlIncidentRepositoryAdapter,
@@ -167,6 +182,7 @@ class AppContainer:
     guardrail_pipeline: SafetyGuardrailPipelineService | None = None
     guarded_executor: GuardedCommandExecutor | None = None
     indexer_worker: AnyioDocumentIndexerWorker | None = None
+    health_query_handler: GetHealthStatusQueryHandler | None = None
 
 
 def _seed_default_demo_tenant(uow: UnitOfWorkPort) -> None:
@@ -390,6 +406,22 @@ def create_app_container(
         embedding_client=emb_client,
     )
 
+    if current_settings.PERSISTENCE_DRIVER == PersistenceDriver.MSSQL and unit_of_work is None:
+        engine = create_mssql_engine(current_settings.get_database_url())
+        db_probe = MssqlHealthProbeAdapter(engine=engine)
+    else:
+        db_probe = InMemoryDatabaseHealthProbeAdapter(engine_name="mssql")
+
+    broker_probe = InMemoryBrokerHealthProbeAdapter(engine_name="rabbitmq")
+    ai_engine_probe = AiEngineHealthProbeAdapter(llm_client=client)
+
+    health_query_handler = GetHealthStatusQueryHandler(
+        database_probe=db_probe,
+        broker_probe=broker_probe,
+        ai_engine_probe=ai_engine_probe,
+        version="1.0.0",
+    )
+
     fastapi_app = build_api(
         create_conversation_handler=create_handler,
         send_message_handler=send_handler,
@@ -399,6 +431,7 @@ def create_app_container(
         unit_of_work=uow,
         guarded_executor=guarded_executor,
         incident_repo=resolved_incident_repo,
+        health_query_handler=health_query_handler,
         enable_tenant_middleware=use_tenant_middleware,
         enable_opentelemetry_middleware=use_otel,
         retriever_service=retriever_service,
@@ -436,6 +469,7 @@ def create_app_container(
         guardrail_pipeline=guardrail_pipeline,
         guarded_executor=guarded_executor,
         indexer_worker=indexer_worker,
+        health_query_handler=health_query_handler,
     )
 
 
