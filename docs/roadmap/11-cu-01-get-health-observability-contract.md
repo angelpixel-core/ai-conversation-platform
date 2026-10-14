@@ -148,3 +148,27 @@ graph TD
 - [x] **5.4 Regeneración de Especificación OpenAPI / ReDoc:**
   - Ejecutar `python -m src.interfaces.cli.export_openapi`.
   - Validar generación limpia de `public/openapi.json` e `public/index.html`.
+
+### Fase 6: Auditoría de Rendimiento, Resiliencia de Probes y ADR 0020 (Performance & Low Latency)
+- [x] **6.1 Auditoría de Latencia y Puntos de Fricción:**
+  - Identificar cuellos de botella en Python (`asyncio.gather` sin timeout), FastAPI (serialización y cabeceras de caché) y contención de conexiones en base de datos.
+- [x] **6.2 Implementación de Guardrail de Timeout por Probe (`asyncio.wait_for`):**
+  - Incorporar timeout fail-fast configurable (`timeout_seconds = 1.5s`) en `GetHealthStatusQueryHandler`.
+  - Capturar `TimeoutError` reportando `status="unhealthy"` y detalle informativo sin demorar la respuesta de la API.
+- [x] **6.3 Implementación de Caché en Memoria con TTL (Sliding Window Buffer):**
+  - Añadir soporte para `cache_ttl_seconds` (por defecto `2.0s`) en `GetHealthStatusQueryHandler`.
+  - Servir solicitudes en caliente en `< 0.1ms` (zero I/O) para mitigar el efecto *thundering herd* de balanceadores de carga y monitores externos.
+  - Proteger contra *cache stampede* usando `asyncio.Lock`.
+- [x] **6.4 Optimización de Serialización HTTP y Cabeceras de Diagnóstico:**
+  - Inyectar cabecera `Cache-Control: no-cache, no-store, must-revalidate` en `HealthRouter`.
+  - Inyectar cabecera de observabilidad `X-Health-Cache: HIT | MISS`.
+- [x] **6.5 Configuración Centralizada en `Settings`:**
+  - Incorporar `HEALTH_CHECK_CACHE_TTL_SECONDS` y `HEALTH_CHECK_TIMEOUT_SECONDS` en `Settings`.
+- [x] **6.6 Formalización de ADR 0020:**
+  - Crear [`.agent/architecture/decisions/0020-health-probes-performance-caching-and-resilience.md`](../../.agent/architecture/decisions/0020-health-probes-performance-caching-and-resilience.md).
+- [x] **6.7 Batería de Pruebas Automatizadas:**
+  - Pruebas unitarias de timeout fail-fast y caché TTL en `tests/unit/application/test_get_health_status_query.py`.
+  - Pruebas unitarias de cabeceras en `tests/unit/interfaces/http/test_health_router.py`.
+  - Pruebas de integración E2E en `tests/integration/api/test_health_endpoint.py`.
+- [x] **6.8 Verificación Integral de Calidad:**
+  - Ejecutar `make check-all` asegurando 100% de checks en verde.

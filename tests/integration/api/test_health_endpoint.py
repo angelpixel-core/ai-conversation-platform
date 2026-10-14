@@ -22,6 +22,13 @@ def test_health_endpoint_integration_with_telemetry_and_tenancy() -> None:
     assert response.status_code == 200
     assert "X-Trace-ID" in response.headers
     assert "X-Span-ID" in response.headers
+    assert response.headers.get("Cache-Control") == "no-cache, no-store, must-revalidate"
+    assert response.headers.get("X-Health-Cache") == "MISS"
+
+    # Immediate second call should be served from memory cache (HIT)
+    response_cached = client.get("/health")
+    assert response_cached.status_code == 200
+    assert response_cached.headers.get("X-Health-Cache") == "HIT"
 
     body = response.json()
     assert body["status"] == "healthy"

@@ -17,13 +17,14 @@ from src.application.shared.queries.get_health_status import (
 
 
 class MockHealthProbe(HealthProbePort):
-    """Mock probe for controlled testing of status, latency and exceptions."""
+    """Mock probe for controlled testing of status, latency, calls, and exceptions."""
 
     status: HealthStatus
     latency_ms: float
     engine: str | None
     delay_seconds: float
     raise_exception: Exception | None
+    call_count: int
 
     def __init__(
         self,
@@ -38,8 +39,10 @@ class MockHealthProbe(HealthProbePort):
         self.engine = engine
         self.delay_seconds = delay_seconds
         self.raise_exception = raise_exception
+        self.call_count = 0
 
     async def check_health(self) -> ComponentHealthResult:
+        self.call_count += 1
         if self.delay_seconds > 0:
             await asyncio.sleep(self.delay_seconds)
         if self.raise_exception:
@@ -63,12 +66,14 @@ async def test_get_health_status_all_healthy() -> None:
         broker_probe=broker_probe,
         ai_engine_probe=ai_probe,
         version="1.0.0",
+        cache_ttl_seconds=0.0,
     )
 
     result = await handler.handle(GetHealthStatusQuery())
 
     assert result.status == "healthy"
     assert result.version == "1.0.0"
+    assert result.cached is False
     assert result.database.status == "healthy"
     assert result.database.latency_ms == 8.0
     assert result.database.engine == "mssql"
@@ -93,6 +98,7 @@ async def test_get_health_status_one_unhealthy() -> None:
         database_probe=db_probe,
         broker_probe=broker_probe,
         ai_engine_probe=ai_probe,
+        cache_ttl_seconds=0.0,
     )
 
     result = await handler.handle(GetHealthStatusQuery())
@@ -113,6 +119,7 @@ async def test_get_health_status_degraded_when_no_unhealthy() -> None:
         database_probe=db_probe,
         broker_probe=broker_probe,
         ai_engine_probe=ai_probe,
+        cache_ttl_seconds=0.0,
     )
 
     result = await handler.handle(GetHealthStatusQuery())
@@ -132,6 +139,7 @@ async def test_get_health_status_handles_unexpected_exception() -> None:
         database_probe=db_probe,
         broker_probe=broker_probe,
         ai_engine_probe=ai_probe,
+        cache_ttl_seconds=0.0,
     )
 
     result = await handler.handle(GetHealthStatusQuery())
@@ -154,6 +162,7 @@ async def test_get_health_status_concurrent_execution() -> None:
         database_probe=db_probe,
         broker_probe=broker_probe,
         ai_engine_probe=ai_probe,
+        cache_ttl_seconds=0.0,
     )
 
     start = time.perf_counter()
@@ -161,5 +170,116 @@ async def test_get_health_status_concurrent_execution() -> None:
     duration = time.perf_counter() - start
 
     assert result.status == "healthy"
-    # Should take ~0.05s, definitely less than sequential 0.15s
     assert duration < 0.12
+
+
+@pytest.mark.anyio
+async def test_get_health_status_timeout_fail_fast() -> None:
+    """Ensure a slow/hanging probe fails fast without blocking the whole health query."""
+    db_probe = MockHealthProbe(delay_seconds=0.4)
+    broker_probe = MockHealthProbe(status="healthy", latency_ms=2.0, engine="rabbitmq")
+    ai_probe = MockHealthProbe(status="healthy", latency_ms=10.0)
+
+    handler = GetHealthStatusQueryHandler(
+        database_probe=db_probe,
+        broker_probe=broker_probe,
+        ai_engine_probe=ai_probe,
+        timeout_seconds=0.05,
+        cache_ttl_seconds=0.0,
+    )
+
+    start = time.perf_counter()
+    result = await handler.handle(GetHealthStatusQuery())
+    duration = time.perf_counter() - start
+
+    assert result.status == "unhealthy"
+    assert result.database.status == "unhealthy"
+    assert result.database.details is not None
+    assert "timed out" in result.database.details
+    assert result.broker.status == "healthy"
+    assert duration < 0.15
+
+
+@pytest.mark.anyio
+async def test_get_health_status_cache_hit_and_miss() -> None:
+    """Ensure in-memory TTL cache serves subsequent requests instantly without calling probes."""
+    db_probe = MockHealthProbe(status="healthy", latency_ms=10.0, engine="mssql")
+    broker_probe = MockHealthProbe(status="healthy", latency_ms=5.0, engine="rabbitmq")
+    ai_probe = MockHealthProbe(status="healthy", latency_ms=15.0)
+
+    handler = GetHealthStatusQueryHandler(
+        database_probe=db_probe,
+        broker_probe=broker_probe,
+        ai_engine_probe=ai_probe,
+        cache_ttl_seconds=1.0,
+    )
+
+    # 1. First call -> Cache MISS
+    res1 = await handler.handle(GetHealthStatusQuery())
+    assert res1.cached is False
+    assert db_probe.call_count == 1
+    assert broker_probe.call_count == 1
+    assert ai_probe.call_count == 1
+
+    # 2. Immediate second call -> Cache HIT
+    res2 = await handler.handle(GetHealthStatusQuery())
+    assert res2.cached is True
+    assert res2.status == res1.status
+    # Probe calls should NOT increment on cache hit
+    assert db_probe.call_count == 1
+    assert broker_probe.call_count == 1
+    assert ai_probe.call_count == 1
+
+
+@pytest.mark.anyio
+async def test_get_health_status_cache_expiration() -> None:
+    """Ensure cache expires after TTL and refreshes probes."""
+    db_probe = MockHealthProbe(status="healthy", latency_ms=5.0, engine="mssql")
+    broker_probe = MockHealthProbe(status="healthy", latency_ms=2.0, engine="rabbitmq")
+    ai_probe = MockHealthProbe(status="healthy", latency_ms=10.0)
+
+    handler = GetHealthStatusQueryHandler(
+        database_probe=db_probe,
+        broker_probe=broker_probe,
+        ai_engine_probe=ai_probe,
+        cache_ttl_seconds=0.05,
+    )
+
+    res1 = await handler.handle(GetHealthStatusQuery())
+    assert res1.cached is False
+    assert db_probe.call_count == 1
+
+    # Wait past TTL
+    await asyncio.sleep(0.07)
+
+    res2 = await handler.handle(GetHealthStatusQuery())
+    assert res2.cached is False
+    assert db_probe.call_count == 2
+
+
+@pytest.mark.anyio
+async def test_get_health_status_thundering_herd_lock() -> None:
+    """Ensure concurrent callers on cold cache are deduplicated through lock."""
+    db_probe = MockHealthProbe(status="healthy", delay_seconds=0.04)
+    broker_probe = MockHealthProbe(status="healthy", delay_seconds=0.04)
+    ai_probe = MockHealthProbe(status="healthy", delay_seconds=0.04)
+
+    handler = GetHealthStatusQueryHandler(
+        database_probe=db_probe,
+        broker_probe=broker_probe,
+        ai_engine_probe=ai_probe,
+        cache_ttl_seconds=1.0,
+    )
+
+    # Launch 5 concurrent calls simultaneously
+    results = await asyncio.gather(*[handler.handle(GetHealthStatusQuery()) for _ in range(5)])
+
+    # All calls succeeded
+    assert len(results) == 5
+    for r in results:
+        assert r.status == "healthy"
+
+    # Only one call actually executed the probes; other 4 were served from cache!
+    assert db_probe.call_count == 1
+    assert broker_probe.call_count == 1
+    assert ai_probe.call_count == 1

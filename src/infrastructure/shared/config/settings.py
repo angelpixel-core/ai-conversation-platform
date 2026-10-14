@@ -27,6 +27,16 @@ class AppSettings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     API_HOST: str = "0.0.0.0"  # noqa: S104 # nosec B104
     API_PORT: int = 8000
+    HEALTH_CHECK_CACHE_TTL_SECONDS: float = Field(
+        default=2.0,
+        ge=0.0,
+        description="In-memory cache TTL for health check queries in seconds.",
+    )
+    HEALTH_CHECK_TIMEOUT_SECONDS: float = Field(
+        default=1.5,
+        gt=0.0,
+        description="Per-probe execution timeout in seconds.",
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -97,7 +97,7 @@ graph TD
         GetGovernanceMetricsQueryHandlerNode["GetGovernanceMetricsQueryHandler"]
         HealthProbePortNode["HealthProbePort (src/application/shared/ports/health_probe_port.py)"]
         GetHealthStatusQueryNode["GetHealthStatusQuery (src/application/shared/queries/get_health_status.py)"]
-        GetHealthStatusHandlerNode["GetHealthStatusQueryHandler (CQRS AsyncQueryHandler)"]
+        GetHealthStatusHandlerNode["GetHealthStatusQueryHandler (CQRS AsyncQueryHandler, TTL Cache & Timeouts)"]
     end
 
     subgraph Domain ["Domain Layer (Core Business)"]

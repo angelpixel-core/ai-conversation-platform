@@ -420,6 +420,8 @@ def create_app_container(
         broker_probe=broker_probe,
         ai_engine_probe=ai_engine_probe,
         version="1.0.0",
+        timeout_seconds=current_settings.HEALTH_CHECK_TIMEOUT_SECONDS,
+        cache_ttl_seconds=current_settings.HEALTH_CHECK_CACHE_TTL_SECONDS,
     )
 
     fastapi_app = build_api(

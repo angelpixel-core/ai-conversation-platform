@@ -94,6 +94,10 @@ def test_get_health_healthy_response_contract() -> None:
     assert ai_check["latency_ms"] == 32.0
     assert "engine" not in ai_check, "engine should be excluded when None"
 
+    # Header assertions
+    assert response.headers.get("Cache-Control") == "no-cache, no-store, must-revalidate"
+    assert response.headers.get("X-Health-Cache") in {"HIT", "MISS"}
+
 
 def test_get_health_unhealthy_status() -> None:
     """Ensure platform reports 'unhealthy' if a dependency fails."""
@@ -106,3 +110,18 @@ def test_get_health_unhealthy_status() -> None:
     assert payload["status"] == "unhealthy"
     assert payload["checks"]["database"]["status"] == "unhealthy"
     assert payload["checks"]["broker"]["status"] == "healthy"
+
+
+def test_get_health_headers_cache_hit_and_miss() -> None:
+    """Ensure HTTP headers accurately reflect Cache-Control and X-Health-Cache HIT/MISS."""
+    client = _build_test_client()
+
+    r1 = client.get("/health")
+    assert r1.status_code == 200
+    assert r1.headers.get("X-Health-Cache") == "MISS"
+    assert r1.headers.get("Cache-Control") == "no-cache, no-store, must-revalidate"
+
+    r2 = client.get("/health")
+    assert r2.status_code == 200
+    assert r2.headers.get("X-Health-Cache") == "HIT"
+    assert r2.headers.get("Cache-Control") == "no-cache, no-store, must-revalidate"

@@ -15,15 +15,22 @@ from src.application.shared.ports.health_probe_port import (
 class MssqlHealthProbeAdapter(HealthProbePort):
     """Probes MSSQL / SQLAlchemy database engine connectivity and round-trip query latency."""
 
-    def __init__(self, engine: Engine, engine_name: str = "mssql") -> None:
+    def __init__(
+        self,
+        engine: Engine,
+        engine_name: str = "mssql",
+        timeout_seconds: float = 1.5,
+    ) -> None:
         """Initialize adapter with SQLAlchemy engine.
 
         Args:
             engine: SQLAlchemy Engine instance connected to database.
             engine_name: Identifier for the database technology (defaults to 'mssql').
+            timeout_seconds: Execution timeout in seconds for the database ping.
         """
         self._engine = engine
         self._engine_name = engine_name
+        self._timeout_seconds = timeout_seconds
 
     async def check_health(self) -> ComponentHealthResult:
         """Execute a lightweight 'SELECT 1' ping in a worker thread and measure latency.
@@ -35,7 +42,9 @@ class MssqlHealthProbeAdapter(HealthProbePort):
         try:
 
             def _ping() -> None:
-                with self._engine.connect() as conn:
+                with self._engine.connect().execution_options(
+                    timeout=self._timeout_seconds
+                ) as conn:
                     conn.execute(text("SELECT 1"))
 
             await anyio.to_thread.run_sync(_ping)

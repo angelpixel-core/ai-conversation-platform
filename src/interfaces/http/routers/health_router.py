@@ -1,6 +1,6 @@
 """System health and observability HTTP Router."""
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Response, status
 
 from src.application.shared.queries.get_health_status import (
     GetHealthStatusQuery,
@@ -35,8 +35,10 @@ def create_health_router(health_handler: GetHealthStatusQueryHandler) -> APIRout
             "for persistent storage, message broker, and AI inference engines."
         ),
     )
-    async def get_health() -> HealthCheckResponse:
+    async def get_health(response: Response) -> HealthCheckResponse:
         result = await health_handler.handle(GetHealthStatusQuery())
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["X-Health-Cache"] = "HIT" if result.cached else "MISS"
         return HealthCheckResponse(
             status=result.status,
             version=result.version,
