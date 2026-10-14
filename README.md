@@ -300,7 +300,24 @@ curl -s http://localhost:8000/health | jq
 
 ```json
 {
-  "status": "ok"
+  "status": "healthy",
+  "version": "1.0.0",
+  "checks": {
+    "database": {
+      "status": "healthy",
+      "latency_ms": 8.0,
+      "engine": "mssql"
+    },
+    "broker": {
+      "status": "healthy",
+      "latency_ms": 4.0,
+      "engine": "rabbitmq"
+    },
+    "ai_engine": {
+      "status": "healthy",
+      "latency_ms": 32.0
+    }
+  }
 }
 ```
 

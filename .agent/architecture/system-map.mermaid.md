@@ -29,6 +29,8 @@ graph TD
         SafetyViolationHandlerNode["SafetyPolicyViolation Handler (HTTP 400 Bad Request)"]
         ConversationsRouterNode["ConversationsRouter (src/interfaces/http/routers/conversations_router.py)"]
         ProblemDetailsNode["ProblemDetails & RFC 7807 (src/interfaces/http/problem_details.py)"]
+        HealthRouterNode["HealthRouter (/health, src/interfaces/http/routers/health_router.py)"]
+        HealthSchemasNode["HealthSchemas (src/interfaces/http/health_schemas.py)"]
     end
 
 
@@ -93,6 +95,9 @@ graph TD
         ListIncidentsQueryHandlerNode["ListIncidentsQueryHandler"]
         GetGovernanceMetricsQueryNode["GetGovernanceMetricsQuery"]
         GetGovernanceMetricsQueryHandlerNode["GetGovernanceMetricsQueryHandler"]
+        HealthProbePortNode["HealthProbePort (src/application/shared/ports/health_probe_port.py)"]
+        GetHealthStatusQueryNode["GetHealthStatusQuery (src/application/shared/queries/get_health_status.py)"]
+        GetHealthStatusHandlerNode["GetHealthStatusQueryHandler (CQRS AsyncQueryHandler, TTL Cache & Timeouts)"]
     end
 
     subgraph Domain ["Domain Layer (Core Business)"]
@@ -236,6 +241,11 @@ graph TD
         HeuristicInjectionDetectorAdapterNode["HeuristicInjectionDetectorAdapter"]
         AnyioStreamGuardrailFilterNode["AnyioStreamGuardrailFilterAdapter"]
         OpenTelemetryConfigNode["OpenTelemetryConfig (W3C Propagator)"]
+        MssqlHealthProbeNode["MssqlHealthProbeAdapter (SQLAlchemy SELECT 1 ping)"]
+        InMemoryDbHealthProbeNode["InMemoryDatabaseHealthProbeAdapter"]
+        RabbitMQHealthProbeNode["RabbitMQHealthProbeAdapter (aio-pika connection check)"]
+        InMemoryBrokerHealthProbeNode["InMemoryBrokerHealthProbeAdapter"]
+        AiEngineHealthProbeNode["AiEngineHealthProbeAdapter"]
         AppSettings["Settings (Pydantic Settings)"]
     end
 
@@ -554,5 +564,17 @@ graph TD
     WorkerContainerNode --> SafetyGuardrailPortNode
     WorkerContainerNode --> PiiScannerPortNode
     WorkerContainerNode --> SafetyGuardrailPipelineServiceNode
+    RouterFastAPI --> HealthRouterNode
+    HealthRouterNode --> HealthSchemasNode
+    HealthRouterNode --> GetHealthStatusHandlerNode
+    GetHealthStatusHandlerNode --> GetHealthStatusQueryNode
+    GetHealthStatusHandlerNode --> HealthProbePortNode
+    MssqlHealthProbeNode -- Implementa --> HealthProbePortNode
+    InMemoryDbHealthProbeNode -- Implementa --> HealthProbePortNode
+    RabbitMQHealthProbeNode -- Implementa --> HealthProbePortNode
+    InMemoryBrokerHealthProbeNode -- Implementa --> HealthProbePortNode
+    AiEngineHealthProbeNode -- Implementa --> HealthProbePortNode
+    AppContainerNode --> HealthRouterNode
+    AppContainerNode --> GetHealthStatusHandlerNode
 ```
 

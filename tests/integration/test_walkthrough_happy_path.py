@@ -38,7 +38,15 @@ async def test_walkthrough_guide_full_happy_path() -> None:
     # -------------------------------------------------------------------------
     resp_health = client.get("/health")
     assert resp_health.status_code == 200
-    assert resp_health.json() == {"status": "ok"}
+    health_data = resp_health.json()
+    assert health_data["status"] == "healthy"
+    assert health_data["version"] == "1.0.0"
+    assert health_data["checks"]["database"]["status"] == "healthy"
+    assert health_data["checks"]["database"]["engine"] == "mssql"
+    assert health_data["checks"]["broker"]["status"] == "healthy"
+    assert health_data["checks"]["broker"]["engine"] == "rabbitmq"
+    assert health_data["checks"]["ai_engine"]["status"] == "healthy"
+    assert "engine" not in health_data["checks"]["ai_engine"]
 
     resp_openapi = client.get("/openapi.json")
     assert resp_openapi.status_code == 200
