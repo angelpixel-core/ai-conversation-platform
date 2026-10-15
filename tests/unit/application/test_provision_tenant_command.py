@@ -28,12 +28,15 @@ def test_provision_tenant_success() -> None:
 
     result = handler.handle(command)
 
+    assert result.id == "tenant-beta"
     assert result.tenant_id == "tenant-beta"
     assert result.name == "Beta Organization"
+    assert result.tier == "ENTERPRISE"
     assert result.balance == Decimal("250.00")
     assert result.reserved_amount == Decimal("0.00")
     assert result.available_balance == Decimal("250.00")
     assert result.currency == "USD"
+    assert result.contact_email is None
 
     # Verify retrieval
     with uow:

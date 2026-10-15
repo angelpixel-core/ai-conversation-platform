@@ -32,6 +32,21 @@ from src.application.shared.ports.unit_of_work import UnitOfWorkPort
 from src.application.shared.queries.get_health_status import (
     GetHealthStatusQueryHandler,
 )
+from src.application.tenants.commands.provision_tenant_command import (
+    ProvisionTenantCommandHandler,
+)
+from src.application.tenants.commands.reserve_quota_command import (
+    ReserveQuotaCommandHandler,
+)
+from src.application.tenants.commands.update_tenant_policy_command import (
+    UpdateTenantPolicyCommandHandler,
+)
+from src.application.tenants.queries.get_tenant_budget_query import (
+    GetTenantBudgetQueryHandler,
+)
+from src.application.tenants.queries.list_tenants_query import (
+    ListTenantsQueryHandler,
+)
 from src.domain.agents.ports.workflow_checkpoint_repository_port import (
     WorkflowCheckpointRepositoryPort,
 )
@@ -260,6 +275,11 @@ def build_api(
     guarded_executor: GuardedCommandExecutor | None = None,
     incident_repo: IncidentRepositoryPort | None = None,
     health_query_handler: GetHealthStatusQueryHandler | None = None,
+    provision_tenant_handler: ProvisionTenantCommandHandler | None = None,
+    list_tenants_handler: ListTenantsQueryHandler | None = None,
+    get_tenant_budget_handler: GetTenantBudgetQueryHandler | None = None,
+    update_tenant_policy_handler: UpdateTenantPolicyCommandHandler | None = None,
+    reserve_quota_handler: ReserveQuotaCommandHandler | None = None,
     *,
     handler: CreateConversationCommandHandler | None = None,
     enable_tenant_middleware: bool = False,
@@ -329,8 +349,26 @@ def build_api(
     if incident_repo is not None:
         app.include_router(create_governance_router(incident_repo))
 
+    if unit_of_work is not None or any(
+        [
+            provision_tenant_handler,
+            list_tenants_handler,
+            get_tenant_budget_handler,
+            update_tenant_policy_handler,
+            reserve_quota_handler,
+        ]
+    ):
+        app.include_router(
+            create_tenant_admin_router(
+                provision_handler=provision_tenant_handler,
+                list_handler=list_tenants_handler,
+                get_budget_handler=get_tenant_budget_handler,
+                update_policy_handler=update_tenant_policy_handler,
+                reserve_quota_handler=reserve_quota_handler,
+                unit_of_work=unit_of_work,
+            )
+        )
     if unit_of_work is not None:
-        app.include_router(create_tenant_admin_router(unit_of_work))
         app.include_router(create_knowledge_router(unit_of_work, indexer_worker=indexer_worker))
         app.include_router(create_approvals_router(unit_of_work))
 

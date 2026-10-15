@@ -29,6 +29,9 @@ class TenantMapper:
             monthly_budget_usd=policy_model.monthly_budget_usd
             if policy_model
             else Decimal("50.00"),
+            max_requests_per_minute=policy_model.max_requests_per_minute
+            if policy_model and hasattr(policy_model, "max_requests_per_minute")
+            else 60,
             allowed_models=frozenset(allowed_models),
         )
 
@@ -44,6 +47,7 @@ class TenantMapper:
             budget=budget,
             policy=policy,
             status=TenantStatus(model.status),
+            contact_email=getattr(model, "contact_email", None),
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
@@ -56,6 +60,7 @@ class TenantMapper:
             tier=entity.policy.tier.value,
             max_tokens_per_request=entity.policy.max_tokens_per_request,
             monthly_budget_usd=entity.policy.monthly_budget_usd,
+            max_requests_per_minute=entity.policy.max_requests_per_minute,
             allowed_models_json=json.dumps(sorted(entity.policy.allowed_models)),
         )
 
@@ -66,6 +71,7 @@ class TenantMapper:
             balance_usd=entity.budget.balance,
             reserved_usd=entity.budget.reserved_amount,
             currency=entity.budget.currency,
+            contact_email=entity.contact_email,
             created_at=entity.created_at,
             updated_at=entity.updated_at,
             policy=policy_model,

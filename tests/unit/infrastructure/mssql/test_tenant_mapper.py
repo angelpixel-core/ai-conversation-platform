@@ -50,8 +50,47 @@ def test_mapper_to_model_and_back_roundtrip() -> None:
     assert reconstituted.policy.tier == TenantTier.ENTERPRISE
     assert reconstituted.policy.max_tokens_per_request == 16384
     assert reconstituted.policy.monthly_budget_usd == Decimal("1000.0000")
+    assert reconstituted.policy.max_requests_per_minute == 60
     assert reconstituted.policy.allowed_models == frozenset({"gpt-4o", "gemini-1.5-pro"})
     assert reconstituted.status == TenantStatus.ACTIVE
+    assert reconstituted.contact_email is None
+
+
+def test_mapper_pro_tier_and_metadata_roundtrip() -> None:
+    original = Tenant(
+        tenant_id=TenantId("pro-tenant-42"),
+        name="Pro Scale Corp",
+        budget=MonetaryBudget(
+            balance=Decimal("500.0000"),
+            currency="USD",
+            reserved_amount=Decimal("0.0000"),
+        ),
+        policy=TenantPolicy(
+            tier=TenantTier.PRO,
+            max_tokens_per_request=8192,
+            monthly_budget_usd=Decimal("250.0000"),
+            max_requests_per_minute=120,
+            allowed_models=frozenset({"gpt-4o", "claude-3-5-sonnet"}),
+        ),
+        contact_email="devops@proscale.io",
+        status=TenantStatus.ACTIVE,
+    )
+
+    model = TenantMapper.to_model(original)
+    assert model.id == "pro-tenant-42"
+    assert model.contact_email == "devops@proscale.io"
+    assert model.policy is not None
+    assert model.policy.tier == "PRO"
+    assert model.policy.max_requests_per_minute == 120
+    assert model.policy.max_tokens_per_request == 8192
+
+    reconstituted = TenantMapper.to_domain(model)
+    assert reconstituted.id.value == "pro-tenant-42"
+    assert reconstituted.contact_email == "devops@proscale.io"
+    assert reconstituted.policy.tier == TenantTier.PRO
+    assert reconstituted.policy.max_requests_per_minute == 120
+    assert reconstituted.policy.max_tokens_per_request == 8192
+    assert reconstituted.policy.allowed_models == frozenset({"gpt-4o", "claude-3-5-sonnet"})
 
 
 def test_mapper_to_domain_with_none_policy() -> None:

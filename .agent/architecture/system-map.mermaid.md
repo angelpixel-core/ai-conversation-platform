@@ -14,6 +14,7 @@ graph TD
         TenantContextMiddlewareNode["TenantContextMiddleware"]
         TenantDependencyNode["TenantDependency (get_current_tenant_id_dep)"]
         TenantAdminRouterNode["TenantAdminRouter (/admin/tenants)"]
+        TenantSchemasNode["TenantSchemas (RFC-32 DTOs, src/interfaces/http/tenant_schemas.py)"]
         KnowledgeRouterNode["KnowledgeRouter (/tenants/{tenant_id}/documents)"]
         KnowledgeSchemasNode["KnowledgeSchemas (DTOs)"]
         CitationsSSENode["Streaming Citations (SSE: citation)"]
@@ -67,6 +68,12 @@ graph TD
         ReserveQuotaHandler["ReserveQuotaCommandHandler"]
         SettleQuotaCmd["SettleQuotaCommand"]
         SettleQuotaHandler["SettleQuotaCommandHandler"]
+        ListTenantsQueryNode["ListTenantsQuery"]
+        ListTenantsQueryHandlerNode["ListTenantsQueryHandler"]
+        GetTenantBudgetQueryNode["GetTenantBudgetQuery"]
+        GetTenantBudgetQueryHandlerNode["GetTenantBudgetQueryHandler"]
+        UpdateTenantPolicyCmdNode["UpdateTenantPolicyCommand"]
+        UpdateTenantPolicyCommandHandlerNode["UpdateTenantPolicyCommandHandler"]
         UploadDocCmd["UploadDocumentCommand"]
         UploadDocHandler["UploadDocumentCommandHandler"]
         IndexChunksCmd["IndexDocumentChunksCommand"]
@@ -126,6 +133,7 @@ graph TD
         TenantBudgetSettledEvent["TenantBudgetSettledDomainEvent"]
         TenantQuotaExceededEvent["TenantQuotaExceededDomainEvent"]
         TenantSuspendedEvent["TenantSuspendedDomainEvent"]
+        TenantPolicyUpdatedDomainEventNode["TenantPolicyUpdatedDomainEvent"]
         FallbackActivatedEvent["ModelRouteFallbackActivatedDomainEvent"]
         TenantRepoPort["TenantRepositoryPort (Port)"]
         ModelCatalogPortNode["ModelCatalogPort (Port)"]
@@ -274,8 +282,11 @@ graph TD
     RouterFastAPI --> TenantAdminRouterNode
     TenantContextMiddlewareNode --> TenantContextNode
     TenantDependencyNode --> TenantContextNode
-    TenantAdminRouterNode --> UOWPort
+    TenantAdminRouterNode --> TenantSchemasNode
     TenantAdminRouterNode --> ProvisionTenantHandler
+    TenantAdminRouterNode --> ListTenantsQueryHandlerNode
+    TenantAdminRouterNode --> GetTenantBudgetQueryHandlerNode
+    TenantAdminRouterNode --> UpdateTenantPolicyCommandHandlerNode
     TenantAdminRouterNode --> ReserveQuotaHandler
 
     %% Application orchestration
@@ -401,6 +412,17 @@ graph TD
     SettleQuotaHandler --> UOWPort
     SettleQuotaHandler --> TenantAggregate
     SettleQuotaHandler --> TenantRepoPort
+    ProvisionTenantHandler --> ProvisionTenantCmd
+    ProvisionTenantHandler --> UOWPort
+    ProvisionTenantHandler --> TenantAggregate
+    ListTenantsQueryHandlerNode --> ListTenantsQueryNode
+    ListTenantsQueryHandlerNode --> UOWPort
+    GetTenantBudgetQueryHandlerNode --> GetTenantBudgetQueryNode
+    GetTenantBudgetQueryHandlerNode --> UOWPort
+    UpdateTenantPolicyCommandHandlerNode --> UpdateTenantPolicyCmdNode
+    UpdateTenantPolicyCommandHandlerNode --> UOWPort
+    UpdateTenantPolicyCommandHandlerNode --> TenantAggregate
+    TenantAggregate -.-> TenantPolicyUpdatedDomainEventNode
     ModelRouterServiceNode --> ModelCatalogPortNode
     ModelRouterServiceNode --> TenantAggregate
     MssqlTenantRepoNode -- Implementa --> TenantRepoPort
@@ -411,6 +433,10 @@ graph TD
     TenantMapperNode --> MssqlModels
     MssqlUOW --> MssqlTenantRepoNode
     InMemoryUOW --> InMemoryTenantRepoNode
+    AppContainerNode --> ProvisionTenantHandler
+    AppContainerNode --> ListTenantsQueryHandlerNode
+    AppContainerNode --> GetTenantBudgetQueryHandlerNode
+    AppContainerNode --> UpdateTenantPolicyCommandHandlerNode
     AppContainerNode --> ModelCatalogPortNode
     AppContainerNode --> ModelRouterServiceNode
     AppContainerNode --> ReserveQuotaHandler

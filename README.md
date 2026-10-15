@@ -344,11 +344,10 @@ curl -s -w "\nHTTP Status: %{http_code}\n" -X POST http://localhost:8000/convers
 
 ```json
 {
-  "id": "5920550b-79cb-4b97-acba-f4ea3afe8061",
-  "title": "Unidentified Tenant"
+  "detail": "Encabezado 'X-Tenant-ID' es obligatorio para acceder a recursos protegidos."
 }
 
-HTTP Status: 201
+HTTP Status: 400
 ```
 
 ```bash
