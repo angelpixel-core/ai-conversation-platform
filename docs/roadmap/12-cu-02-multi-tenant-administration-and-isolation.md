@@ -127,7 +127,7 @@ graph TD
   - En `src/application/tenants/commands/provision_tenant_command.py`, añadir soporte para `contact_email` y `max_requests_per_minute`, garantizando que `ProvisionTenantResult` exponga tanto `id` como `tenant_id`.
 
 ### Fase 3: Capa de Interfaces (Driver Schemas Pydantic v2 & Router Modular)
-- [ ] **3.1 Extracción de Esquemas a `tenant_schemas.py`:**
+- [x] **3.1 Extracción de Esquemas a `tenant_schemas.py`:**
   - Crear [`src/interfaces/http/tenant_schemas.py`](../../src/interfaces/http/tenant_schemas.py).
   - Definir esquemas estructurados Pydantic v2:
     - `TenantFinancialsSchema`: `currency`, `balance`, `reserved_amount`, `available_balance`, `monthly_budget_usd`.
@@ -138,12 +138,12 @@ graph TD
     - `TenantBudgetResponse`: Exposición dual de `id` y `tenant_id`.
     - `UpdateTenantPolicyRequest` y `TenantPolicyResponse`.
     - `ReserveQuotaRequest` y `ReserveQuotaResponse`.
-- [ ] **3.2 Refactorización de `tenant_admin_router.py`:**
+- [x] **3.2 Refactorización de `tenant_admin_router.py`:**
   - Limpiar [`src/interfaces/http/routers/tenant_admin_router.py`](../../src/interfaces/http/routers/tenant_admin_router.py):
     - Inyectar los 5 handlers CQRS (`provision_handler`, `list_handler`, `get_budget_handler`, `update_policy_handler`, `reserve_quota_handler`).
     - Eliminar acceso directo al `UnitOfWorkPort` y mutación privada de entidades.
-    - Reducir el router a ~100 líneas limpias y declarativas.
-- [ ] **3.3 Sincronización en `api.py` y `container.py`:**
+    - Modularizar rutas en comandos y consultas respetando límites de complejidad ciclomática C901.
+- [x] **3.3 Sincronización en `api.py` y `container.py`:**
   - Actualizar `build_api` en [`src/interfaces/http/api.py`](../../src/interfaces/http/api.py) para inyectar los handlers de tenants.
   - En [`src/container.py`](../../src/container.py), instanciar los nuevos handlers y conectarlos al composition root.
 
