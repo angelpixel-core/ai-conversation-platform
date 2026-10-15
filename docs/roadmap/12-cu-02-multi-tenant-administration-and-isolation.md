@@ -105,25 +105,25 @@ graph TD
   - Exportar en [`src/domain/tenants/events/__init__.py`](../../src/domain/tenants/events/__init__.py).
 
 ### Fase 2: Capa de Aplicación (CQRS Queries & Commands)
-- [ ] **2.1 Subcarpeta y Exportaciones de Queries:**
+- [x] **2.1 Subcarpeta y Exportaciones de Queries:**
   - Crear carpeta `src/application/tenants/queries/`.
   - Crear `src/application/tenants/queries/__init__.py`.
-- [ ] **2.2 Query y QueryHandler para Listado de Tenants:**
+- [x] **2.2 Query y QueryHandler para Listado de Tenants:**
   - Crear `src/application/tenants/queries/list_tenants_query.py`:
     - `ListTenantsQuery`: DTO de consulta inmutable.
     - `TenantSummaryDTO`: DTO que contiene tanto los campos planos (`balance`, `available_balance`) como los agrupados (`financials`, `limits`, `metadata`).
     - `ListTenantsQueryHandler`: Orquesta la lectura desacoplada consumiendo `unit_of_work.tenants.list()`.
-- [ ] **2.3 Query y QueryHandler para Consulta de Presupuesto:**
+- [x] **2.3 Query y QueryHandler para Consulta de Presupuesto:**
   - Crear `src/application/tenants/queries/get_tenant_budget_query.py`:
     - `GetTenantBudgetQuery`: DTO de consulta con `tenant_id: str`.
     - `TenantBudgetDTO`: DTO con `id`, `tenant_id`, `balance`, `reserved_amount`, `available_balance`, `currency`.
     - `GetTenantBudgetQueryHandler`: Obtiene el tenant o lanza `TenantNotFoundError`.
-- [ ] **2.4 Command y CommandHandler para Actualización de Políticas:**
+- [x] **2.4 Command y CommandHandler para Actualización de Políticas:**
   - Crear `src/application/tenants/commands/update_tenant_policy_command.py`:
     - `UpdateTenantPolicyCommand`: DTO de comando con `tenant_id`, `tier`, `max_tokens_per_request`, `monthly_budget_usd`, `max_requests_per_minute`, `allowed_models`.
     - `UpdateTenantPolicyResult`: DTO de resultado.
     - `UpdateTenantPolicyCommandHandler`: Orquesta la actualización mediante `tenant.update_policy(...)` y commit atómico.
-- [ ] **2.5 Adaptación de `ProvisionTenantCommand`:**
+- [x] **2.5 Adaptación de `ProvisionTenantCommand`:**
   - En `src/application/tenants/commands/provision_tenant_command.py`, añadir soporte para `contact_email` y `max_requests_per_minute`, garantizando que `ProvisionTenantResult` exponga tanto `id` como `tenant_id`.
 
 ### Fase 3: Capa de Interfaces (Driver Schemas Pydantic v2 & Router Modular)
