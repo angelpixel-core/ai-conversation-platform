@@ -27,3 +27,4 @@ tags: []
 
 - [RFC 01: Estandarización de Infraestructura, Pipelines, Secretos y Especificación Cloud](roadmap/rfc/rfc_infra_pipelines_and_provisioning_spec.md) (ADRs 0010 - 0013)
 - [RFC 02: Refactor y Estandarización de Código Fuente: Clean Architecture, DDD y Tipado Estricto](roadmap/rfc/rfc_source_code_refactors_and_clean_arch_polish.md) (ADRs 0014 - 0018)
+- [RFC 32: Contrato Estandarizado de Administración y Aislamiento Multi-Tenant (`/admin/tenants`)](roadmap/rfc/rfc_32_multi_tenant_admin_contract_spec.md) (ADR 0021)
