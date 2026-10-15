@@ -29,6 +29,7 @@ class TenantPolicyModel(SQLModel, table=True):
         default='["gpt-4o-mini", "gemini-1.5-flash"]',
         nullable=False,
     )
+    max_requests_per_minute: int = Field(default=60, nullable=False)
 
     tenant: "TenantModel" = Relationship(back_populates="policy")
 
@@ -48,6 +49,7 @@ class TenantModel(SQLModel, table=True):
         default=Decimal("0.0000"), max_digits=12, decimal_places=4, nullable=False
     )
     currency: str = Field(default="USD", max_length=3, nullable=False)
+    contact_email: str | None = Field(default=None, max_length=255, nullable=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
 

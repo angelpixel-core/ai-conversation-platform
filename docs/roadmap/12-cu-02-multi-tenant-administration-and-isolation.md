@@ -148,21 +148,22 @@ graph TD
   - En [`src/container.py`](../../src/container.py), instanciar los nuevos handlers y conectarlos al composition root.
 
 ### Fase 4: Capa de Persistencia e Infraestructura (Mappers & Adapters)
-- [ ] **4.1 Soporte en Mappers:**
+- [x] **4.1 Soporte en Mappers:**
   - En [`src/infrastructure/persistence/mssql/tenant_mapper.py`](../../src/infrastructure/persistence/mssql/tenant_mapper.py), soportar el nivel `PRO` y los campos `contact_email` y `max_requests_per_minute`.
-- [ ] **4.2 Verificación de Aislamiento Multi-Tenant:**
+  - Crear migración Alembic [`src/infrastructure/persistence/mssql/migrations/versions/0008_tenant_metadata_and_rate_limits.py`](../../src/infrastructure/persistence/mssql/migrations/versions/0008_tenant_metadata_and_rate_limits.py).
+- [x] **4.2 Verificación de Aislamiento Multi-Tenant:**
   - Validar [`src/interfaces/http/middlewares/tenant_context_middleware.py`](../../src/interfaces/http/middlewares/tenant_context_middleware.py) asegurando que `X-Tenant-Id` y `X-Tenant-ID` se propaguen con total aislamiento en endpoints de negocio y se omitan en `/admin/*`.
 
 ### Fase 5: Batería de Pruebas Automatizadas (TDD & Regresión)
-- [ ] **5.1 Pruebas Unitarias de Dominio:**
+- [x] **5.1 Pruebas Unitarias de Dominio:**
   - Crear `tests/unit/domain/test_tenant_policy_tiers.py` validando los 4 tiers, defaults y el método `Tenant.update_policy` con emisión de `TenantPolicyUpdatedDomainEvent`.
-- [ ] **5.2 Pruebas Unitarias de Aplicación (CQRS):**
+- [x] **5.2 Pruebas Unitarias de Aplicación (CQRS):**
   - Crear `tests/unit/application/test_list_tenants_query.py` validando la proyección de DTOs enriquecidos y aplanados.
   - Crear `tests/unit/application/test_get_tenant_budget_query.py` validando consulta y excepción `TenantNotFoundError`.
   - Crear `tests/unit/application/test_update_tenant_policy_command.py` validando actualización transaccional.
-- [ ] **5.3 Pruebas Unitarias de Interfaces:**
+- [x] **5.3 Pruebas Unitarias de Interfaces:**
   - Crear `tests/unit/interfaces/http/test_tenant_schemas.py` verificando serialización dual `id`/`tenant_id`, exclusión de nulos y tolerancia de lectura.
-- [ ] **5.4 Pruebas de Integración End-to-End:**
+- [x] **5.4 Pruebas de Integración End-to-End:**
   - Actualizar `tests/integration/api/test_tenant_admin_router.py` validando el nuevo contrato RFC-32 en `/admin/tenants`.
   - Verificar `tests/integration/api/test_tenant_middleware_isolation.py`.
   - Verificar `tests/integration/test_walkthrough_happy_path.py` (Paso 2).
