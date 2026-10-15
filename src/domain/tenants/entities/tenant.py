@@ -9,6 +9,7 @@ from src.domain.tenants.entities.tenant_policy import TenantPolicy, TenantTier
 from src.domain.tenants.events.tenant_events import (
     TenantBudgetReservedDomainEvent,
     TenantBudgetSettledDomainEvent,
+    TenantPolicyUpdatedDomainEvent,
     TenantQuotaExceededDomainEvent,
     TenantSuspendedDomainEvent,
 )
@@ -43,6 +44,7 @@ class Tenant(AggregateRoot):
         budget: MonetaryBudget,
         policy: TenantPolicy | None = None,
         status: TenantStatus = TenantStatus.ACTIVE,
+        contact_email: str | None = None,
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
     ) -> None:
@@ -54,6 +56,7 @@ class Tenant(AggregateRoot):
             budget: Monetary budget value object tracking balances and reserves.
             policy: Optional usage and rate-limit policy. Defaults to FREE tier.
             status: Initial operational status. Defaults to ACTIVE.
+            contact_email: Optional administrator or operations email.
             created_at: Optional UTC creation timestamp. Defaults to now.
             updated_at: Optional UTC modification timestamp. Defaults to now.
 
@@ -69,6 +72,8 @@ class Tenant(AggregateRoot):
         self._budget = budget
         self._policy = policy or TenantPolicy()
         self._status = status
+        clean_email = contact_email.strip() if contact_email else None
+        self._contact_email = clean_email or None
         now = datetime.now(UTC)
         self._created_at = created_at or now
         self._updated_at = updated_at or now
@@ -100,19 +105,8 @@ class Tenant(AggregateRoot):
                 reserved_amount=Decimal("0.00"),
                 currency="USD",
             ),
-            policy=TenantPolicy(
-                tier=TenantTier.STANDARD,
-                max_tokens_per_request=4096,
-                monthly_budget_usd=Decimal("500.00"),
-                allowed_models=frozenset(
-                    {
-                        "gpt-4o",
-                        "gpt-4o-mini",
-                        "claude-3-5-sonnet",
-                        "gemini-1.5-flash",
-                    }
-                ),
-            ),
+            policy=TenantPolicy.default_for_tier(TenantTier.STANDARD),
+            contact_email="ops@acme.corp" if str(tid) == "corp-acme" else "admin@default.local",
         )
 
     @property
@@ -149,6 +143,11 @@ class Tenant(AggregateRoot):
     def updated_at(self) -> datetime:
         """datetime: UTC last updated timestamp."""
         return self._updated_at
+
+    @property
+    def contact_email(self) -> str | None:
+        """str | None: Contact or operations email address."""
+        return self._contact_email
 
     @property
     def is_active(self) -> bool:
@@ -250,6 +249,24 @@ class Tenant(AggregateRoot):
         """Re-activate a previously suspended tenant."""
         self._status = TenantStatus.ACTIVE
         self._updated_at = datetime.now(UTC)
+
+    def update_policy(self, policy: TenantPolicy) -> None:
+        """Update contractual usage policy and model permissions with domain event emission.
+
+        Args:
+            policy: New validated TenantPolicy instance.
+        """
+        self._policy = policy
+        self._updated_at = datetime.now(UTC)
+        self.record_event(
+            TenantPolicyUpdatedDomainEvent(
+                tenant_id=str(self._id),
+                tier=policy.tier.value,
+                max_tokens_per_request=policy.max_tokens_per_request,
+                monthly_budget_usd=policy.monthly_budget_usd,
+                occurred_at=self._updated_at,
+            )
+        )
 
 
 __all__ = ["Tenant", "TenantStatus"]
