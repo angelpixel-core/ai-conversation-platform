@@ -167,17 +167,17 @@ graph TD
   - Actualizar `tests/integration/api/test_tenant_admin_router.py` validando el nuevo contrato RFC-32 en `/admin/tenants`.
   - Verificar `tests/integration/api/test_tenant_middleware_isolation.py`.
   - Verificar `tests/integration/test_walkthrough_happy_path.py` (Paso 2).
-- [ ] **5.5 Barrera de Calidad Total:**
+- [x] **5.5 Barrera de Calidad Total:**
   - Ejecutar `make check-all` asegurando 0 errores Ruff, 0 errores Pyright, 0 alertas Bandit y 100% de tests en verde.
 
 ### Fase 6: Documentación, ADR 0021 y Sincronización del Diagrama Vivo
-- [ ] **6.1 Formalización de ADR 0021:**
-  - Crear `.agent/architecture/decisions/0021-multi-tenant-contract-standardization-and-cqrs-isolation.md`.
-- [ ] **6.2 Sincronización del Diagrama Vivo:**
+- [x] **6.1 Formalización de ADR 0021:**
+  - Crear [`.agent/architecture/decisions/0021-multi-tenant-contract-standardization-and-cqrs-isolation.md`](../../.agent/architecture/decisions/0021-multi-tenant-contract-standardization-and-cqrs-isolation.md).
+- [x] **6.2 Sincronización del Diagrama Vivo:**
   - Actualizar [`.agent/architecture/system-map.mermaid.md`](../../.agent/architecture/system-map.mermaid.md) con `TenantSchemas`, `ListTenantsQueryHandler`, `GetTenantBudgetQueryHandler` y `UpdateTenantPolicyCommandHandler`.
-- [ ] **6.3 Corrección en Guía de Ejecución (`README.md`):**
+- [x] **6.3 Corrección en Guía de Ejecución (`README.md`):**
   - En [`README.md`](../../README.md#L345-L352), corregir el snippet del Paso 2.1 para mostrar `HTTP Status: 400 Bad Request` y el mensaje de error de tenant obligatorio.
-- [ ] **6.4 Actualización de Índice Maestro:**
+- [x] **6.4 Actualización de Índice Maestro:**
   - Registrar el enlace a este roadmap en [`docs/roadmap.md`](../roadmap.md).
-- [ ] **6.5 Regeneración de OpenAPI y ReDoc:**
+- [x] **6.5 Regeneración de OpenAPI y ReDoc:**
   - Exportar especificación OpenAPI 3.1 (`python -m src.interfaces.cli.export_openapi`) y validar `public/openapi.json` y `public/index.html`.
