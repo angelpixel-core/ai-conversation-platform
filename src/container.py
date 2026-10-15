@@ -46,11 +46,23 @@ from src.application.shared.ports.unit_of_work import UnitOfWorkPort
 from src.application.shared.queries.get_health_status import (
     GetHealthStatusQueryHandler,
 )
+from src.application.tenants.commands.provision_tenant_command import (
+    ProvisionTenantCommandHandler,
+)
 from src.application.tenants.commands.reserve_quota_command import (
     ReserveQuotaCommandHandler,
 )
 from src.application.tenants.commands.settle_quota_command import (
     SettleQuotaCommandHandler,
+)
+from src.application.tenants.commands.update_tenant_policy_command import (
+    UpdateTenantPolicyCommandHandler,
+)
+from src.application.tenants.queries.get_tenant_budget_query import (
+    GetTenantBudgetQueryHandler,
+)
+from src.application.tenants.queries.list_tenants_query import (
+    ListTenantsQueryHandler,
 )
 from src.application.tools.services.tool_policy_evaluator_service import (
     ToolPolicyEvaluatorService,
@@ -360,6 +372,10 @@ def create_app_container(
     model_router = ModelRouterService(catalog=catalog)
     reserve_handler = ReserveQuotaCommandHandler(unit_of_work=uow)
     settle_handler = SettleQuotaCommandHandler(unit_of_work=uow)
+    provision_tenant_handler = ProvisionTenantCommandHandler(unit_of_work=uow)
+    list_tenants_handler = ListTenantsQueryHandler(unit_of_work=uow)
+    get_tenant_budget_handler = GetTenantBudgetQueryHandler(unit_of_work=uow)
+    update_tenant_policy_handler = UpdateTenantPolicyCommandHandler(unit_of_work=uow)
 
     emb_client = embedding_client or FakeEmbeddingClientAdapter(dimension=1536)
     retriever_service = HybridRetrieverService(
@@ -434,6 +450,11 @@ def create_app_container(
         guarded_executor=guarded_executor,
         incident_repo=resolved_incident_repo,
         health_query_handler=health_query_handler,
+        provision_tenant_handler=provision_tenant_handler,
+        list_tenants_handler=list_tenants_handler,
+        get_tenant_budget_handler=get_tenant_budget_handler,
+        update_tenant_policy_handler=update_tenant_policy_handler,
+        reserve_quota_handler=reserve_handler,
         enable_tenant_middleware=use_tenant_middleware,
         enable_opentelemetry_middleware=use_otel,
         retriever_service=retriever_service,

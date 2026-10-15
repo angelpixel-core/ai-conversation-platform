@@ -46,6 +46,17 @@ class TenantSuspendedDomainEvent:
 
 
 @dataclass(frozen=True)
+class TenantPolicyUpdatedDomainEvent:
+    """Emitted when tenant policy (tier, rate limits, model access) is updated."""
+
+    tenant_id: str
+    tier: str
+    max_tokens_per_request: int
+    monthly_budget_usd: Decimal
+    occurred_at: datetime
+
+
+@dataclass(frozen=True)
 class ModelRouteFallbackActivatedDomainEvent:
     """Emitted when a primary model route fails and a fallback route is triggered."""
 
@@ -54,3 +65,13 @@ class ModelRouteFallbackActivatedDomainEvent:
     fallback_model_id: str
     failure_reason: str
     occurred_at: datetime
+
+
+__all__ = [
+    "ModelRouteFallbackActivatedDomainEvent",
+    "TenantBudgetReservedDomainEvent",
+    "TenantBudgetSettledDomainEvent",
+    "TenantPolicyUpdatedDomainEvent",
+    "TenantQuotaExceededDomainEvent",
+    "TenantSuspendedDomainEvent",
+]

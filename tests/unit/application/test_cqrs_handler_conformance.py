@@ -77,6 +77,18 @@ from src.application.tenants.commands.settle_quota_command import (
     SettleQuotaCommand,
     SettleQuotaCommandHandler,
 )
+from src.application.tenants.commands.update_tenant_policy_command import (
+    UpdateTenantPolicyCommand,
+    UpdateTenantPolicyCommandHandler,
+)
+from src.application.tenants.queries.get_tenant_budget_query import (
+    GetTenantBudgetQuery,
+    GetTenantBudgetQueryHandler,
+)
+from src.application.tenants.queries.list_tenants_query import (
+    ListTenantsQuery,
+    ListTenantsQueryHandler,
+)
 from src.application.tools.commands.approve_tool_execution import (
     ApproveToolExecutionCommand,
     ApproveToolExecutionCommandHandler,
@@ -111,6 +123,7 @@ def test_command_handlers_have_handle_method_and_accept_command() -> None:
         (RecordSecurityIncidentCommandHandler, RecordSecurityIncidentCommand),
         (StartWorkflowCommandHandler, StartWorkflowCommand),
         (ResumeWorkflowCommandHandler, ResumeWorkflowCommand),
+        (UpdateTenantPolicyCommandHandler, UpdateTenantPolicyCommand),
     ]
 
     for handler_cls, _command_cls in handlers:
@@ -128,6 +141,8 @@ def test_query_handlers_have_handle_method_and_accept_query() -> None:
         (ResumeStreamQueryHandler, ResumeStreamQuery),
         (GetGovernanceMetricsQueryHandler, GetGovernanceMetricsQuery),
         (ListIncidentsQueryHandler, ListIncidentsQuery),
+        (ListTenantsQueryHandler, ListTenantsQuery),
+        (GetTenantBudgetQueryHandler, GetTenantBudgetQuery),
     ]
 
     for handler_cls, _query_cls in handlers:

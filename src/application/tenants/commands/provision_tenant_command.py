@@ -21,6 +21,8 @@ class ProvisionTenantCommand:
     tier: str = "STANDARD"
     max_tokens_per_request: int = 4096
     monthly_budget_usd: Decimal = Decimal("500.00")
+    max_requests_per_minute: int = 60
+    contact_email: str | None = None
     allowed_models: frozenset[str] = frozenset(
         {"gpt-4o", "gpt-4o-mini", "claude-3-5-sonnet", "gemini-1.5-flash"}
     )
@@ -30,12 +32,15 @@ class ProvisionTenantCommand:
 class ProvisionTenantResult:
     """Result DTO returned upon tenant provisioning."""
 
+    id: str
     tenant_id: str
     name: str
+    tier: str
     balance: Decimal
     reserved_amount: Decimal
     available_balance: Decimal
     currency: str
+    contact_email: str | None = None
 
 
 class ProvisionTenantCommandHandler:
@@ -76,6 +81,7 @@ class ProvisionTenantCommandHandler:
                 tier=tier_enum,
                 max_tokens_per_request=command.max_tokens_per_request,
                 monthly_budget_usd=command.monthly_budget_usd,
+                max_requests_per_minute=command.max_requests_per_minute,
                 allowed_models=command.allowed_models,
             )
             tenant = Tenant(
@@ -87,17 +93,21 @@ class ProvisionTenantCommandHandler:
                     currency="USD",
                 ),
                 policy=policy,
+                contact_email=command.contact_email,
             )
             uow.tenants.add(tenant)
             uow.commit()
 
             return ProvisionTenantResult(
+                id=str(tenant.id),
                 tenant_id=str(tenant.id),
                 name=tenant.name,
+                tier=tenant.policy.tier.value,
                 balance=tenant.budget.balance,
                 reserved_amount=tenant.budget.reserved_amount,
                 available_balance=tenant.budget.available_balance,
                 currency=tenant.budget.currency,
+                contact_email=tenant.contact_email,
             )
 
 
