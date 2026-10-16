@@ -62,7 +62,7 @@ test-file:
 test-happy-path:
 	.venv/bin/python -m pytest tests/integration/test_walkthrough_happy_path.py -v
 
-.PHONY: install install-dev test test-file test-happy-path coverage lint format format-check typecheck security audit check-all docs-build run-api run-worker db/upgrade db/downgrade db/shell stack/up stack/up-build stack/down stack/status
+.PHONY: install install-dev test test-file test-happy-path coverage lint format format-check typecheck security audit check-all docs-build run-api run-worker db/upgrade db/downgrade db/shell stack/up stack/up-d stack/up-build stack/up-build-d stack/down stack/down-v stack/down-clean stack/status stack/logs stack/recreate stack/recreate-build stack/reset stack/reset-build
 
 # Ejecutar todas las comprobaciones de calidad, tipado, seguridad y tests
 check-all: format-check lint typecheck security test
@@ -91,18 +91,67 @@ db/downgrade:
 db/shell:
 	docker compose exec db /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourStrong!Passw0rd' -C -d ChatbotDB
 
-# Levantar servicios con Docker Compose (API + Worker + DB + Broker)
+# Levantar servicios con Docker Compose en primer plano (API + Worker + DB + Broker)
 stack/up:
 	docker compose up
 
-# Reconstruir y levantar servicios con Docker Compose
+# Levantar servicios con Docker Compose en segundo plano (detached mode)
+stack/up-d:
+	docker compose up -d
+
+# Reconstruir y levantar servicios con Docker Compose en primer plano
 stack/up-build:
 	docker compose up --build
 
-# Detener servicios de Docker Compose
+# Reconstruir y levantar servicios con Docker Compose en segundo plano
+stack/up-build-d:
+	docker compose up --build -d
+
+# Detener servicios de Docker Compose preservando volúmenes
 stack/down:
 	docker compose down
+
+# Detener servicios y purgar volúmenes persistentes de datos (DB y Broker)
+stack/down-v:
+	docker compose down -v
+
+# Alias expresivo para detener servicios y purgar volúmenes de datos
+stack/down-clean: stack/down-v
 
 # Ver estado de los servicios de Docker Compose
 stack/status:
 	docker compose ps
+
+# Seguir los logs de todos los servicios de Docker Compose en tiempo real
+stack/logs:
+	docker compose logs -f
+
+# Recrear el stack desde cero: purga volúmenes, inicializa DB/Broker, aplica migraciones y levanta la API
+stack/recreate: stack/down-v
+	@echo "==> Iniciando infraestructura de base de datos y broker..."
+	@docker compose up -d db broker
+	@echo "==> Aguardando a que SQL Server esté saludable..."
+	@until [ "$$(docker inspect --format '{{.State.Health.Status}}' chatbot_db 2>/dev/null)" = "healthy" ]; do \
+		sleep 2; \
+	done
+	@echo "==> Base de datos lista. Aplicando migraciones Alembic..."
+	@.venv/bin/alembic upgrade head
+	@echo "==> Levantando servicios de API y Worker..."
+	docker compose up
+
+# Reconstruir imágenes y recrear el stack desde cero con migraciones aplicadas
+stack/recreate-build: stack/down-v
+	@echo "==> Iniciando infraestructura de base de datos y broker..."
+	@docker compose up -d db broker
+	@echo "==> Aguardando a que SQL Server esté saludable..."
+	@until [ "$$(docker inspect --format '{{.State.Health.Status}}' chatbot_db 2>/dev/null)" = "healthy" ]; do \
+		sleep 2; \
+	done
+	@echo "==> Base de datos lista. Aplicando migraciones Alembic..."
+	@.venv/bin/alembic upgrade head
+	@echo "==> Reconstruyendo imágenes y levantando servicios..."
+	docker compose up --build
+
+# Alias concisos para recreación del stack
+stack/reset: stack/recreate
+stack/reset-build: stack/recreate-build
