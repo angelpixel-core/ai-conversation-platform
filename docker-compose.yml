@@ -59,13 +59,14 @@ services:
       test: [ "CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourStrong@Password123' -C -Q 'SELECT 1' || exit 1" ]
       interval: 5s
       timeout: 5s
-      retries: 10
-      start_period: 10s
+      retries: 15
+      start_period: 30s
     restart: unless-stopped
 
   broker:
     image: rabbitmq:3-management-alpine
     container_name: chatbot_broker
+    init: true
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -78,8 +79,8 @@ services:
       test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
       interval: 5s
       timeout: 5s
-      retries: 10
-      start_period: 10s
+      retries: 20
+      start_period: 30s
     restart: unless-stopped
 
 volumes:
