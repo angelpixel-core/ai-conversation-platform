@@ -1,0 +1,225 @@
+/chatbot-ai-rag-langchain/apps/chatbot/service/api/.agent/templates
+├── application
+│   ├── commands
+│   │   ├── command_handler.tt.py
+│   │   ├── command.tt.py
+│   │   ├── reserve_quota_command.tt.py
+│   │   ├── test_command_handler.tt.py
+│   │   └── test_reserve_quota_command.tt.py
+│   ├── queries
+│   │   ├── query_handler.tt.py
+│   │   ├── query.tt.py
+│   │   └── test_query_handler.tt.py
+│   ├── services
+│   │   ├── graph_execution_engine.tt.py
+│   │   ├── guardrail_pipeline_service.tt.py
+│   │   ├── hybrid_retriever_service.tt.py
+│   │   ├── model_router_service.tt.py
+│   │   ├── stream_recovery_service.tt.py
+│   │   ├── test_graph_execution_engine.tt.py
+│   │   ├── test_guardrail_pipeline_service.tt.py
+│   │   ├── test_hybrid_retriever_service.tt.py
+│   │   ├── test_model_router_service.tt.py
+│   │   ├── test_stream_recovery_service.tt.py
+│   │   ├── test_tool_policy_evaluator_service.tt.py
+│   │   └── tool_policy_evaluator_service.tt.py
+│   ├── shared
+│   │   ├── idempotency
+│   │   │   ├── idempotent_command_executor.tt.py
+│   │   │   └── test_idempotent_command_executor.tt.py
+│   │   ├── ports
+│   │   │   ├── event_consumer_port.tt.py
+│   │   │   ├── event_publisher_port.tt.py
+│   │   │   ├── http_client_port.tt.py
+│   │   │   ├── idempotency_repository_port.tt.py
+│   │   │   ├── llm_client_port.tt.py
+│   │   │   ├── message_broker_port.tt.py
+│   │   │   ├── stream_buffer_repository_port.tt.py
+│   │   │   ├── test_event_consumer_port.tt.py
+│   │   │   ├── test_event_publisher_port.tt.py
+│   │   │   ├── test_idempotency_repository_port.tt.py
+│   │   │   ├── test_message_broker_port.tt.py
+│   │   │   ├── test_stream_buffer_repository_port.tt.py
+│   │   │   ├── test_unit_of_work_port.tt.py
+│   │   │   └── unit_of_work_port.tt.py
+│   │   ├── tenant_context.tt.py
+│   │   ├── test_tenant_context.tt.py
+│   │   └── trace_context_carrier.tt.py
+│   └── workers
+│       ├── llm_message_processing_worker.tt.py
+│       └── test_llm_message_processing_worker.tt.py
+├── domain
+│   ├── entities
+│   │   ├── audit_log_record.tt.py
+│   │   ├── document_chunk_entity.tt.py
+│   │   ├── document_entity.tt.py
+│   │   ├── entity.tt.py
+│   │   ├── security_incident.tt.py
+│   │   ├── tenant_entity.tt.py
+│   │   ├── test_audit_log_record.tt.py
+│   │   ├── test_document_chunk_entity.tt.py
+│   │   ├── test_document_entity.tt.py
+│   │   ├── test_entity.tt.py
+│   │   ├── test_tenant_entity.tt.py
+│   │   ├── test_tool_approval_request.tt.py
+│   │   ├── test_workflow_graph.tt.py
+│   │   ├── test_workflow_instance.tt.py
+│   │   ├── tool_approval_request.tt.py
+│   │   ├── workflow_graph.tt.py
+│   │   └── workflow_instance.tt.py
+│   ├── events
+│   │   ├── domain_event.tt.py
+│   │   ├── event_envelope.tt.py
+│   │   ├── knowledge_events.tt.py
+│   │   ├── tenant_events.tt.py
+│   │   ├── test_domain_event.tt.py
+│   │   ├── test_event_envelope.tt.py
+│   │   ├── test_knowledge_events.tt.py
+│   │   └── test_tenant_events.tt.py
+│   ├── ports
+│   │   ├── audit_repository_port.tt.py
+│   │   ├── embedding_client_port.tt.py
+│   │   ├── knowledge_repository_port.tt.py
+│   │   ├── model_catalog_port.tt.py
+│   │   ├── repository_port.tt.py
+│   │   ├── sandboxed_tool_runner_port.tt.py
+│   │   ├── tenant_repository_port.tt.py
+│   │   ├── test_audit_repository_port.tt.py
+│   │   ├── test_embedding_client_port.tt.py
+│   │   ├── test_knowledge_repository_port.tt.py
+│   │   ├── test_model_catalog_port.tt.py
+│   │   ├── test_repository_port.tt.py
+│   │   ├── test_sandboxed_tool_runner_port.tt.py
+│   │   ├── test_tenant_repository_port.tt.py
+│   │   ├── test_tool_approval_repository_port.tt.py
+│   │   ├── test_workflow_checkpoint_repository_port.tt.py
+│   │   ├── tool_approval_repository_port.tt.py
+│   │   └── workflow_checkpoint_repository_port.tt.py
+│   ├── shared
+│   │   ├── aggregate_root.tt.py
+│   │   ├── domain_error.tt.py
+│   │   ├── test_aggregate_root.tt.py
+│   │   └── test_domain_error.tt.py
+│   └── value_objects
+│       ├── agent_role.tt.py
+│       ├── citation.tt.py
+│       ├── embedding_vector.tt.py
+│       ├── graph_edge.tt.py
+│       ├── idempotency_key.tt.py
+│       ├── model_route.tt.py
+│       ├── monetary_budget.tt.py
+│       ├── safety_verdict.tt.py
+│       ├── state_snapshot.tt.py
+│       ├── stream_chunk.tt.py
+│       ├── tenant_id.tt.py
+│       ├── test_agent_role.tt.py
+│       ├── test_citation.tt.py
+│       ├── test_embedding_vector.tt.py
+│       ├── test_graph_edge.tt.py
+│       ├── test_idempotency_key.tt.py
+│       ├── test_model_route.tt.py
+│       ├── test_monetary_budget.tt.py
+│       ├── test_state_snapshot.tt.py
+│       ├── test_stream_chunk.tt.py
+│       ├── test_tenant_id.tt.py
+│       ├── test_tool_call.tt.py
+│       ├── test_tool_definition.tt.py
+│       ├── test_tool_result.tt.py
+│       ├── test_value_object.tt.py
+│       ├── tool_call.tt.py
+│       ├── tool_definition.tt.py
+│       ├── tool_result.tt.py
+│       └── value_object.tt.py
+├── infrastructure
+│   ├── governance
+│   │   ├── anyio_stream_guardrail_filter.tt.py
+│   │   └── regex_pii_scanner.tt.py
+│   ├── llm
+│   │   ├── llm_adapter.tt.py
+│   │   └── test_llm_adapter.tt.py
+│   ├── messaging
+│   │   ├── anyio_subagent_worker.tt.py
+│   │   ├── in_memory
+│   │   │   ├── in_memory_message_broker.tt.py
+│   │   │   └── test_in_memory_message_broker.tt.py
+│   │   ├── rabbitmq
+│   │   │   ├── rabbitmq_connection_manager.tt.py
+│   │   │   ├── rabbitmq_consumer_adapter.tt.py
+│   │   │   ├── rabbitmq_publisher_adapter.tt.py
+│   │   │   ├── rabbitmq_topology_config.tt.py
+│   │   │   ├── test_rabbitmq_adapters.tt.py
+│   │   │   └── test_rabbitmq_connection_and_topology.tt.py
+│   │   └── test_anyio_subagent_worker.tt.py
+│   ├── persistence
+│   │   ├── in_memory
+│   │   │   ├── in_memory_audit_repository.tt.py
+│   │   │   ├── in_memory_idempotency_repository.tt.py
+│   │   │   ├── in_memory_repository_adapter.tt.py
+│   │   │   ├── in_memory_unit_of_work_adapter.tt.py
+│   │   │   ├── test_in_memory_audit_repository.tt.py
+│   │   │   ├── test_in_memory_idempotency_repository.tt.py
+│   │   │   ├── test_in_memory_repository.tt.py
+│   │   │   └── test_in_memory_unit_of_work.tt.py
+│   │   └── sqlmodel
+│   │       ├── mapper.tt.py
+│   │       ├── models.tt.py
+│   │       ├── mssql_tenant_repository.tt.py
+│   │       ├── outbox_repository.tt.py
+│   │       ├── repository.tt.py
+│   │       ├── tenant_mapper.tt.py
+│   │       ├── tenant_model.tt.py
+│   │       ├── test_mapper.tt.py
+│   │       ├── test_models.tt.py
+│   │       ├── test_mssql_tenant_repository.tt.py
+│   │       ├── test_outbox_repository.tt.py
+│   │       ├── test_repository.tt.py
+│   │       ├── test_tenant_mapper.tt.py
+│   │       ├── test_tenant_model.tt.py
+│   │       ├── test_unit_of_work.tt.py
+│   │       └── unit_of_work.tt.py
+│   ├── shared
+│   │   ├── http_client
+│   │   │   ├── httpx_client_adapter.tt.py
+│   │   │   └── test_httpx_client_adapter.tt.py
+│   │   ├── logging
+│   │   │   ├── logging_config.tt.py
+│   │   │   └── test_logging_config.tt.py
+│   │   ├── persistence
+│   │   │   └── outbox
+│   │   │       ├── outbox_pattern.tt.py
+│   │   │       ├── outbox_relay.tt.py
+│   │   │       ├── test_outbox_pattern.tt.py
+│   │   │       └── test_outbox_relay.tt.py
+│   │   └── telemetry
+│   │       ├── telemetry.tt.py
+│   │       └── test_telemetry.tt.py
+│   └── tools
+│       ├── anyio_sandboxed_tool_runner.tt.py
+│       └── test_anyio_sandboxed_tool_runner.tt.py
+├── interfaces
+│   ├── cli
+│   │   ├── cli_command.tt.py
+│   │   └── test_cli_command.tt.py
+│   ├── http
+│   │   ├── idempotency_dependency.tt.py
+│   │   ├── resumable_sse_endpoint.tt.py
+│   │   ├── router.tt.py
+│   │   ├── schema.tt.py
+│   │   ├── sse_streaming_endpoint.tt.py
+│   │   ├── tenant_context_middleware.tt.py
+│   │   ├── tenant_dependency.tt.py
+│   │   ├── test_http_router.tt.py
+│   │   ├── test_idempotency_dependency.tt.py
+│   │   ├── test_resumable_sse_endpoint.tt.py
+│   │   ├── test_schema.tt.py
+│   │   ├── test_sse_streaming_endpoint.tt.py
+│   │   ├── test_tenant_context_middleware.tt.py
+│   │   └── test_tenant_dependency.tt.py
+│   └── worker
+│       ├── test_worker_entrypoint.tt.py
+│       └── worker_entrypoint.tt.py
+├── main.tt.py
+├── tests
+│   └── test_guardrail_pipeline.tt.py
+└── TREE.txt
+
