@@ -142,7 +142,7 @@ stack/recreate: stack/down-v
 # Reconstruir imágenes y recrear el stack desde cero con migraciones aplicadas
 stack/recreate-build: stack/down-v
 	@echo "==> Iniciando infraestructura de base de datos y broker..."
-	@docker compose up -d db broker
+	@docker compose up db broker
 	@echo "==> Aguardando a que SQL Server esté saludable..."
 	@until [ "$$(docker inspect --format '{{.State.Health.Status}}' chatbot_db 2>/dev/null)" = "healthy" ]; do \
 		sleep 2; \
