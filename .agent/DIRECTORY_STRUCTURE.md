@@ -16,7 +16,9 @@ ai-conversation-platform/
 │
 ├── docs/
 │   ├── architecture.md
-│   └── roadmap.md
+│   ├── roadmap.md
+│   └── articles/                           <-- Artículos técnicos por vertical slice
+│       └── README.md
 │
 └── .agent/
     ├── rules/
@@ -38,6 +40,8 @@ ai-conversation-platform/
     │   └── system-map.mermaid.md
     │
     └── templates/                          <-- JERARQUÍA POR CAPAS (Clean Architecture)
+        ├── ARTICLE_TEMPLATE.md             (agnóstica)
+        ├── ARTICLE_TEMPLATE.python.md      (Python / FastAPI / pytest)
         ├── domain/
         │   ├── entity.tt.py
         │   └── repository_port.tt.py

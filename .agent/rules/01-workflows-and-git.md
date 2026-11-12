@@ -29,7 +29,9 @@ Para cada funcionalidad, refactor o slice asignado, el agente debe seguir este o
    - Si una prueba falla, entrar en ciclo de autocorrección. **Queda terminantemente prohibido modificar los tests para forzar que pasen si el cambio debilita las invariantes de negocio.**
 4. **Sincronización del Diagrama Vivo (Mermaid):**
    - Antes de dar la tarea por finalizada, actualizar `.agent/architecture/system-map.mermaid.md`.
-5. **Reporte al Desarrollador:**
+5. **Publicación Técnica (solo vertical slices):**
+   - Consolidar y validar `docs/articles/ARTICLE-<NNN>-<slug>.md` según la §4.
+6. **Reporte al Desarrollador:**
    - Presentar el resumen del cambio, el estado de los tests y el diff visual del diagrama actualizado.
 
 ---
@@ -70,4 +72,21 @@ Un commit solo puede sugerirse o ejecutarse si:
 2. No existen imports circulares ni violaciones de capas de `00-core-philosophy.md`.
 3. El archivo `.agent/architecture/system-map.mermaid.md` refleja fielmente los artefactos del commit.
 4. No se dejan archivos temporales, logs ni credenciales en el staged area.
+5. Si el cambio es un vertical slice, su artículo técnico existe y pasa el gate de la §4.
+
+---
+
+## 4. Fase de Publicación Técnica (Vertical Slices)
+
+Cada vertical slice (User Story, command o query) produce un artículo técnico. Los refactors y cambios de arquitectura NO generan artículo: se documentan en ADRs (`.agent/architecture/decisions/`).
+
+1. **Creación:** al iniciar el slice, copiar `.agent/templates/ARTICLE_TEMPLATE.python.md` a `docs/articles/ARTICLE-<NNN>-<slug>.md` (NNN = siguiente número libre de 3 dígitos) y registrar la entrada en `docs/articles/README.md`.
+2. **Redacción incremental:** §1-2 al definir contratos y diseño; §3 tras el dominio; §4 con salidas reales de `pytest`; §5-6 al refactor y commits. Idioma: español, identificadores en inglés.
+3. **Gate (Definition of Done):** antes de sugerir el commit, verificar que:
+   - No quedan placeholders `[...]`, salvo `Squash Commit en main: pendiente`.
+   - Todos los paths citados existen en el repositorio.
+   - Los bloques de resultados de §4 provienen de ejecuciones reales de `pytest`.
+   Si el gate falla, no se sugiere ni ejecuta el commit.
+4. **Commit:** `docs(publication): add technical article for US-XX` en la feature branch.
+5. **Post-merge (opcional):** reemplazar `pendiente` por el hash del squash commit en `main`.
 
