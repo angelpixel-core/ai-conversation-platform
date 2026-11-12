@@ -1,0 +1,1254 @@
+├── .agent/                                           # Gobernanza, memoria del agente y arquitectura viva
+│   ├── rules/                                        # Invariantes no negociables (00-core-philosophy, 01-workflows-and-git)
+│   ├── specs/current/                                # Especificación técnica y requerimientos del slice en ejecución
+│   ├── templates/                                    # Plantillas canónicas de referencia y scaffolding por capa
+│   └── architecture/
+│       ├── decisions/                                # Registros formales de decisiones de arquitectura (ADR 0001..XXXX)
+│       └── system-map.mermaid.md                     # Diagrama vivo de componentes, flujos y eventos del sistema (Mermaid)
+├── .github/                                          # [Gobernanza DevOps]: Automatización CI/CD, seguridad y release
+│   └── workflows/
+│       ├── ci.yml                                    # Pipeline continuo: lint (Ruff), typecheck (Mypy) y tests (Pytest)
+│       ├── cd.yml                                    # Despliegue automatizado: build multi-stage Docker y push a registry
+│       ├── security.yml                              # Auditoría de dependencias y escaneo de vulnerabilidades (Trivy/Bandit)
+│       └── release.yml                               # Versionado semántico y publicación de tags/releases
+├── .dockerignore                                     # Exclusiones de contexto Docker (.git, caches, venv, node_modules)
+├── .env.example                                      # Matriz documentada de variables de entorno con valores seguros por defecto
+├── .gitignore                                        # Ignorados canónicos Git (.venv, __pycache__, dist, coverage)
+├── Dockerfile                                        # Imagen multi-stage optimizada (compila web/client y empaqueta backend)
+├── Makefile                                          # Catálogo canónico: install, check-all, stack/up(-d), stack/down(-v), stack/recreate
+├── README.md                                         # Visión general, contexto de negocio y arquitectura del proyecto
+├── TREE.txt                                          # Mapa exhaustivo vivo de archivos y directorios del proyecto
+├── alembic.ini                                       # Configuración de migraciones relacionales y versionado de base de datos
+├── pyproject.toml                                    # Empaquetado estándar, dependencias y configuración de linters/testers
+├── package.json                                      # [Opcional] Tooling de compilación y bundling para interfaces/web/client/
+├── tsconfig.json                                     # [Opcional] Configuración TypeScript estricta para el cliente web
+├── vite.config.ts                                    # [Opcional] Bundler de alta velocidad apuntando a interfaces/web/client/
+├── bin/                                              # Entrypoints ejecutables del sistema ("Las Puertas de Disparo")
+│   ├── api                                           # Entrypoint ejecutable de servidor HTTP / REST / GraphQL (:8000)
+│   ├── web                                           # Entrypoint ejecutable de servidor Web / Portal visual (:3000 o embebido)
+│   ├── worker                                        # Entrypoint ejecutable del consumidor asíncrono de eventos y Outbox Relay
+│   ├── mcp                                           # Entrypoint ejecutable de servidor Model Context Protocol (stdio / SSE)
+│   ├── grpc                                          # [Opcional] Entrypoint de servidor gRPC / Protobuf (:50051)
+│   ├── <project_cli>                                 # CLI unificada Typer (ej. reconcile-cli, trading-cli, platform-cli)
+│   ├── ingest                                        # [Wrapper opcional] Entrypoint de ingesta o simulación sintética de datos
+│   ├── transform                                     # [Wrapper opcional] Entrypoint de transformación o motor de cálculo
+│   ├── export                                        # [Wrapper opcional] Entrypoint de compilación y exportación de reportes
+│   ├── serve                                         # [Wrapper opcional] Entrypoint de dashboard reactivo local (ej. Marimo :2718)
+│   ├── monitor                                       # [Wrapper opcional] Entrypoint de evaluación de SLAs, guardrails o drift
+│   └── simulate                                      # [Wrapper opcional] Entrypoint de simulación sintética de tráfico de caos y estrés
+├── compose.yml                                       # Orquestación declarativa Docker Compose multi-servicio
+│   │                                                 # [Servicios]: api (:8000), web (:3000), worker, db (:1433/:5432), broker (:5672)
+│   │                                                 # [Cloud Emulator - Floci]: Emulación local de servicios cloud (S3/GCS, SQS/PubSub, KMS)
+│   │                                                 # [Nota Adaptación]: Activación mediante 'profiles: ["cloud"]' o toggle CLOUD_EMULATOR_ENABLED
+├── config/                                           # Configuración tipada jerárquica con pydantic-settings
+│   ├── environments/                                 # Perfiles de configuración segregados por entorno
+│   │   ├── base.py                                   # Esquema base inmutable y validación de tipos
+│   │   ├── development.py                            # Perfil de desarrollo local con recarga en vivo
+│   │   ├── testing.py                                # Perfil de pruebas con bases de datos fakes y emulador Floci
+│   │   └── production.py                             # Perfil endurecido para staging y producción
+│   ├── <operational_thresholds>.json                 # Umbrales contractuales, guardrails de SLAs, cuotas o hiperparámetros
+│   └── settings.py                                   # Punto de carga singleton que resuelve el entorno activo
+├── data/
+│   ├── raw/                                          # Fuentes de datos crudas, extractos externos o ground truth
+│   └── processed/                                    # Datasets procesados, tablas normalizadas y registros de auditoría
+├── docs/
+│   ├── README.md                                     # Índice central y orden de lectura recomendado de la documentación
+│   ├── 001-walkthrough.md                            # Guía de ejecución paso a paso de inicio a fin (Golden Path)
+│   ├── 002-<domain_deliverable_guide>.md             # Manual de uso del entregable principal (ej. 002-audit-guide.md)
+│   ├── 003-<stakeholder_insights>.md                 # Preguntas estratégicas de negocio e insights para directores / CFO
+│   ├── 004-<dashboard_usage_guide>.md                # Guía interactiva del dashboard analítico (ej. Marimo o Streamlit)
+│   ├── 005-<ops_runbook>.md                          # Runbook de monitoreo, guardrails y respuesta a incidentes operativos
+│   ├── 006-architecture-and-solution-design.md      # Arquitectura de Sistemas, Bounded Contexts y Blueprint de Solución
+│   ├── 007-testing-strategy-and-quality-pyramid.md   # Estrategia de Testing y Pirámide de Calidad de 4 Niveles
+│   ├── roadmap/                                      # Roadmap evolutivo por casos de uso con checkboxes interactivos (- [ ])
+│   │   ├── README.md                                 # Índice de hitos completados y en progreso
+│   │   └── rfc/                                      # Especificaciones formales RFC (RFC-01, RFC-02, RFC-32)
+│   ├── assets/
+│   │   └── walkthrough/                              # Capturas visuales de evidencia CLI, entregables y dashboards
+│   ├── publications/                                 # Material editorial y difusión técnica
+│   │   ├── article.md                                # Artículo técnico pilar (~9-10 min) para blog o CMS
+│   │   └── social-drafts/                            # Borradores para redes profesionales (LinkedIn, X, video)
+│   └── showcase/                                     # Entregables interactivos de demostración
+│       ├── <audit_or_analytical_model>.<xlsx|ext>    # Modelo descargable (ej. Audit_Model.xlsx)
+│       ├── portfolio-showcase.md                     # Ficha técnica estandarizada y métricas para portfolio / CMS
+│       └── <dashboard_report>.<html|ext>             # Reporte interactivo estático exportado (ej. dashboard.html)
+├── packages/                                         # [Opcional Monorepo Workspaces]: Paquetes internos desacoplados
+│   ├── ui_tokens/                                    # [Ejemplo Típico Frontend]: Tokens de diseño, temas y colores
+│   │   ├── package.json
+│   │   ├── tokens.json
+│   │   └── src/index.ts
+│   └── core_crypto/                                  # [Ejemplo Agnóstico Backend]: Librería interna de hashing y firmas
+│       ├── pyproject.toml
+│       └── src/core_crypto/hasher.py
+├── sdks/                                             # [Opcional Clientes Externos]: SDKs distribuibles para consumidores de la API
+│   ├── python/                                       # [Cliente Python]: httpx + pydantic client para terceros
+│   │   ├── pyproject.toml
+│   │   └── company_api_client/
+│   │       ├── client.py
+│   │       └── models.py
+│   └── typescript/                                   # [Cliente TypeScript]: npm package para frontends externos o partners
+│       ├── package.json
+│       └── src/
+│           ├── client.ts
+│           └── types.ts
+├── src/
+│   └── <project_package>/                            # Paquete raíz unificado del sistema
+│       ├── libs/                                     # Utilidades y algoritmos puros sin dependencias de negocio (cero reglas de dominio)
+│       │   ├── crypto/                               # [Ejemplo Típico]: Criptografía y firmas
+│       │   │   ├── hmac_signer/
+│       │   │   │   └── signer.py                     # Firmas HMAC-SHA256 para webhooks
+│       │   │   └── token_hasher/
+│       │   │       └── hasher.py                     # Algoritmos de hashing determinista
+│       │   ├── algorithms/                           # [Ejemplo Agnóstico]: Algoritmos deterministas agnósticos
+│       │   │   ├── rate_limiter/
+│       │   │   │   └── token_bucket.py               # Algoritmo de rate limiting matemático
+│       │   │   └── graph/
+│       │   │       └── cycle_detector.py             # Detección de ciclos en grafos de dependencias
+│       │   └── sanitizers/                           # Limpieza y formateo de texto
+│       │       ├── html/
+│       │       │   └── sanitizer.py                  # Sanitización XSS de strings
+│       │       └── markdown/
+│       │           └── cleaner.py                    # Normalización de contenido markdown
+│       │
+│       ├── shared_kernel/                            # Capacidades transversales y contratos desacoplados (Enterprise Core)
+│       │   ├── domain/                               # [Canónico / Abstracto]: Contratos base sin dependencias de framework
+│       │   │   ├── contracts/                        # Interfaces abstractas base
+│       │   │   │   ├── aggregate_root.py             # Clase base AggregateRoot con registro y despacho de DomainEvents
+│       │   │   │   ├── event_sourced_aggregate.py    # Clase base EventSourcedAggregate (rehydrate, apply, uncommitted_events)
+│       │   │   │   ├── domain_error.py               # Excepción base tipada para errores de dominio invariantes
+│       │   │   │   ├── concurrency_error.py          # Excepción base OptimisticConcurrencyError ante colisiones de versión
+│       │   │   │   ├── value_object.py               # Inmutable por igualdad estructural (frozen dataclass)
+│       │   │   │   └── domain_event.py               # Protocolo/Base inmutable de eventos de dominio con timestamp y UUID
+│       │   │   ├── events/                           # Eventos y sobres de transporte de dominio
+│       │   │   │   └── envelope/
+│       │   │   │       ├── cloud_event.py            # [Canónico / Abstracto]: Sobre estándar CloudEvents v1.0.2 inmutable
+│       │   │   │       └── claim_check.py            # [Canónico / Abstracto]: Puntero ClaimCheck inmutable para payloads pesados
+│       │   │   └── value_objects/                    # Value Objects universales organizados por concepto
+│       │   │       ├── money/
+│       │   │       │   ├── money.py                  # [Ejemplo Canónico]: Monto decimal inmutable
+│       │   │       │   └── currency.py               # [Ejemplo Canónico]: Código ISO-4217 validado
+│       │   │       ├── identity/
+│       │   │       │   ├── tenant_id.py              # [Ejemplo Canónico]: Identificador tipado de aislamiento multi-inquilino
+│       │   │       │   └── idempotency_key.py        # [Ejemplo Canónico]: UUIDv4 / Hash inmutable para deduplicación
+│       │   │       ├── residency/
+│       │   │       │   └── region.py                 # [Ejemplo Canónico]: Value Object DataResidencyRegion (Soberanía legal de datos)
+│       │   │       ├── ai_embeddings/
+│       │   │       │   └── vector.py                 # [Adaptación IA]: Vector float32 normalizado con cálculo de similitud
+│       │   │       ├── moderation/
+│       │   │       │   └── safety_verdict.py         # [Adaptación IA]: Dictamen de moderación, severidad y banderas PII
+│       │   │       └── routing/
+│       │   │           ├── model_route.py            # [Adaptación IA]: Proveedor LLM, nombre de modelo y cuota asociada
+│       │   │           └── stream_chunk.py           # [Adaptación IA]: Fragmento delta de texto, token ID y bandera final
+│       │   │
+│       │   ├── application/                          # Orquestación transversal y puertos de infraestructura (Ports)
+│       │   │   ├── bus/                              # [Mediator & Dispatcher]: Despacho centralizado y Pipeline Behaviors
+│       │   │   │   ├── command/
+│       │   │   │   │   ├── bus.py                    # Enruta comandos a su handler correspondiente
+│       │   │   │   │   └── pipeline.py               # Encadenador de middlewares/behaviors de comandos
+│       │   │   │   ├── query/
+│       │   │   │   │   └── bus.py                    # Enruta queries a su handler optimizado
+│       │   │   │   ├── event/
+│       │   │   │   │   └── bus.py                    # Despacha DomainEvents hacia los EventHandlers suscritos
+│       │   │   │   └── behaviors/                    # Pipeline Behaviors transversales automáticos
+│       │   │   │       ├── validation/
+│       │   │   │       │   └── behavior.py           # Validación automática de esquemas antes de ejecutar el handler
+│       │   │   │       ├── logging/
+│       │   │   │       │   └── behavior.py           # Registro estructurado de inicio, fin y latencia del caso de uso
+│       │   │   │       ├── metrics/
+│       │   │   │       │   └── behavior.py           # Telemetría OpenTelemetry y contadores de rendimiento
+│       │   │   │       ├── transaction/
+│       │   │   │       │   └── behavior.py           # Gestión atómica del UnitOfWork (commit si ok, rollback en error)
+│       │   │   │       ├── circuit_breaker/
+│       │   │   │       │   └── behavior.py           # Corta la ejecución si el caso de uso supera umbrales de fallo continuo
+│       │   │   │       └── feature_flag/
+│       │   │   │           └── behavior.py           # Valida si una bandera está activa antes de ejecutar el handler
+│       │   │   │
+│       │   │   ├── ports/                            # Interfaces secundarias (SPI) organizadas por namespace
+│       │   │   │   ├── persistence/
+│       │   │   │   │   ├── unit_of_work.py           # [Canónico / Abstracto]: Contrato de transacciones atómicas (commit/rollback)
+│       │   │   │   │   └── idempotency_repository.py # [Canónico / Abstracto]: Contrato de persistencia de llaves de idempotencia
+│       │   │   │   ├── messaging/
+│       │   │   │   │   ├── event_publisher.py        # [Canónico / Abstracto]: Contrato de publicación de eventos de integración
+│       │   │   │   │   └── event_consumer.py         # [Canónico / Abstracto]: Contrato de escucha asíncrona de mensajes
+│       │   │   │   ├── cache/
+│       │   │   │   │   └── repository.py             # [Canónico / Abstracto]: Contrato KV con TTL (get, set, delete)
+│       │   │   │   ├── clock/
+│       │   │   │   │   └── service.py                # [Canónico / Abstracto]: Contrato de tiempo determinista para tests
+│       │   │   │   ├── storage/
+│       │   │   │   │   └── service.py                # [Canónico / Abstracto]: Contrato de almacenamiento de archivos / blobs
+│       │   │   │   ├── secrets/
+│       │   │   │   │   ├── service.py                # [Canónico / Abstracto]: Contrato de acceso a llaves KMS y secretos
+│       │   │   │   │   └── lease_manager.py          # [Canónico / Abstracto]: Contrato DynamicSecretLeasePort (credenciales efímeras Vault)
+│       │   │   │   ├── network/
+│       │   │   │   │   └── http_client.py            # [Canónico / Abstracto]: Contrato agnóstico de llamadas HTTP salientes
+│       │   │   │   ├── rate_limit/
+│       │   │   │   │   └── limiter.py                # [Canónico / Abstracto]: Contrato para inspección y consumo de cuotas
+│       │   │   │   ├── feature_flags/
+│       │   │   │   │   └── service.py                # [Canónico / Abstracto]: Contrato is_enabled(flag_key, context)
+│       │   │   │   ├── authorization/
+│       │   │   │   │   └── service.py                # [Canónico / Abstracto]: Contrato ABAC/PBAC is_authorized(subject, resource, action)
+│       │   │   │   ├── identity/
+│       │   │   │   │   └── provider.py               # [Canónico / Abstracto]: Contrato PrincipalProviderPort (subject, tenant, roles)
+│       │   │   │   ├── entitlements/
+│       │   │   │   │   └── service.py                # [Canónico / Abstracto]: Contrato EntitlementsPort (has_feature, check_quota por plan)
+│       │   │   │   ├── crypto/
+│       │   │   │   │   └── shredder.py               # [Canónico / Abstracto]: Contrato CryptoShredderPort (GDPR crypto-shredding)
+│       │   │   │   ├── workflows/
+│       │   │   │   │   └── repository.py             # [Canónico / Abstracto]: Contrato WorkflowStateRepository (save, load, correlation)
+│       │   │   │   ├── projections/
+│       │   │   │   │   └── synchronizer.py           # [Canónico / Abstracto]: Contrato ReadModelSynchronizerPort (wait_for_watermark)
+│       │   │   │   ├── schema_registry/
+│       │   │   │   │   └── validator.py              # [Canónico / Abstracto]: Contrato SchemaRegistryPort (validate_payload, check_compatibility)
+│       │   │   │   ├── presenters/
+│       │   │   │   │   └── formatter.py              # [Canónico / Abstracto]: Contrato OutputPresenterPort (format_text, format_json, format_table)
+│       │   │   │   └── ai/
+│       │   │   │       ├── llm_client.py             # [Adaptación IA]: Contrato agnóstico de modelos generativos
+│       │   │   │       ├── stream_buffer_repo.py     # [Adaptación IA]: Contrato de buffer temporal para streaming reanudable
+│       │   │   │       └── checkpoint_repository.py  # [Adaptación IA]: Contrato transversal para suspender/reanudar agentes HITL
+│       │   │   ├── idempotency/
+│       │   │   │   └── executor.py                   # IdempotentCommandExecutor (Garantía Exactly-Once de comandos mutables)
+│       │   │   ├── tenant_context/
+│       │   │   │   └── carrier.py                    # TenantContextCarrier (Aislamiento lógico y Row-Level Security)
+│       │   │   └── telemetry/
+│       │   │       ├── trace/
+│       │   │       │   └── carrier.py                # TraceContextCarrier (Propagación W3C traceparent y OpenTelemetry)
+│       │   │       └── baggage/
+│       │   │           └── carrier.py                # BaggageContextCarrier (Propagación W3C Baggage: tenant, user, experiment)
+│       │   │
+│       │   └── infrastructure/                       # Adaptadores duales e infraestructura compartida
+│       │       ├── persistence/                      # Implementación de persistencia física transversal
+│       │       │   ├── in_memory/                    # In-Memory Unit of Work y repositorios para pruebas ultra-veloces
+│       │       │   │   ├── unit_of_work/
+│       │       │   │   │   └── fake.py               # Fake UoW con transacciones virtuales en memoria
+│       │       │   │   └── idempotency/
+│       │       │   │       └── repository.py
+│       │       │   ├── event_store/                  # Componentes transversales para agregados basados en eventos
+│       │       │   │   └── snapshots/
+│       │       │   │       └── policy.py             # Evaluador genérico reutilizable de umbral de eventos (ThresholdSnapshotPolicy)
+│       │       │   ├── mssql_or_pg/                  # Conexión relacional (SQLModel/SQLAlchemy) y Unit of Work transaccional real
+│       │       │   │   ├── connection/
+│       │       │   │   │   └── session.py            # SessionFactory y pool de conexiones asíncrono
+│       │       │   │   ├── replica_router/
+│       │       │   │   │   └── router.py             # Enrutador dinámico de conexiones (Primary Writer vs Read Replicas)
+│       │       │   │   ├── tenant_routing/
+│       │       │   │   │   └── connection_factory.py # Factoría dinámica de conexiones/esquemas por tenant (Database/Schema-per-Tenant)
+│       │       │   │   ├── region_routing/
+│       │       │   │   │   └── cluster_resolver.py   # Resolver de clusters por región geográfica (Soberanía EU/US/APAC)
+│       │       │   │   ├── unit_of_work/
+│       │       │   │   │   └── transaction.py        # Implementación real de UnitOfWorkPort sobre SQLAlchemy Session
+│       │       │   │   ├── models/                   # Modelos relacionales ORM de infraestructura transversal
+│       │       │   │   │   ├── outbox/
+│       │       │   │   │   │   └── model.py          # Tabla outbox_messages para publicación atómica de eventos
+│       │       │   │   │   ├── inbox/
+│       │       │   │   │   │   └── model.py          # Tabla inbox_messages para deduplicación atómica de eventos del broker
+│       │       │   │   │   ├── idempotency/
+│       │       │   │   │   │   └── model.py          # Tabla idempotency_records para llaves y respuestas cacheadas
+│       │       │   │   │   ├── checkpoint/
+│       │       │   │   │   │   └── model.py          # Tabla agent_checkpoints para suspensión y reanudación duradera
+│       │       │   │   │   └── projection_cursor/
+│       │       │   │   │       └── model.py          # Tabla projection_checkpoints para posición/watermark en CQRS
+│       │       │   │   └── mappers/                  # Mapeo bidireccional puro de modelos ORM transversales
+│       │       │   │       ├── outbox/
+│       │       │   │       │   └── mapper.py         # Traduce OutboxRecord <-> DomainEvent serializado
+│       │       │   │       ├── inbox/
+│       │       │   │       │   └── mapper.py         # Traduce InboxRecord <-> IntegrationEvent recibido
+│       │       │   │       ├── idempotency/
+│       │       │   │       │   └── mapper.py         # Traduce IdempotencyRecord <-> IdempotentCommandResult
+│       │       │   │       ├── checkpoint/
+│       │       │   │       │   └── mapper.py         # Traduce CheckpointRecord <-> AgentState serializado
+│       │       │   │       └── projection_cursor/
+│       │       │   │           └── mapper.py         # Traduce ProjectionCursorRecord <-> ProjectionWatermark
+│       │       │   ├── migrations/                   # Entorno y revisiones Alembic (env.py, script.py.mako, versions/)
+│       │       │   └── outbox/                       # OutboxPattern Dual: Polling Relay o Transaction Log CDC
+│       │       │       ├── message/
+│       │       │       │   └── entity.py             # Entidad de persistencia del mensaje Outbox
+│       │       │       ├── relay/
+│       │       │       │   └── worker.py             # Proceso en background de sondeo periódico (Polling Relay estándar)
+│       │       │       └── cdc/
+│       │       │           └── connector.py          # Conector Change Data Capture (Debezium WAL / MSSQL CDC sin contención)
+│       │       ├── cache/                            # Adaptador de almacenamiento KV y cache distribuido
+│       │       │   ├── in_memory/
+│       │       │   │   └── adapter.py                # Dict cache local con expiración en memoria para tests
+│       │       │   └── redis/
+│       │       │       └── adapter.py                # Cliente Redis asíncrono para producción
+│       │       ├── rate_limit/                       # Adaptador de limitación de tasa distribuido y multi-región
+│       │       │   ├── in_memory/
+│       │       │   │   └── adapter.py                # Limitador local en memoria para tests
+│       │       │   ├── redis/
+│       │       │   │   └── adapter.py                # Sliding window / token bucket sobre Redis para producción
+│       │       │   └── crdt/
+│       │       │       └── adapter.py                # Contador libre de conflicto (PN-Counter) para Active-Active Multi-Region
+│       │       ├── clock/                            # Adaptador de tiempo del sistema
+│       │       │   ├── system/
+│       │       │   │   └── adapter.py                # Reloj real UTC del sistema operativo
+│       │       │   └── frozen/
+│       │       │       └── adapter.py                # Reloj congelado para pruebas deterministas y repetibles
+│       │       ├── storage/                          # Adaptador de almacenamiento de archivos y blobs
+│       │       │   ├── local/
+│       │       │   │   └── adapter.py                # Almacenamiento en disco local para desarrollo
+│       │       │   └── s3_or_gcs/
+│       │       │       └── adapter.py                # Almacenamiento en bucket AWS S3 / Google Cloud Storage
+│       │       ├── secrets/                          # Adaptador de recuperación de secretos y KMS
+│       │       │   ├── env/
+│       │       │   │   └── adapter.py                # Lectura desde variables de entorno locales
+│       │       │   ├── kms/
+│       │       │   │   └── adapter.py                # Desencriptación dinámica con AWS KMS o HashiCorp Vault
+│       │       │   └── vault/
+│       │       │       └── dynamic_lease.py          # Adaptador de credenciales de base de datos efímeras con renovación de lease
+│       │       ├── crypto/                           # Adaptador de privacidad y cifrado de datos sensibles
+│       │       │   └── envelope_encryption/
+│       │       │       └── adapter.py                # Cifrado de sobre DEK/KEK con KMS para GDPR crypto-shredding
+│       │       ├── resilience/                       # Políticas de resiliencia y tolerancia a fallos I/O saliente
+│       │       │   ├── circuit_breaker/
+│       │       │   │   └── breaker.py                # Máquina de estados Closed/Open/Half-Open y fallback para llamadas salientes
+│       │       │   ├── retry/
+│       │       │   │   └── policy.py                 # Reintentos con retroceso exponencial y full jitter
+│       │       │   ├── bulkhead/
+│       │       │   │   └── isolator.py               # Aislamiento de concurrencia y semáforos de recursos
+│       │       │   └── fallback/
+│       │       │       └── handler.py                # Respuesta de degradación graciosa ante fallos de downstream
+│       │       ├── feature_flags/                    # Adaptador de evaluación de banderas dinámicas
+│       │       │   ├── local/
+│       │       │   │   └── adapter.py                # Banderas basadas en configuración/entorno para desarrollo
+│       │       │   └── unleash/
+│       │       │       └── adapter.py                # Cliente Unleash / LaunchDarkly para evaluación dinámica
+│       │       ├── authorization/                    # Adaptador de control de acceso por políticas (ABAC)
+│       │       │   ├── in_memory/
+│       │       │   │   └── adapter.py                # Evaluador simple de políticas en memoria para pruebas
+│       │       │   └── opa_or_casbin/
+│       │       │       └── adapter.py                # Motor Open Policy Agent (OPA) / Casbin / Cedar
+│       │       ├── identity/                         # Adaptador de autenticación y verificación de credenciales
+│       │       │   ├── jwt/
+│       │       │   │   └── adapter.py                # Decodificador y validador de tokens Bearer JWT
+│       │       │   └── api_key/
+│       │       │       └── adapter.py                # Validador determinista de hashes de API Keys de servicio
+│       │       ├── entitlements/                     # Adaptador de verificación de planes y cuotas contratadas
+│       │       │   ├── in_memory/
+│       │       │   │   └── adapter.py                # Evaluador de cuotas en memoria para tests
+│       │       │   └── database/
+│       │       │       └── adapter.py                # Evaluador persistente de suscripciones y límites SaaS
+│       │       ├── messaging/                        # Fontanería de mensajería asíncrona
+│       │       │   ├── in_memory/
+│       │       │   │   └── broker.py                 # InMemoryMessageBroker (Bus en memoria para tests aislados)
+│       │       │   ├── envelope/
+│       │       │   │   └── serializer.py             # Serializador y deserializador bidireccional JSON / CloudEvents v1.0.2
+│       │       │   ├── claim_check/
+│       │       │   │   └── interceptor.py            # Interceptor Claim-Check para desvío/hidratación de payloads grandes
+│       │       │   └── rabbitmq_or_redis/            # ConnectionManager, EventPublisher y EventConsumer real para producción
+│       │       │       ├── connection/
+│       │       │       │   └── manager.py            # Manejador de reconexión y topología de exchanges/queues
+│       │       │       ├── publisher/
+│       │       │       │   └── client.py             # Publicador AMQP que implementa EventPublisherPort
+│       │       │       └── consumer/
+│       │       │           └── listener.py           # Listener AMQP que implementa EventConsumerPort
+│       │       ├── schema_registry/                  # Adaptador de gobernanza y validación de contratos de eventos
+│       │       │   ├── local/
+│       │       │   │   └── adapter.py                # Validador de JSONSchema local para desarrollo y tests
+│       │       │   └── confluent/
+│       │       │       └── adapter.py                # Cliente Confluent / Apicurio Schema Registry para producción
+│       │       ├── cloud/                            # Adaptador de emulación cloud
+│       │       │   ├── floci/
+│       │       │   │   └── adapter.py                # Conector hacia emulador local Floci (S3/PubSub/KMS)
+│       │       │   └── s3/
+│       │       │       └── adapter.py                # Adaptador productivo hacia AWS S3 o GCS
+│       │       ├── telemetry/
+│       │       │   ├── otel.py                       # Configuración OpenTelemetry (TracerProvider, exporters OTLP)
+│       │       │   └── baggage/
+│       │       │       └── propagator.py             # Propagador W3C Baggage para headers HTTP y AMQP broker
+│       │       ├── logging/
+│       │       │   └── json_logger.py                # Structured JSON Logging y consola Rich formateada
+│       │       └── lifecycle/                        # Gestión de ciclo de vida del proceso y apagado agraciado
+│       │           └── shutdown/
+│       │               └── drain.py                  # Manejador de señales OS (SIGTERM/SIGINT) y callbacks de drenado
+│       │
+│       ├── contexts/                                 # [Nivel Superior]: Bounded Contexts (Límites de Dominio DDD)
+│       │   │
+│       │   ├── <canonical_bounded_context>/          # [1. MOLDE CANÓNICO / ABSTRACTO / AGNÓSTICO]: Contratos y Responsabilidades
+│       │   │   ├── domain/                           # Reglas de negocio puras e invariantes (Cero dependencias externas / DB)
+│       │   │   │   ├── entities/
+│       │   │   │   │   └── <aggregate>/              # Entidad con ciclo de vida e identidad única
+│       │   │   │   │       ├── aggregate.py          # Aggregate Root con control de invariantes y eventos
+│       │   │   │   │       └── item.py               # Entidad hija perteneciente al aggregate
+│       │   │   │   ├── value_objects/
+│       │   │   │   │   └── <concept>/
+│       │   │   │   │       └── value.py              # Estructura inmutable por igualdad de valor
+│       │   │   │   ├── services/
+│       │   │   │   │   └── <domain_service>/
+│       │   │   │   │       └── service.py            # Lógica de dominio pura que abarca dos o más agregados
+│       │   │   │   ├── specifications/
+│       │   │   │   │   └── <specification>/
+│       │   │   │   │       └── specification.py      # Reglas y predicados de consulta de negocio reutilizables
+│       │   │   │   ├── engines/
+│       │   │   │   │   └── <engine_concept>/
+│       │   │   │   │       └── engine.py             # Motor determinista de cálculo intensivo en memoria sin I/O
+│       │   │   │   ├── events/
+│       │   │   │   │   └── <aggregate>/
+│       │   │   │   │       └── created.py            # Evento inmutable de dominio emitido ante cambio de estado
+│       │   │   │   └── exceptions/
+│       │   │   │       └── <aggregate>/
+│       │   │   │           └── error.py              # Excepción de negocio tipada
+│       │   │   ├── application/                      # Casos de uso de negocio, orquestación y puertos secundarios (CQRS)
+│       │   │   │   ├── commands/                     # [C - Mutaciones]: Intenciones inmutables de cambio de estado
+│       │   │   │   │   └── <action>/
+│       │   │   │   │       ├── command.py            # DTO inmutable con parámetros requeridos para la mutación
+│       │   │   │   │       └── handler.py            # Orquesta: valida idempotencia, carga Aggregate, ejecuta regla y persiste en UoW
+│       │   │   │   ├── queries/                      # [Q - Lecturas]: Consultas optimizadas sin efectos secundarios
+│       │   │   │   │   └── <get_data>/
+│       │   │   │   │       ├── query.py              # Parámetros y filtros inmutables de búsqueda
+│       │   │   │   │       └── handler.py            # Consulta proyecciones de lectura y devuelve Read DTOs / ViewModels
+│       │   │   │   ├── event_handlers/               # [Reactividad]: Suscriptores internos a DomainEvents
+│       │   │   │   │   └── <on_event>/
+│       │   │   │   │       └── handler.py            # Ejecuta efectos secundarios locales (actualizar proyección, enviar email)
+│       │   │   │   ├── workflows/                    # [Orquestación Distribuida]: Sagas y Process Managers guiados por eventos
+│       │   │   │   │   └── <workflow>/
+│       │   │   │   │       ├── orchestrator.py       # Máquina de estados que escucha eventos y despacha commands existentes (compensaciones)
+│       │   │   │   │       └── state.py              # Estado persistente del flujo, correlation_id y pasos completados
+│       │   │   │   ├── services/                     # Application Services y Pipelines de orquestación compleja
+│       │   │   │   │   ├── engines/
+│       │   │   │   │   │   └── <orchestrator>/
+│       │   │   │   │   │       └── engine.py         # Motor orquestador de ejecución con I/O o evaluación de grafos
+│       │   │   │   │   └── <pipeline>/
+│       │   │   │   │       └── service.py            # Coordinador de múltiples pasos entre adaptadores externos
+│       │   │   │   ├── ports/                        # Interfaces secundarias (SPI) que definen qué necesita la aplicación
+│       │   │   │   │   ├── <aggregate>/
+│       │   │   │   │   │   └── repository.py         # Contrato abstracto de persistencia (save, find_by_id, delete)
+│       │   │   │   │   └── <service>/
+│       │   │   │   │       └── gateway.py            # Contrato abstracto con APIs externas o microservicios
+│       │   │   │   └── dtos/
+│       │   │   │       └── <concept>/
+│       │   │   │           └── dto.py                # Contrato de datos de entrada/salida desacoplado de HTTP y ORM
+│       │   │   └── infrastructure/                   # Adaptadores Driven de Entrada/Salida específicos del Contexto
+│       │   │       ├── persistence/                  # Implementación física de almacenamiento (State-Based o Event-Sourced)
+│       │   │       │   ├── models/                   # [Opción State-Based]: Modelos relacionales ORM (SQLModel/SQLAlchemy)
+│       │   │       │   │   └── <aggregate>/
+│       │   │       │   │       └── model.py          # Modelo de tabla ORM relacional o documento
+│       │   │       │   ├── repositories/
+│       │   │       │   │   └── <aggregate>/
+│       │   │       │   │       └── repository.py     # Implementación física del puerto de repositorio sobre DB
+│       │   │       │   ├── mappers/
+│       │   │       │   │   └── <aggregate>/
+│       │   │       │   │       └── mapper.py         # Traductor puro bidireccional: ORM Model <-> Domain Entity
+│       │   │       │   ├── outbox/                   # [Opción State-Based]: Persistencia atómica de eventos en la misma transacción
+│       │   │       │   │   ├── message/
+│       │   │       │   │   │   └── model.py          # Tabla física outbox_events
+│       │   │       │   │   ├── relay/
+│       │   │       │   │   │   └── worker.py         # Proceso que despacha eventos pendientes al broker (Polling)
+│       │   │       │   │   └── cdc/
+│       │   │       │   │       └── connector.py      # [Hiper-Escala]: Conector CDC (Debezium) directo sobre Transaction Log
+│       │   │       │   ├── event_store/              # [Opción Event-Sourced]: Almacenamiento append-only de eventos inmutables
+│       │   │       │   │   └── <stream>/
+│       │   │       │   │       ├── model.py          # Tabla física de stream de eventos (aggregate_id, version, payload)
+│       │   │       │   │       └── engine.py         # Motor de anexado y lectura de streams para rehidratar agregados
+│       │   │       │   ├── snapshots/                # [Opción Event-Sourced]: Puntos de control para agregados con streams largos
+│       │   │       │   │   └── <aggregate>/
+│       │   │       │   │       ├── model.py          # Tabla física de snapshots periódicos
+│       │   │       │   │       └── engine.py         # Motor de persistencia y carga de snapshots
+│       │   │       │   └── projections/              # [CQRS Read Models]: Vistas materializadas y tablas denormalizadas
+│       │   │       │       └── <read_model>/
+│       │   │       │           ├── model.py          # Tabla física optimizada para consultas ultra-rápidas
+│       │   │       │           └── projection.py     # Suscriptor que actualiza la proyección ante DomainEvents
+│       │   │       └── external/
+│       │   │           ├── <vendor>/
+│       │   │           │   └── adapter.py            # Cliente concreto que implementa el gateway port
+│       │   │           └── <legacy_vendor>/          # Integración con sistemas legacy o modelos de datos ajenos
+│       │   │               ├── adapter.py            # Adaptador de cliente HTTP / RPC hacia el sistema externo
+│       │   │               └── acl/                  # [Anti-Corruption Layer]: Aislamiento semántico del dominio
+│       │   │                   ├── translator.py     # Traduce contratos externos ajenos a Value Objects y Entidades limpias
+│       │   │                   └── facade.py         # Fachada idiomática requerida por la capa de aplicación
+│       │   │
+│       │   ├── conversations/                        # [2. EJEMPLO CONCRETO TÍPICO IA]: Conversational AI, Streaming & RAG
+│       │   │   ├── domain/                           # Reglas de negocio del chat, invariantes y sesiones
+│       │   │   │   ├── entities/
+│       │   │   │   │   ├── conversation/
+│       │   │   │   │   │   ├── aggregate.py          # Aggregate Root: maneja mensajes, estado de sesión y cuota consumida
+│       │   │   │   │   │   ├── message.py            # Entidad Message con rol (user/assistant/system), texto y timestamps
+│       │   │   │   │   │   └── chunk.py              # Fragmento de contexto recuperado con score de relevancia
+│       │   │   │   │   └── memory/                   # [Memoria Jerárquica del Agente]: Separación de niveles de retención
+│       │   │   │   │       ├── working.py            # Memoria de trabajo en context window (scratchpad / variables de turno)
+│       │   │   │   │       ├── episodic.py           # Memoria episódica persistente (historial y hechos de sesiones previas)
+│       │   │   │   │       └── semantic.py           # Memoria semántica indexada (conocimiento RAG y embeddings)
+│       │   │   │   ├── value_objects/
+│       │   │   │   │   ├── routing/
+│       │   │   │   │   │   └── route.py              # Enrutamiento dinámico a Gemini Flash / Pro según complejidad
+│       │   │   │   │   ├── streaming/
+│       │   │   │   │   │   └── chunk.py              # Fragmento inmutable emitido durante la generación reactiva
+│       │   │   │   │   └── tokens/
+│       │   │   │   │       └── usage.py              # Medición de tokens de entrada, salida y costo asociado
+│       │   │   │   ├── services/
+│       │   │   │   │   └── token_budget/
+│       │   │   │   │       └── service.py            # Dominio: distribución de presupuesto de tokens entre prompt y tools
+│       │   │   │   ├── specifications/
+│       │   │   │   │   └── active_session/
+│       │   │   │   │       └── specification.py      # Especificación de validez y no expiración de sesión
+│       │   │   │   ├── engines/
+│       │   │   │   │   ├── prompt_chain/
+│       │   │   │   │   │   └── engine.py             # Ensamblado determinista de prompts, plantillas y few-shot examples
+│       │   │   │   │   └── compression/
+│       │   │   │   │       └── engine.py             # Reducción algorítmica de ventana de contexto en memoria
+│       │   │   │   ├── events/
+│       │   │   │   │   └── message/
+│       │   │   │   │       ├── streamed.py           # Notifica que un fragmento fue emitido
+│       │   │   │   │       └── tool_executed.py      # Notifica que una herramienta externa fue ejecutada por el agente
+│       │   │   │   └── exceptions/
+│       │   │   │       └── context/
+│       │   │   │           ├── window_exceeded.py
+│       │   │   │           └── model_unavailable.py
+│       │   │   ├── application/                      # Casos de uso de IA generativa y orquestación
+│       │   │   │   ├── commands/
+│       │   │   │   │   ├── send_message/
+│       │   │   │   │   │   ├── command.py
+│       │   │   │   │   │   └── handler.py
+│       │   │   │   │   └── stream_conversation/
+│       │   │   │   │       ├── command.py
+│       │   │   │   │       └── handler.py
+│       │   │   │   ├── queries/
+│       │   │   │   │   ├── get_conversation/
+│       │   │   │   │   │   ├── query.py
+│       │   │   │   │   │   └── handler.py
+│       │   │   │   │   └── list_messages/
+│       │   │   │   │       ├── query.py
+│       │   │   │   │       └── handler.py
+│       │   │   │   ├── event_handlers/
+│       │   │   │   │   ├── message_streamed/
+│       │   │   │   │   │   └── handler.py            # Actualiza buffer temporal en Redis y emite telemetría
+│       │   │   │   │   └── tool_executed/
+│       │   │   │   │       └── handler.py            # Registra auditoría forense en contexto governance
+│       │   │   │   ├── workflows/                    # [Orquestación de Sesión y Agentes]: Ciclo de vida y suspensiones
+│       │   │   │   │   └── session_lifecycle/
+│       │   │   │   │       ├── orchestrator.py       # Máquina de estados que gestiona turnos, suspensiones HITL y reanudación
+│       │   │   │   │       └── state.py              # Estado persistente de la sesión y checkpoint_id asociado
+│       │   │   │   ├── services/
+│       │   │   │   │   ├── checkpointing/
+│       │   │   │   │   │   └── service.py            # Servicio de suspensión/reanudación que usa AgentCheckpointPort
+│       │   │   │   │   ├── engines/
+│       │   │   │   │   │   ├── graph_execution/
+│       │   │   │   │   │   │   └── engine.py         # Motor de grafos de decisión multi-paso del agente
+│       │   │   │   │   │   └── stream_recovery/
+│       │   │   │   │   │       └── engine.py         # Reanudación de streaming ante caídas de conexión
+│       │   │   │   │   ├── retriever/
+│       │   │   │   │   │   └── service.py            # Búsqueda híbrida (Vectorial densa + BM25 léxica)
+│       │   │   │   │   ├── guardrail/
+│       │   │   │   │   │   └── service.py            # Pipeline de escaneo de inyecciones y PII
+│       │   │   │   │   └── model_router/
+│       │   │   │   │       └── service.py            # Selector de proveedor/modelo óptimo
+│       │   │   │   ├── ports/
+│       │   │   │   │   ├── llm/
+│       │   │   │   │   │   └── client.py             # SPI para invocar modelos fundacionales (Gemini/OpenAI)
+│       │   │   │   │   ├── vector/
+│       │   │   │   │   │   └── store.py              # SPI para indexación y búsqueda en base vectorial (Qdrant)
+│       │   │   │   │   ├── conversation/
+│       │   │   │   │   │   └── repository.py         # SPI para persistencia del aggregate Conversation
+│       │   │   │   │   ├── stream_buffer/
+│       │   │   │   │   │   └── repository.py         # SPI para almacenamiento temporal en Redis Streams
+│       │   │   │   │   └── semantic_cache/
+│       │   │   │   │       └── repository.py         # SPI para cache de similitud vectorial de respuestas LLM
+│       │   │   │   └── dtos/
+│       │   │   │       ├── conversation/
+│       │   │   │       │   └── dto.py
+│       │   │   │       └── stream/
+│       │   │   │           └── chunk_dto.py
+│       │   │   └── infrastructure/                   # Adaptadores de LLMs, bases vectoriales y persistencia
+│       │   │       ├── persistence/
+│       │   │       │   ├── models/
+│       │   │       │   │   ├── conversation/
+│       │   │       │   │   │   └── model.py          # Tabla relacional conversations
+│       │   │       │   │   └── message/
+│       │   │       │   │       └── model.py          # Tabla relacional messages
+│       │   │       │   ├── repositories/
+│       │   │       │   │   ├── conversation/
+│       │   │       │   │   │   └── repository.py     # sql_conversation_repository.py
+│       │   │       │   │   └── stream_buffer/
+│       │   │       │   │       └── repository.py     # redis_stream_buffer_repo.py
+│       │   │       │   ├── mappers/
+│       │   │       │   │   ├── conversation/
+│       │   │       │   │   │   └── mapper.py         # Traduce ConversationORMModel <-> Conversation
+│       │   │       │   │   └── message/
+│       │   │       │   │       └── mapper.py         # Traduce MessageORMModel <-> Message
+│       │   │       │   └── projections/
+│       │   │       │       └── session_overview/
+│       │   │       │           ├── model.py          # Tabla denormalizada con resumen de sesiones y tokens totales
+│       │   │       │           └── projection.py     # Actualiza la vista de lectura ante message_streamed
+│       │   │       ├── cache/
+│       │   │       │   └── semantic/
+│       │   │       │       └── adapter.py            # Adaptador de semantic cache sobre Redis Vector / Qdrant
+│       │   │       └── external/
+│       │   │           ├── gemini/
+│       │   │           │   └── adapter.py            # Adaptador oficial google-genai SDK
+│       │   │           ├── qdrant/
+│       │   │           │   └── adapter.py            # Adaptador gRPC hacia Qdrant Vector DB
+│       │   │           └── tavily/
+│       │   │               └── adapter.py            # Adaptador de búsqueda web externa
+│       │   │
+│       │   ├── orders/                               # [3. EJEMPLO CONCRETO AGNÓSTICO CORE]: Órdenes, Pagos y Facturación (State-Based)
+│       │   │   │                                     # [Nota Alternativas Enterprise Documentadas]:
+│       │   │   │                                     # - Opción Ledger: Desplegado abajo como Contexto 4 independiente (Event Sourcing Puro)
+│       │   │   │                                     # - Opción Subscriptions: Subscriptions & Quota Management (PlanLimit, UsageTrackingEngine)
+│       │   │   ├── domain/                           # Entidades de negocio transaccionales e invariantes de cobro
+│       │   │   │   ├── entities/
+│       │   │   │   │   └── order/
+│       │   │   │   │       ├── aggregate.py          # Aggregate Root: gestiona items, total y transiciones de estado
+│       │   │   │   │       ├── item.py               # Entidad hija con producto, cantidad y precio unitario
+│       │   │   │   │       └── customer.py           # Entidad de cliente con historial y categoría de riesgo
+│       │   │   │   ├── value_objects/
+│       │   │   │   │   ├── pricing/
+│       │   │   │   │   │   ├── money.py              # Importe decimal con moneda ISO
+│       │   │   │   │   │   └── tax_rate.py           # Porcentaje impositivo según jurisdicción fiscal
+│       │   │   │   │   └── status/
+│       │   │   │   │       └── order_status.py       # Enum tipado: Draft, Confirmed, Paid, Shipped, Cancelled
+│       │   │   │   ├── contracts/
+│       │   │   │   │   └── reservation/
+│       │   │   │   │       └── service.py            # Dominio: Contrato OrderReservationService (reserva temporal de stock y fondos)
+│       │   │   │   ├── services/
+│       │   │   │   │   └── pricing_calculator/
+│       │   │   │   │       └── service.py            # Dominio: cálculo de precio final combinando orden, cliente y promociones
+│       │   │   │   ├── specifications/
+│       │   │   │   │   ├── cancellable_order/
+│       │   │   │   │   │   └── specification.py      # Especifica si la orden está en estado elegible para cancelación
+│       │   │   │   │   └── eligible_for_discount/
+│       │   │   │   │       └── specification.py      # Especifica reglas de volumen y cliente frecuente
+│       │   │   │   ├── engines/
+│       │   │   │   │   ├── tax/
+│       │   │   │   │   │   └── engine.py             # Cálculo determinista de impuestos compuestos en memoria
+│       │   │   │   │   └── discount/
+│       │   │   │   │       └── engine.py             # Evaluación de cupones, promociones y reglas de volumen
+│       │   │   │   ├── events/
+│       │   │   │   │   └── order/
+│       │   │   │   │       ├── created.py
+│       │   │   │   │       ├── paid.py
+│       │   │   │   │       └── cancelled.py
+│       │   │   │   └── exceptions/
+│       │   │   │       └── order/
+│       │   │   │           ├── already_paid.py
+│       │   │   │           └── insufficient_inventory.py
+│       │   │   ├── application/                      # Casos de uso de mutación y lectura transaccional (CQRS)
+│       │   │   │   ├── commands/
+│       │   │   │   │   ├── create_order/
+│       │   │   │   │   │   ├── command.py
+│       │   │   │   │   │   └── handler.py
+│       │   │   │   │   ├── reserve_order/
+│       │   │   │   │   │   ├── command.py            # Comando TCC fase Try: bloquea inventario con TTL antes de pago
+│       │   │   │   │   │   └── handler.py
+│       │   │   │   │   └── cancel_order/
+│       │   │   │   │       ├── command.py
+│       │   │   │   │       └── handler.py
+│       │   │   │   ├── queries/
+│       │   │   │   │   ├── get_order/
+│       │   │   │   │   │   ├── query.py
+│       │   │   │   │   │   └── handler.py
+│       │   │   │   │   └── list_orders/
+│       │   │   │   │       ├── query.py
+│       │   │   │   │       └── handler.py
+│       │   │   │   ├── event_handlers/
+│       │   │   │   │   ├── order_created/
+│       │   │   │   │   │   └── handler.py            # Reserva inventario y envía confirmación preliminar
+│       │   │   │   │   ├── order_paid/
+│       │   │   │   │   │   └── handler.py            # Dispara emisión de factura y despacho
+│       │   │   │   │   └── order_cancelled/
+│       │   │   │   │       └── handler.py            # Libera stock y emite solicitud de reembolso
+│       │   │   │   ├── workflows/                    # [Sagas Orquestadas con Compensación]: Garantía BASE distribuida
+│       │   │   │   │   └── order_fulfillment/
+│       │   │   │   │       ├── orchestrator.py       # Orquesta cobro, stock y despacho; ante fallos despacha cancel_order existente
+│       │   │   │   │       └── state.py              # Estado de la saga (PENDING, PAID, STOCK_RESERVED, COMPENSATING, CANCELLED)
+│       │   │   │   ├── services/
+│       │   │   │   │   ├── payment_reconciliation/
+│       │   │   │   │   │   └── service.py            # Conciliación con liquidaciones bancarias
+│       │   │   │   │   └── invoice_generator/
+│       │   │   │   │       └── service.py            # Orquestador de emisión de comprobantes fiscales
+│       │   │   │   ├── ports/
+│       │   │   │   │   ├── order/
+│       │   │   │   │   │   └── repository.py         # SPI para persistencia del aggregate Order
+│       │   │   │   │   ├── payment/
+│       │   │   │   │   │   └── gateway.py            # SPI para procesamiento de cobros (Stripe/MercadoPago)
+│       │   │   │   │   └── inventory/
+│       │   │   │   │       └── client.py             # SPI para reserva y confirmación de stock
+│       │   │   │   └── dtos/
+│       │   │   │       ├── order/
+│       │   │   │       │   └── dto.py
+│       │   │   │       └── invoice/
+│       │   │   │           └── dto.py
+│       │   │   └── infrastructure/                   # Integración con pasarelas de pago y base de datos relacional
+│       │   │       ├── persistence/
+│       │   │       │   ├── models/
+│       │   │       │   │   ├── order/
+│       │   │       │   │   │   └── model.py          # Tabla relacional orders
+│       │   │       │   │   └── item/
+│       │   │       │   │       └── model.py          # Tabla relacional order_items
+│       │   │       │   ├── repositories/
+│       │   │       │   │   └── order/
+│       │   │       │   │       └── repository.py     # Repositorio SQLModel / SQLAlchemy
+│       │   │       │   ├── mappers/
+│       │   │       │   │   ├── order/
+│       │   │       │   │   │   └── mapper.py         # Traduce OrderORMModel <-> Order
+│       │   │       │   │   └── item/
+│       │   │       │   │       └── mapper.py         # Traduce OrderItemORMModel <-> OrderItem
+│       │   │       │   └── projections/
+│       │   │       │       └── customer_order_summary/
+│       │   │       │           ├── model.py          # Tabla desnormalizada optimizada para listados y filtros
+│       │   │       │           └── projection.py     # Suscriptor que sincroniza la vista ante eventos
+│       │   │       └── external/
+│       │   │           ├── stripe/
+│       │   │           │   └── adapter.py            # Adaptador de pasarela Stripe API
+│       │   │           └── erp/
+│       │   │               ├── adapter.py            # Adaptador de integración SOAP/REST con ERP corporativo
+│       │   │               └── acl/                  # [Anti-Corruption Layer]: Aislamiento del modelo legado
+│       │   │                   ├── translator.py     # Traduce estructuras externas del ERP a Order y Money de dominio
+│       │   │                   └── facade.py         # Fachada idiomática requerida por PaymentGatewayPort / InventoryClientPort
+│       │   │
+│       │   ├── ledger/                               # [4. EJEMPLO CONCRETO CORE FINANCIERO]: Cuentas Contables y Event Sourcing Puro
+│       │   │   ├── domain/                           # Invariantes de partida doble y agregados basados en eventos
+│       │   │   │   ├── entities/
+│       │   │   │   │   └── account/
+│       │   │   │   │       ├── aggregate.py          # Aggregate Root (EventSourcedAggregate): rehydrate(events), apply(event)
+│       │   │   │   │       └── entry.py              # Entidad inmutable JournalEntry (débito / crédito con fecha valor)
+│       │   │   │   ├── value_objects/
+│       │   │   │   │   ├── currency/
+│       │   │   │   │   │   └── code.py               # Código de moneda ISO-4217 validado
+│       │   │   │   │   └── balance/
+│       │   │   │   │       └── amount.py             # Saldo decimal con precisión monetaria (Fixed-point)
+│       │   │   │   ├── contracts/
+│       │   │   │   │   └── snapshot/
+│       │   │   │   │       └── policy.py             # Especificación de dominio: hitos contables y reglas de snapshotting
+│       │   │   │   ├── engines/
+│       │   │   │   │   └── double_entry/
+│       │   │   │   │       └── engine.py             # Verificador matemático de balance cero (Sum(Debits) == Sum(Credits))
+│       │   │   │   ├── events/
+│       │   │   │   │   └── account/
+│       │   │   │   │       ├── opened.py             # Evento inmutable AccountOpenedEvent
+│       │   │   │   │       ├── credited.py           # Evento inmutable AccountCreditedEvent
+│       │   │   │   │       ├── debited.py            # Evento inmutable AccountDebitedEvent
+│       │   │   │   │       └── closed.py             # Evento inmutable AccountClosedEvent
+│       │   │   │   └── exceptions/
+│       │   │   │       └── account/
+│       │   │   │           ├── insufficient_funds.py
+│       │   │   │           ├── concurrency_conflict.py   # Conflicto de versión de stream concurrente (OCC)
+│       │   │   │           └── account_frozen.py
+│       │   │   ├── application/                      # Casos de uso de registro contable y consultas de saldo
+│       │   │   │   ├── commands/
+│       │   │   │   │   ├── open_account/
+│       │   │   │   │   │   ├── command.py
+│       │   │   │   │   │   └── handler.py
+│       │   │   │   │   └── post_journal_entry/
+│       │   │   │   │       ├── command.py
+│       │   │   │   │       └── handler.py            # Carga aggregate desde EventStore, aplica entry y persiste eventos
+│       │   │   │   ├── queries/
+│       │   │   │   │   ├── get_account_balance/
+│       │   │   │   │   │   ├── query.py
+│       │   │   │   │   │   └── handler.py            # Lee proyecciones denormalizadas para respuesta ultra-rápida
+│       │   │   │   │   └── get_account_history/
+│       │   │   │   │       ├── query.py
+│       │   │   │   │       └── handler.py
+│       │   │   │   ├── event_handlers/
+│       │   │   │   │   ├── account_credited/
+│       │   │   │   │   │   └── handler.py            # Actualiza proyección de saldo y dispara alerta de balance
+│       │   │   │   │   └── account_debited/
+│       │   │   │   │       └── handler.py            # Actualiza proyección de saldo
+│       │   │   │   ├── workflows/                    # [Workflows de Conciliación y Cierre]:
+│       │   │   │   │   └── reconciliation/
+│       │   │   │   │       ├── orchestrator.py       # Máquina de estados para cuadre contable diario y detección de desfases
+│       │   │   │   │       └── state.py              # Estado del proceso de conciliación (MATCHED, DISCREPANCY, RESOLVED)
+│       │   │   │   ├── ports/
+│       │   │   │   │   ├── event_store/
+│       │   │   │   │   │   └── repository.py         # SPI para persistencia y lectura de streams de eventos inmutables
+│       │   │   │   │   └── snapshot/
+│       │   │   │   │       └── repository.py         # SPI para persistencia periódica de snapshots del aggregate
+│       │   │   │   └── dtos/
+│       │   │   │       ├── account/
+│       │   │   │       │   └── dto.py
+│       │   │   │       └── journal_entry/
+│       │   │   │           └── dto.py
+│       │   │   └── infrastructure/                   # EventStore físico, snapshots y vistas materializadas
+│       │   │       └── persistence/
+│       │   │           ├── event_store/
+│       │   │           │   ├── account/
+│       │   │           │   │   └── model.py          # Tabla append-only account_events (aggregate_id, sequence_num, payload)
+│       │   │           │   ├── upcasters/            # [Schema Evolution]: Upcasting en memoria de versiones históricas (v1 -> v2)
+│       │   │           │   │   └── account/
+│       │   │           │   │       └── upcaster.py       # Transforma eventos obsoletos en vuelo sin mutar registros históricos
+│       │   │           │   └── engine.py             # Implementación física del EventStore con validación de expected_version
+│       │   │           ├── snapshots/
+│       │   │           │   ├── account/
+│       │   │           │   │   ├── model.py          # Tabla account_snapshots para punto de control cada N eventos
+│       │   │           │   │   └── policy.py         # Orquestador de snapshotting para Account (N eventos + hitos contables)
+│       │   │           │   └── engine.py             # Lógica de compactación y recuperación de snapshots
+│       │   │           └── projections/
+│       │   │               └── account_balance/
+│       │   │                   ├── model.py          # Tabla relacional de lectura optimizada con saldo actual calculado
+│       │   │                   ├── projection.py     # Suscriptor asíncrono que actualiza el saldo ante cada evento emitido
+│       │   │                   └── rebuilder.py      # Catch-Up y Replay projector para reconstrucción desde génesis
+│       │   │
+│       │   ├── governance/                           # [5. EJEMPLO CONCRETO SOPORTE]: Guardrails, Monitoreo y SLAs
+│       │   │   ├── domain/                           # Reglas de umbrales, severidades, veredictos e incidentes
+│       │   │   │   ├── entities/
+│       │   │   │   │   └── incident/
+│       │   │   │   │       ├── aggregate.py          # Registro de incidentes de seguridad y severidad
+│       │   │   │   │       ├── policy.py             # Definición de políticas de latencia, cuotas y timeouts
+│       │   │   │   │       └── audit_log.py          # Registro inmutable de traza forense
+│       │   │   │   ├── value_objects/
+│       │   │   │   │   └── verdict/
+│       │   │   │   │       ├── severity.py           # Enum tipado: Low, Medium, High, Critical
+│       │   │   │   │       └── outcome.py            # Pass, Warn, Blocked, Escalated
+│       │   │   │   ├── engines/
+│       │   │   │   │   ├── sla/
+│       │   │   │   │   │   └── engine.py             # Comparación matemática de percentiles p95/p99 en memoria
+│       │   │   │   │   └── threshold/
+│       │   │   │   │       └── engine.py             # Evaluación determinista de límites contractuales
+│       │   │   │   ├── events/
+│       │   │   │   │   └── incident/
+│       │   │   │   │       ├── tripped.py
+│       │   │   │   │       └── escalated.py
+│       │   │   │   └── exceptions/
+│       │   │   │       └── policy/
+│       │   │   │           └── violation.py
+│       │   │   ├── application/                      # Handlers de evaluación de guardrails y despacho de alertas
+│       │   │   │   ├── commands/
+│       │   │   │   │   ├── evaluate_guardrails/
+│       │   │   │   │   │   ├── command.py
+│       │   │   │   │   │   └── handler.py
+│       │   │   │   │   └── escalate_incident/
+│       │   │   │   │       ├── command.py
+│       │   │   │   │       └── handler.py
+│       │   │   │   ├── queries/
+│       │   │   │   │   └── get_incident_history/
+│       │   │   │   │       ├── query.py
+│       │   │   │   │       └── handler.py
+│       │   │   │   ├── services/
+│       │   │   │   │   ├── engines/
+│       │   │   │   │   │   └── pipeline/
+│       │   │   │   │   │       └── engine.py         # Pipeline de ejecución de inspectores de seguridad
+│       │   │   │   │   └── alert_dispatcher/
+│       │   │   │   │       └── service.py            # Enrutamiento de alertas según severidad
+│       │   │   │   ├── ports/
+│       │   │   │   │   ├── incident/
+│       │   │   │   │   │   └── repository.py         # SPI para persistencia de incidentes
+│       │   │   │   │   ├── security/
+│       │   │   │   │   │   └── scanner.py            # SPI para escaneo de prompt injection / PII
+│       │   │   │   │   └── notification/
+│       │   │   │   │       └── gateway.py            # SPI para canales de notificación (Slack/PagerDuty)
+│       │   │   │   └── dtos/
+│       │   │   │       └── incident/
+│       │   │   │           └── dto.py
+│       │   │   └── infrastructure/                   # Notificadores y escáneres de seguridad
+│       │   │       ├── persistence/
+│       │   │       │   ├── models/
+│       │   │       │   │   └── incident/
+│       │   │       │   │       └── model.py
+│       │   │       │   ├── repositories/
+│       │   │       │   │   └── incident/
+│       │   │       │   │       └── repository.py
+│       │   │       │   └── mappers/
+│       │   │       │       └── incident/
+│       │   │       │           └── mapper.py
+│       │   │       └── external/
+│       │   │           ├── slack/
+│       │   │           │   └── adapter.py            # Webhook hacia canal de operaciones Slack
+│       │   │           └── llm_guard/
+│       │   │               └── adapter.py            # Adaptador de escáner LLM Guard
+│       │   │
+│       │   ├── operations/                           # [6. EJEMPLO CONCRETO SOPORTE]: Tareas Programadas y Workers
+│       │   │   ├── domain/                           # Solicitudes de ejecución, estados de aprobación e interfaces
+│       │   │   │   ├── entities/
+│       │   │   │   │   └── task/
+│       │   │   │   │       ├── aggregate.py          # Definición de tarea programada con frecuencia y parámetros
+│       │   │   │   │       ├── execution.py          # Ejecución puntual con logs, duración y código de salida
+│       │   │   │   │       └── approval.py           # Solicitud Human-In-The-Loop con aprobadores y estado
+│       │   │   │   ├── value_objects/
+│       │   │   │   │   ├── schedule/
+│       │   │   │   │   │   └── cron.py               # Expresión cron validada
+│       │   │   │   │   └── execution/
+│       │   │   │   │       ├── status.py             # Pending, Running, Success, Failed, Cancelled
+│       │   │   │   │       └── payload.py            # Payload inmutable serializado en JSON
+│       │   │   │   ├── engines/
+│       │   │   │   │   ├── cron/
+│       │   │   │   │   │   └── engine.py             # Cálculo determinista del próximo disparo en memoria
+│       │   │   │   │   └── retry/
+│       │   │   │   │       └── engine.py             # Cálculo de backoff exponencial y jitter
+│       │   │   │   ├── events/
+│       │   │   │   │   └── task/
+│       │   │   │   │       ├── scheduled.py
+│       │   │   │   │       ├── completed.py
+│       │   │   │   │       └── failed.py
+│       │   │   │   └── exceptions/
+│       │   │   │       └── task/
+│       │   │   │           ├── timeout.py
+│       │   │   │           └── unauthorized.py
+│       │   │   ├── application/                      # Orquestador de tareas y handlers de comandos de ejecución
+│       │   │   │   ├── commands/
+│       │   │   │   │   ├── dispatch_task/
+│       │   │   │   │   │   ├── command.py
+│       │   │   │   │   │   └── handler.py
+│       │   │   │   │   └── approve_task/
+│       │   │   │   │       ├── command.py
+│       │   │   │   │       └── handler.py
+│       │   │   │   ├── queries/
+│       │   │   │   │   ├── get_task_status/
+│       │   │   │   │   │   ├── query.py
+│       │   │   │   │   │   └── handler.py
+│       │   │   │   │   └── list_pending_approvals/
+│       │   │   │   │       ├── query.py
+│       │   │   │   │       └── handler.py
+│       │   │   │   ├── services/
+│       │   │   │   │   ├── engines/
+│       │   │   │   │   │   └── task_orchestrator/
+│       │   │   │   │   │       └── engine.py         # Despacho y monitoreo de procesos asíncronos
+│       │   │   │   │   └── task_recovery/
+│       │   │   │   │       └── service.py            # Detección y reintento de tareas huérfanas
+│       │   │   │   ├── ports/
+│       │   │   │   │   ├── task/
+│       │   │   │   │   │   └── repository.py         # SPI para persistencia de tareas y ejecuciones
+│       │   │   │   │   └── sandbox/
+│       │   │   │   │       └── runner.py             # SPI para ejecución en contenedor o subproceso seguro
+│       │   │   │   └── dtos/
+│       │   │   │       └── task/
+│       │   │   │           └── dto.py
+│       │   │   └── infrastructure/                   # Corredor en sandbox aislado y persistencia
+│       │   │       ├── persistence/
+│       │   │       │   ├── models/
+│       │   │       │   │   └── task/
+│       │   │       │   │       └── model.py
+│       │   │       │   ├── repositories/
+│       │   │       │   │   └── task/
+│       │   │       │   │       └── repository.py
+│       │   │       │   └── mappers/
+│       │   │       │       └── task/
+│       │   │       │           └── mapper.py
+│       │   │       └── external/
+│       │   │           ├── docker/
+│       │   │           │   └── adapter.py            # Ejecutor aislado con límites de CPU, memoria y red
+│       │   │           └── arq_redis/
+│       │   │               └── adapter.py            # Adaptador de colas livianas de trabajo con Redis
+│       │   │
+│       │   └── analytics/                            # [7. EJEMPLO CONCRETO SOPORTE]: Reportes Forenses y Modelos Analíticos
+│       │       ├── domain/                           # Especificaciones de reportes y fórmulas de agregación
+│       │       │   ├── entities/
+│       │       │   │   └── report/
+│       │       │   │       ├── aggregate.py          # Definición de reporte, columnas, filtros y periodicidad
+│       │       │   │       ├── dataset.py            # Conjunto inmutable de observaciones normalizadas
+│       │       │   │       └── audit_trail.py        # Agregado forense para verificación de cumplimiento
+│       │       │   ├── value_objects/
+│       │       │   │   ├── metric/
+│       │       │   │   │   └── aggregation.py        # Count, Sum, Average, Percentile95
+│       │       │   │   └── format/
+│       │       │   │       ├── window.py             # Rango temporal cerrado (start, end)
+│       │       │   │       └── file_type.py          # Enum: Excel, PDF, CSV, JSON
+│       │       │   ├── engines/
+│       │       │   │   ├── aggregation/
+│       │       │   │   │   └── engine.py             # Cómputo estadístico puro en memoria sin I/O
+│       │       │   │   └── reconciliation/
+│       │       │   │       └── engine.py             # Cruce de balances y detección de discrepancias
+│       │       │   ├── events/
+│       │       │   │   └── report/
+│       │       │   │       ├── generated.py
+│       │       │   │       └── anomaly_detected.py
+│       │       │   └── exceptions/
+│       │       │       └── report/
+│       │       │           ├── empty_dataset.py
+│       │       │           └── invalid_date_range.py
+│       │       ├── application/                      # Handlers de exportación y queries analíticas forenses
+│       │       │   ├── commands/
+│       │       │   │   └── generate_report/
+│       │       │   │       ├── command.py
+│       │       │   │       └── handler.py
+│       │       │   ├── queries/
+│       │       │   │   ├── query_metrics/
+│       │       │   │   │   ├── query.py
+│       │       │   │   │   └── handler.py
+│       │       │   │   └── export_audit/
+│       │       │   │       ├── query.py
+│       │       │   │       └── handler.py
+│       │       │   ├── services/
+│       │       │   │   ├── engines/
+│       │       │   │   │   └── tabular_export/
+│       │       │   │   │       └── engine.py         # Generación de estructuras tabulares para exportación
+│       │       │   │   └── aggregation/
+│       │       │   │       └── service.py            # Orquestador de consultas a bases analíticas
+│       │       │   ├── ports/
+│       │       │   │   ├── query/
+│       │       │   │   │   └── analytic.py           # SPI para ejecución de queries analíticas agregadas
+│       │       │   │   └── export/
+│       │       │   │       └── report.py             # SPI para serialización física a Excel/PDF
+│       │       │   └── dtos/
+│       │       │       └── report/
+│       │       │           └── dto.py
+│       │       └── infrastructure/                   # Adaptadores de exportación física y vistas agregadas
+│       │           ├── persistence/
+│       │           │   ├── models/
+│       │           │   │   └── report/
+│       │           │   │       └── model.py
+│       │           │   ├── repositories/
+│       │           │   │   └── report/
+│       │           │   │       └── repository.py
+│       │           │   └── mappers/
+│       │           │       └── report/
+│       │           │           └── mapper.py
+│       │           └── external/
+│       │               ├── openpyxl/
+│       │               │   └── exporter.py           # Generador nativo de libros Excel (.xlsx) con fórmulas
+│       │               └── weasyprint/
+│       │                   └── exporter.py           # Generador de documentos PDF institucionales
+│       │
+│       └── interfaces/                               # [Driver Adapters]: Entradas del sistema segregadas por canal y protocolo
+│           ├── common/                               # Adaptadores y formateadores transversales compartidos
+│           │   └── presenters/                       # Presenters canónicos unificados (Patrón Strategy + Registry OCP)
+│           │       ├── contracts/
+│           │       │   └── strategy.py               # Protocolo PresenterStrategy (can_handle, render) y PresentationContext
+│           │       ├── registry/
+│           │       │   └── selector.py               # PresenterRegistry: resolución declarativa de estrategia sin condicionales if/else
+│           │       ├── strategies/                   # Estrategias concretas desacopladas por formato y canal
+│           │       │   ├── rich/
+│           │       │   │   └── strategy.py           # Estrategia interactiva para terminal CLI humana (Rich tables, panels, trees)
+│           │       │   ├── markdown/
+│           │       │   │   └── strategy.py           # Estrategia en tablas GFM limpias y bloques de código para agentes FastMCP
+│           │       │   ├── json/
+│           │       │   │   └── strategy.py           # Estrategia JSON estructurada para tuberías de automatización UNIX (jq)
+│           │       │   └── text/
+│           │       │       └── strategy.py           # Estrategia minimalista plana para pipes UNIX (grep, awk, cut)
+│           │       ├── text/
+│           │       │   └── presenter.py              # Presenter facade compatible implementando OutputPresenterPort
+│           │       ├── json/
+│           │       │   └── presenter.py              # Presenter facade compatible implementando OutputPresenterPort
+│           │       └── table/
+│           │           └── presenter.py              # Presenter facade compatible implementando OutputPresenterPort
+│           ├── cli/                                  # Canal Terminal / Consola (Typer / Click)
+│           │   ├── app.py                            # Entrypoint CLI y parseo de comandos/opciones
+│           │   ├── commands/                         # Comandos terminales organizados por namespace
+│           │   │   ├── canonical/
+│           │   │   │   └── cli.py                    # [Canónico / Abstracto]: Plantilla de comando CLI con parseo y ayuda
+│           │   │   ├── conversations/
+│           │   │   │   └── cli.py                    # CLI de chat interactivo y streaming en terminal
+│           │   │   ├── orders/
+│           │   │   │   └── cli.py                    # CLI de gestión y consulta de órdenes de compra
+│           │   │   ├── ledger/
+│           │   │   │   └── cli.py                    # CLI de consulta de saldo contable y registro de asientos
+│           │   │   ├── governance/
+│           │   │   │   └── cli.py                    # CLI de evaluación de guardrails y reporte de SLAs
+│           │   │   ├── operations/
+│           │   │   │   └── cli.py                    # CLI de disparo manual y aprobación de tareas
+│           │   │   ├── analytics/
+│           │   │   │   └── cli.py                    # CLI de generación y exportación de reportes tabulares
+│           │   │   ├── worker/
+│           │   │   │   └── dlq.py                    # CLI administrativo para reinyectar mensajes fallidos (DLQ redrive)
+│           │   │   └── database/
+│           │   │       └── migrate.py                # CLI de control de migraciones Alembic
+│           │   └── presenters/                       # Adaptadores CLI que delegan en common/presenters/
+│           │       ├── text/
+│           │       │   └── presenter.py              # Presenter de terminal delegando en interfaces/common/presenters/text/
+│           │       ├── json/
+│           │       │   └── presenter.py              # Presenter JSON delegando en interfaces/common/presenters/json/
+│           │       └── table/
+│           │           └── presenter.py              # Presenter Rich delegando en interfaces/common/presenters/table/
+│           │
+│           ├── http/                                 # Canal Red HTTP / API (M2M, Streaming y Servicios)
+│           │   ├── app.py                            # Instancia FastAPI con ciclo de vida y handlers de excepciones (RFC 7807)
+│           │   ├── dependencies.py                   # Inyección de dependencias (Unit of Work, Idempotencia, Tenant)
+│           │   ├── middleware/                       # Middlewares de canal HTTP organizados por responsabilidad
+│           │   │   ├── rate_limit/
+│           │   │   │   └── middleware.py             # RateLimitMiddleware (RFC 6585) con cuotas por tenant/ip
+│           │   │   ├── watermark/
+│           │   │   │   └── middleware.py             # Inyector de cabeceras de consistencia (X-Aggregate-Version, X-Projection-Watermark)
+│           │   │   └── tenant_context/
+│           │   │       └── middleware.py             # Extractor de TenantContext y correlación W3C
+│           │   ├── rest/                             # [Formato JSON]: APIs RESTful estructuradas (M2M / Clientes externos)
+│           │   │   └── v1/
+│           │   │       ├── <canonical_context>/      # [Canónico / Abstracto]: controllers.py, schemas.py
+│           │   │       ├── conversations/            # controllers.py (Rutas /chat, /history), schemas.py
+│           │   │       ├── orders/                   # controllers.py (Rutas /orders, /checkout), schemas.py
+│           │   │       ├── ledger/                   # controllers.py (Rutas /ledger/accounts, /ledger/entries), schemas.py
+│           │   │       ├── governance/               # controllers.py (Rutas /guardrails/eval, /incidents), schemas.py
+│           │   │       ├── operations/               # controllers.py (Rutas /tasks/dispatch, /approvals), schemas.py
+│           │   │       └── analytics/                # controllers.py (Rutas /metrics, /reports/export), schemas.py
+│           │   ├── webhooks/                         # [Incoming Webhooks]: Recepción de eventos externos con validación criptográfica
+│           │   │   ├── stripe/
+│           │   │   │   ├── controller.py             # Endpoint /webhooks/stripe con lectura de body raw
+│           │   │   │   └── verifier.py               # Verificación de firma criptográfica Stripe-Signature (HMAC)
+│           │   │   └── external_events/
+│           │   │       ├── controller.py             # Endpoint genérico de webhooks de terceros
+│           │   │       └── verifier.py               # Verificador de firma HMAC y timestamp anti-replay
+│           │   ├── sse/                              # [Formato Stream Unidireccional]: Server-Sent Events reactivos
+│           │   │   ├── chat/
+│           │   │   │   └── controller.py             # Streaming de tokens y ejecución de herramientas en vivo
+│           │   │   ├── order/
+│           │   │   │   └── controller.py             # Streaming de estado de procesamiento de órdenes y pagos
+│           │   │   ├── task/
+│           │   │   │   └── controller.py             # Streaming en vivo de logs, stdout/stderr y estados de tareas
+│           │   │   └── telemetry/
+│           │   │       └── controller.py             # Streaming de métricas operacionales y semáforo de SLAs
+│           │   ├── websocket/                        # [Formato Stream Bidireccional Full-Duplex]: Gemini Live y Colaboración
+│           │   │   ├── connection/
+│           │   │   │   └── manager.py                # Gestor de conexiones concurrentes activas, ping-pong y desconexiones
+│           │   │   ├── backpressure/
+│           │   │   │   └── controller.py             # Control de flujo reactivo (marcas de agua High/Low para pausar/reanudar)
+│           │   │   └── live_stream/
+│           │   │       ├── endpoint.py               # Endpoint WebSocket /ws/v1/chat/live para audio y texto en tiempo real
+│           │   │       └── protocol.py               # Serialización y deserialización de frames binarios de audio PCM y JSON
+│           │   └── graphql/                          # [Formato Graph Subgraph]: Apollo Federation / Strawberry GraphQL
+│           │       ├── schema/
+│           │       │   └── federation.py             # Definición de esquema federado (@key, @extends, @shareable)
+│           │       ├── server/
+│           │       │   └── router.py                 # Router Strawberry/FastAPI montado en /graphql
+│           │       └── resolvers/                    # Resolutores federados organizados por Bounded Context
+│           │           ├── conversations/
+│           │           │   └── resolver.py           # Resolutor de conversaciones y entidades de chat
+│           │           └── orders/
+│           │               └── resolver.py           # Resolutor de órdenes y catálogo para el supergrafo
+│           │
+│           ├── web/                                  # Canal Visual / UI Humana ("Puerta Exterior" / Gateway SSR + CSR)
+│           │   ├── server/                           # [SSR: Server-Side Rendering]: Vistas y plantillas renderizadas en servidor
+│           │   │   ├── common/                       # Elementos transversales del SSR
+│           │   │   │   ├── base_view.py              # Clase base / helpers de renderizado (Jinja2 Environment, Helpers)
+│           │   │   │   ├── context_processors.py     # Inyección automática de variables globales (Tenant activo, User, CSRF, Year)
+│           │   │   │   └── templates/                # Plantillas maestras compartidas
+│           │   │   │       ├── layouts/              # Layouts base heredables (Jinja blocks)
+│           │   │   │       │   ├── base.html         # <head>, meta tags, carga de assets estáticos
+│           │   │   │       │   ├── app_shell.html    # Shell corporativo (sidebar + navbar + content block)
+│           │   │   │       │   └── minimal.html      # Layout para login, errores 404/500 o vista limpia
+│           │   │   │       └── components/           # Fragmentos reusables del servidor (macros Jinja)
+│           │   │   │           ├── _pagination.html
+│           │   │   │           ├── _flash_messages.html
+│           │   │   │           └── _tenant_header.html
+│           │   │   │
+│           │   │   └── contexts/                     # Segregación estricta por Bounded Context
+│           │   │       ├── <canonical_context>/      # [Canónico / Abstracto]: controllers.py, view_models.py, templates/
+│           │   │       ├── conversations/            # controllers.py, view_models.py, templates/ (chat.html, history.html)
+│           │   │       ├── orders/                   # controllers.py, view_models.py, templates/ (checkout.html, order_detail.html)
+│           │   │       ├── ledger/                   # controllers.py, view_models.py, templates/ (accounts.html, journal.html)
+│           │   │       ├── governance/               # controllers.py, view_models.py, templates/ (login.html, audit_table.html)
+│           │   │       ├── operations/               # controllers.py, view_models.py, templates/ (tasks_dashboard.html, approval_queue.html)
+│           │   │       └── analytics/                # controllers.py, view_models.py, templates/ (dashboard.html, export_preview.html)
+│           │   │
+│           │   ├── client/                           # [CSR: Client-Side Rendering SPA]: Código frontend interactivo (Simetría Bounded Contexts)
+│           │   │   ├── common/                       # Elementos transversales del Frontend SPA
+│           │   │   │   ├── entrypoints/              # Puntos de entrada Vite / Webpack (main.tsx, index.html)
+│           │   │   │   ├── layouts/                  # Layouts dinámicos multi-tenant (LayoutResolver, AppShell, Minimal)
+│           │   │   │   ├── providers/                # Context Processors de React (TenantProvider, AuthProvider, QueryProvider)
+│           │   │   │   ├── router/                   # Enrutamiento en cliente con soporte de rutas protegidas
+│           │   │   │   ├── styles/                   # Variables CSS, tokens por tenant y Tailwind base
+│           │   │   │   └── shared/                   # Primitivas UI transversales (UI Kit, API client, useSSEStream hook)
+│           │   │   │
+│           │   │   └── contexts/                     # Segregación estricta por Bounded Context (Clean Architecture Frontend)
+│           │   │       ├── <canonical_context>/      # [Canónico / Abstracto]: domain/ (types/schemas), data/ (api/queries), ui/ (components/pages)
+│           │   │       ├── conversations/            # Chat interactivo, streaming y visualización de mensajes
+│           │   │       │   ├── domain/               # types.ts, schemas.ts
+│           │   │       │   ├── data/                 # api.ts, queries.ts (useSSEStream, useSendMessage)
+│           │   │       │   └── ui/                   # components/ (ChatBox.tsx, MessageBubble.tsx), pages/ (ChatPage.tsx)
+│           │   │       ├── orders/                   # Carrito, checkout y seguimiento de órdenes
+│           │   │       │   ├── domain/               # types.ts, schemas.ts
+│           │   │       │   ├── data/                 # api.ts, queries.ts (useCreateOrder, useOrderStatus)
+│           │   │       │   └── ui/                   # components/ (OrderForm.tsx, CartSummary.tsx), pages/ (CheckoutPage.tsx)
+│           │   │       ├── ledger/                   # Saldos contables y auditoría de transacciones
+│           │   │       │   ├── domain/               # types.ts, schemas.ts
+│           │   │       │   ├── data/                 # api.ts, queries.ts (useAccountBalance, useJournalEntries)
+│           │   │       │   └── ui/                   # components/ (BalanceCard.tsx, JournalTable.tsx), pages/ (LedgerPage.tsx)
+│           │   │       ├── governance/               # Login, MFA y auditoría
+│           │   │       │   ├── domain/               # types.ts, schemas.ts
+│           │   │       │   ├── data/                 # api.ts, queries.ts
+│           │   │       │   └── ui/                   # components/ (LoginForm.tsx, MfaModal.tsx), pages/ (AuditDashboardPage.tsx)
+│           │   │       ├── operations/               # Panel de control de tareas y cola de aprobación HITL
+│           │   │       │   ├── domain/               # types.ts, schemas.ts
+│           │   │       │   ├── data/                 # api.ts, queries.ts (useDispatchTask, useApprovalQueue)
+│           │   │       │   └── ui/                   # components/ (TaskRunner.tsx, ApprovalQueue.tsx), pages/ (TasksPage.tsx)
+│           │   │       └── analytics/                # Paneles analíticos y métricas
+│           │   │           ├── domain/               # types.ts, schemas.ts
+│           │   │           ├── data/                 # api.ts, queries.ts (useDashboardMetrics)
+│           │   │           └── ui/                   # components/ (RealtimeChart.tsx, MetricsCard.tsx), pages/ (AnalyticsDashboardPage.tsx)
+│           │   │
+│           │   └── static/                           # Assets estáticos y bundles compilados (dist/, CSS, JS, favicons)
+│           │
+│           ├── rpc/                                  # [Opcional] Canal Binario de Alta Velocidad (HTTP/2)
+│           │   ├── protos/                           # Definiciones de contratos de interfaz .proto
+│           │   ├── grpc_server.py                    # Servidor gRPC que despacha Application Commands
+│           │   └── presenters/                       # Serializadores a mensajes binarios Protobuf
+│           │
+│           ├── mcp/                                  # Canal para Agentes de Inteligencia Artificial (Model Context Protocol)
+│           │   ├── server.py                         # Servidor FastMCP / MCP SDK (JSON-RPC sobre stdio o SSE)
+│           │   ├── tools/                            # Herramientas operacionales expuestas organizadas por namespace
+│           │   │   ├── canonical/
+│           │   │   │   └── tools.py                  # [Canónico / Abstracto]: Plantilla de Tool con tipado Pydantic y validación
+│           │   │   ├── conversations/
+│           │   │   │   └── tools.py                  # Herramientas de consulta de historial y memoria episódica
+│           │   │   ├── orders/
+│           │   │   │   └── tools.py                  # Herramientas de consulta de catálogo y estado de órdenes
+│           │   │   ├── ledger/
+│           │   │   │   └── tools.py                  # Herramientas de consulta de cuentas contables y balance
+│           │   │   ├── governance/
+│           │   │   │   └── tools.py                  # Herramientas de consulta de políticas y reporte de incidentes
+│           │   │   ├── operations/
+│           │   │   │   └── tools.py                  # Herramientas de monitoreo de tareas y aprobación HITL
+│           │   │   └── analytics/
+│           │   │       └── tools.py                  # Herramientas de consulta de métricas e informes analíticos
+│           │   ├── resources/                        # Documentos y fuentes de contexto expuestas por namespace
+│           │   │   ├── canonical/
+│           │   │   │   └── resources.py              # [Canónico / Abstracto]: Plantilla de Resource con URI scheme
+│           │   │   ├── conversations/
+│           │   │   │   └── resources.py              # Recurso URI convo://{id}/history
+│           │   │   ├── orders/
+│           │   │   │   └── resources.py              # Recurso URI catalog://items
+│           │   │   └── analytics/
+│           │   │       └── resources.py              # Recursos URI metrics://realtime y reports://latest
+│           │   └── prompts/                          # Plantillas de interacción estructurada provistas al agente
+│           │       ├── canonical/
+│           │       │   └── prompts.py                # [Canónico / Abstracto]: Plantilla de Prompt con variables de reemplazo
+│           │       ├── conversations/
+│           │       │   └── prompts.py                # Prompt base con guardrails y rol del agente
+│           │       └── orders/
+│           │           └── prompts.py                # Prompt asistido para compras y soporte
+│           │
+│           └── worker/                               # Canal Asíncrono de Eventos (Event-Driven Consumer)
+│               ├── entrypoint.py                     # Ciclo de vida del worker y listeners concurrentes de RabbitMQ/AMQP
+│               ├── lifecycle/
+│               │   └── drain.py                      # Coordinador de drenado agraciado (pausar broker, esperar jobs en vuelo)
+│               ├── inbox/                            # [Transactional Inbox]: Deduplicación de eventos del broker
+│               │   └── interceptor.py                # Interceptor que valida message_id en inbox_messages y confirma ACK
+│               └── consumers/                        # Handlers que traducen mensajes del broker organizados por flujo
+│                   ├── canonical/
+│                   │   └── consumer.py               # [Canónico / Abstracto]: Listener patrón con deserialización y UoW
+│                   ├── llm_stream/
+│                   │   └── consumer.py               # Consumidor de colas de streaming y buffers
+│                   ├── order_payment/
+│                   │   └── consumer.py               # Consumidor de webhooks de pago y confirmación de órdenes
+│                   ├── ledger_event/
+│                   │   └── consumer.py               # Consumidor de eventos contables para actualización de proyecciones
+│                   ├── scheduled_task/
+│                   │   └── consumer.py               # Consumidor de tareas programadas en background
+│                   └── dead_letter/
+│                       └── handler.py                # Manejo y auditoría de mensajes fallidos (DLQ)
+└── tests/                                            # Pirámide de Calidad Centralizada de 4 Niveles
+    ├── conftest.py                                   # Fixtures compartidas de sesión, reportero Rich y mocks in-memory
+    ├── unit/                                         # Nivel 1: Dominio puro, Value Objects, DTOs y Handlers aislados
+    │   ├── shared_kernel/                            # Invariantes de AggregateRoot, ValueObjects, Idempotencia y CircuitBreaker
+    │   ├── <canonical_bounded_context>/              # Pruebas unitarias sobre el molde abstracto y contratos base
+    │   ├── conversations/                            # Entidades de chat, streaming buffers y handlers de LLM
+    │   ├── orders/                                   # Invariantes de órdenes, cálculo de impuestos y handlers de pago
+    │   ├── ledger/                                   # Invariantes de partida doble, aggregate Account y balance
+    │   ├── governance/                               # Reglas de umbrales, guardrails y políticas de SLA
+    │   ├── operations/                               # Lógica de aprobación y validación de cron en tareas
+    │   └── analytics/                                # Fórmulas de agregación métrica y conciliación forense
+    ├── integration/                                  # Nivel 2: Adaptadores I/O (Bases de datos, Outbox, APIs y Cloud Floci)
+    │   ├── interfaces/                               # Pruebas de integración sobre adaptadores HTTP, Web, CLI, MCP y Worker
+    │   │   ├── http/                                 # TestClient / HTTPX sobre REST, SSE y GraphQL
+    │   │   ├── web/                                  # Pruebas de renderizado de vistas SSR y contratos del cliente
+    │   │   ├── webhooks/                             # Pruebas de verificación criptográfica de payloads raw
+    │   │   ├── websocket/                            # Pruebas de conexión bidireccional y frames binarios
+    │   │   ├── mcp/                                  # Invocación de herramientas MCP mediante cliente JSON-RPC
+    │   │   └── worker/                               # Consumo de mensajes de colas y deduplicación con Inbox
+    │   ├── shared_kernel/                            # Transacciones Unit of Work, Outbox Relay y persistencia dual
+    │   ├── conversations/                            # Repositorio SQL de chat y adaptadores Qdrant/Gemini
+    │   ├── orders/                                   # Repositorio SQL de órdenes y pasarela Stripe
+    │   ├── ledger/                                   # EventStore relacional append-only, snapshots y proyecciones
+    │   ├── governance/                               # Repositorio de incidentes y webhook Slack
+    │   ├── operations/                               # Repositorio de tareas y corredor en sandbox Docker
+    │   ├── analytics/                                # Repositorio analítico y exportadores Excel/PDF
+    │   ├── rate_limit/                               # Límites de tasa distribuidos sobre Redis
+    │   └── cloud/                                    # Pruebas de integración contra emulador Floci (S3/PubSub)
+    ├── contract/                                     # [Consumer-Driven Contracts]: Verificación de esquemas OpenAPI y pactos
+    │   ├── openapi/                                  # Validación de compatibilidad retroactiva de esquemas JSON
+    │   └── events/                                   # Validación de esquemas Avro/Protobuf de eventos de integración
+    ├── acceptance/                                   # Nivel 3: Living Documentation BDD (Especificaciones Gherkin ejecutables)
+    │   ├── features/                                 # Archivos .feature en lenguaje ubicuo de negocio
+    │   └── step_defs/                                # Step definitions modulares (Given, When, Then)
+    ├── e2e/                                          # Nivel 4: Pruebas de subprocesos de caja negra sobre ejecutables en bin/
+    └── chaos/                                        # Pruebas de Caos y Simulación de Estrés Concurrente
+        └── simulation/
+            ├── scenarios/
+            │   └── runner.py                         # Generador de ráfagas masivas de eventos y comandos concurrentes
+            └── metrics/
+                └── collector.py                      # Medidor de catch-up lag de proyecciones CQRS en tiempo real
