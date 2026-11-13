@@ -8,6 +8,9 @@ from src.application.conversations.commands.create_conversation import (
 from src.application.conversations.commands.send_message import (
     SendMessageCommandHandler,
 )
+from src.application.conversations.queries.get_conversation import (
+    GetConversationQueryHandler,
+)
 from src.application.conversations.queries.stream_conversation import (
     StreamConversationQueryHandler,
 )
@@ -88,6 +91,7 @@ def test_create_app_container_default_wires_in_memory() -> None:
     assert isinstance(container.idempotent_executor, IdempotentCommandExecutor)
     assert isinstance(container.create_conversation_handler, CreateConversationCommandHandler)
     assert isinstance(container.send_message_handler, SendMessageCommandHandler)
+    assert isinstance(container.get_conversation_handler, GetConversationQueryHandler)
     assert isinstance(container.stream_conversation_handler, StreamConversationQueryHandler)
     assert isinstance(container.fastapi_app, FastAPI)
     assert isinstance(container.model_catalog, ModelCatalogPort)

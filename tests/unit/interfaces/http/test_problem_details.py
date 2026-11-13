@@ -152,6 +152,54 @@ def test_api_exception_handler__conversation_not_found() -> None:
     assert data["code"] == "CONVERSATION_NOT_FOUND"
 
 
+def test_api_exception_handler__rfc33_turn_and_idempotency_errors() -> None:
+    """Verifies RFC-33 exception handlers serialize RFC 7807 Problem Details."""
+    app = build_api()
+
+    from src.application.shared.exceptions import (
+        IdempotencyConflictError,
+        IdempotencyPayloadMismatchError,
+    )
+    from src.domain.conversations.exceptions import (
+        ConsecutiveUserMessageError,
+        InvalidUuidFormatError,
+    )
+
+    @app.get("/test-turn-invariant")
+    def trigger_turn_invariant() -> None:
+        raise ConsecutiveUserMessageError(uuid4())
+
+    @app.get("/test-idempotency-in-progress")
+    def trigger_in_progress() -> None:
+        raise IdempotencyConflictError("key-123")
+
+    @app.get("/test-idempotency-mismatch")
+    def trigger_mismatch() -> None:
+        raise IdempotencyPayloadMismatchError("key-123")
+
+    @app.get("/test-invalid-uuid")
+    def trigger_invalid_uuid() -> None:
+        raise InvalidUuidFormatError("bad-uuid")
+
+    client = TestClient(app)
+
+    r1 = client.get("/test-turn-invariant")
+    assert r1.status_code == 400
+    assert r1.json()["code"] == "TURN_INVARIANT_VIOLATED"
+
+    r2 = client.get("/test-idempotency-in-progress")
+    assert r2.status_code == 409
+    assert r2.json()["code"] == "IDEMPOTENCY_IN_PROGRESS"
+
+    r3 = client.get("/test-idempotency-mismatch")
+    assert r3.status_code == 409
+    assert r3.json()["code"] == "IDEMPOTENCY_PAYLOAD_MISMATCH"
+
+    r4 = client.get("/test-invalid-uuid")
+    assert r4.status_code == 422
+    assert r4.json()["code"] == "INVALID_UUID_FORMAT"
+
+
 def test_schemas_conformance() -> None:
     """Verifies Pydantic v2 DTO schemas instantiate correctly."""
     citation = CitationSchema(
