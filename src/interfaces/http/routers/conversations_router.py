@@ -17,6 +17,10 @@ from src.application.conversations.commands.send_message import (
     SendMessageCommand,
     SendMessageCommandHandler,
 )
+from src.application.conversations.queries.get_conversation import (
+    GetConversationQuery,
+    GetConversationQueryHandler,
+)
 from src.application.conversations.queries.stream_conversation import (
     StreamConversationQuery,
     StreamConversationQueryHandler,
@@ -31,12 +35,14 @@ from src.application.shared.governance.guarded_command_executor import (
     GuardedCommandExecutor,
 )
 from src.application.shared.idempotency.idempotent_command_executor import (
-    IdempotencyConflictError,
     IdempotentCommandExecutor,
 )
 from src.application.shared.ports.unit_of_work import UnitOfWorkPort
 from src.application.shared.tenancy.tenant_context import tenant_context
-from src.domain.conversations.exceptions import ConversationNotFoundError
+from src.domain.conversations.exceptions import (
+    ConsecutiveUserMessageError,
+    ConversationNotFoundError,
+)
 from src.domain.conversations.value_objects.message import MessageRole
 from src.domain.knowledge.value_objects.citation import Citation
 from src.domain.shared.domain_error import DomainError
@@ -48,6 +54,8 @@ from src.interfaces.http.resumable_sse_endpoint import (
     build_resumable_sse_response,
 )
 from src.interfaces.http.schemas import (
+    ConversationHistoryResponse,
+    ConversationMessageItemResponse,
     ConversationResponse,
     CreateConversationRequest,
     MessageResponse,
@@ -184,6 +192,8 @@ def _register_conversation_routes(
     router: APIRouter,
     create_conversation_handler: CreateConversationCommandHandler | None,
     idempotent_executor: IdempotentCommandExecutor | None,
+    get_conversation_handler: GetConversationQueryHandler | None = None,
+    unit_of_work: UnitOfWorkPort | None = None,
 ) -> None:
     @router.post(
         "/conversations",
@@ -209,27 +219,98 @@ def _register_conversation_routes(
             tid = TenantId(x_tenant_id or "default-tenant")
             with tenant_context(tid):
                 try:
-                    res = handler.handle(CreateConversationCommand(title=request.title))
-                    return ConversationResponse(id=res.conversation_id, title=res.title)
+                    res = handler.handle(
+                        CreateConversationCommand(title=request.title, tenant_id=tid.value)
+                    )
+                    return ConversationResponse(
+                        id=res.conversation_id,
+                        title=res.title,
+                        tenant_id=res.tenant_id,
+                        created_at=res.created_at,
+                        status=res.status,
+                    )
                 except ValueError as exc:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
                     ) from exc
 
         if idempotent_executor is not None and idempotency_key is not None:
-            try:
-                return await idempotent_executor.execute(
-                    key=idempotency_key,
-                    operation=_execute,
-                    response_serializer=lambda r: {"id": str(r.id), "title": r.title},
-                    response_deserializer=lambda d: ConversationResponse(
-                        id=UUID(d["id"]), title=d["title"]
-                    ),
-                )
-            except IdempotencyConflictError as exc:
-                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+            return await idempotent_executor.execute(
+                key=idempotency_key,
+                operation=_execute,
+                payload_fingerprint=f"create_conversation:{request.title}",
+                response_serializer=lambda r: {
+                    "id": str(r.id),
+                    "title": r.title,
+                    "tenant_id": r.tenant_id,
+                    "created_at": r.created_at.isoformat(),
+                    "status": r.status,
+                },
+                response_deserializer=lambda d: ConversationResponse(
+                    id=UUID(d["id"]),
+                    title=d["title"],
+                    tenant_id=d.get("tenant_id", "default-tenant"),
+                    created_at=datetime.fromisoformat(d["created_at"])
+                    if "created_at" in d
+                    else datetime.now(),
+                    status=d.get("status", "ACTIVE"),
+                ),
+            )
 
         return await _execute()
+
+    @router.get(
+        "/conversations/{conversation_id}",
+        response_model=ConversationHistoryResponse,
+        status_code=status.HTTP_200_OK,
+        tags=["Conversations"],
+        summary="Get conversation history and turn status",
+        description="Retrieves message history and can_append_user_message state (RFC-33).",
+    )
+    async def get_conversation(
+        conversation_id: UUID,
+        x_tenant_id: Annotated[str | None, Header(alias="X-Tenant-Id")] = None,
+    ) -> ConversationHistoryResponse:
+        resolved_handler = get_conversation_handler
+        if resolved_handler is None and unit_of_work is not None:
+            resolved_handler = GetConversationQueryHandler(unit_of_work=unit_of_work)
+        if resolved_handler is None and create_conversation_handler is not None:
+            fallback_uow = getattr(create_conversation_handler, "_unit_of_work", None)
+            if fallback_uow is not None:
+                resolved_handler = GetConversationQueryHandler(unit_of_work=fallback_uow)
+
+        if resolved_handler is None:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="GetConversationQueryHandler not configured.",
+            )
+
+        tid = TenantId(x_tenant_id or "default-tenant")
+        with tenant_context(tid):
+            result = resolved_handler.handle(
+                GetConversationQuery(
+                    conversation_id=conversation_id,
+                    tenant_id=x_tenant_id,
+                )
+            )
+            return ConversationHistoryResponse(
+                id=result.conversation_id,
+                title=result.title,
+                tenant_id=result.tenant_id,
+                created_at=result.created_at,
+                can_append_user_message=result.can_append_user_message,
+                messages=[
+                    ConversationMessageItemResponse(
+                        id=str(m.id),
+                        role=m.role,
+                        content=m.content,
+                        idempotency_key=m.idempotency_key,
+                        created_at=m.created_at,
+                        delivery_status=m.delivery_status,
+                    )
+                    for m in result.messages
+                ],
+            )
 
 
 def _register_message_routes(
@@ -262,16 +343,23 @@ def _register_message_routes(
         async def _execute_with_text(text: str) -> MessageResponse:
             try:
                 res = handler.handle(
-                    SendMessageCommand(conversation_id=conversation_id, content=text)
+                    SendMessageCommand(
+                        conversation_id=conversation_id,
+                        content=text,
+                        idempotency_key=idempotency_key,
+                    )
                 )
                 return MessageResponse(
+                    id=str(res.message_id),
                     conversation_id=res.conversation_id,
                     role=res.role,
                     content=res.content,
+                    idempotency_key=res.idempotency_key,
                     created_at=res.created_at,
+                    cached=False,
                 )
-            except ConversationNotFoundError as exc:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+            except (ConversationNotFoundError, ConsecutiveUserMessageError):
+                raise
             except (ValueError, DomainError) as exc:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
@@ -289,25 +377,30 @@ def _register_message_routes(
                 return await _execute_with_text(request.content)
 
         if idempotent_executor is not None and idempotency_key is not None:
-            try:
-                return await idempotent_executor.execute(
-                    key=idempotency_key,
-                    operation=_run_command,
-                    response_serializer=lambda r: {
-                        "conversation_id": str(r.conversation_id),
-                        "role": r.role,
-                        "content": r.content,
-                        "created_at": r.created_at.isoformat(),
-                    },
-                    response_deserializer=lambda d: MessageResponse(
-                        conversation_id=UUID(d["conversation_id"]),
-                        role=d["role"],
-                        content=d["content"],
-                        created_at=datetime.fromisoformat(d["created_at"]),
-                    ),
-                )
-            except IdempotencyConflictError as exc:
-                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+            return await idempotent_executor.execute(
+                key=idempotency_key,
+                operation=_run_command,
+                payload_fingerprint=f"{conversation_id}:{request.content}",
+                on_cache_hit=lambda r: r.model_copy(update={"cached": True}),
+                response_serializer=lambda r: {
+                    "id": r.id,
+                    "conversation_id": str(r.conversation_id),
+                    "role": r.role,
+                    "content": r.content,
+                    "idempotency_key": r.idempotency_key,
+                    "created_at": r.created_at.isoformat(),
+                    "cached": r.cached,
+                },
+                response_deserializer=lambda d: MessageResponse(
+                    id=d.get("id", ""),
+                    conversation_id=UUID(d["conversation_id"]),
+                    role=d["role"],
+                    content=d["content"],
+                    idempotency_key=d.get("idempotency_key"),
+                    created_at=datetime.fromisoformat(d["created_at"]),
+                    cached=bool(d.get("cached", False)),
+                ),
+            )
 
         return await _run_command()
 
@@ -394,10 +487,17 @@ def create_conversations_router(
     retriever_service: HybridRetrieverService | None = None,
     unit_of_work: UnitOfWorkPort | None = None,
     guarded_executor: GuardedCommandExecutor | None = None,
+    get_conversation_handler: GetConversationQueryHandler | None = None,
 ) -> APIRouter:
     """Create modular APIRouter handling conversations, messages, and streaming."""
     router = APIRouter()
-    _register_conversation_routes(router, create_conversation_handler, idempotent_executor)
+    _register_conversation_routes(
+        router,
+        create_conversation_handler,
+        idempotent_executor,
+        get_conversation_handler=get_conversation_handler,
+        unit_of_work=unit_of_work,
+    )
     _register_message_routes(router, send_message_handler, idempotent_executor, guarded_executor)
     _register_streaming_routes(
         router,

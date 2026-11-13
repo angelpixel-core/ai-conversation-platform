@@ -14,6 +14,9 @@ from src.application.conversations.commands.create_conversation import (
 from src.application.conversations.commands.send_message import (
     SendMessageCommandHandler,
 )
+from src.application.conversations.queries.get_conversation import (
+    GetConversationQueryHandler,
+)
 from src.application.conversations.queries.stream_conversation import (
     StreamConversationQueryHandler,
 )
@@ -195,6 +198,7 @@ class AppContainer:
     guarded_executor: GuardedCommandExecutor | None = None
     indexer_worker: AnyioDocumentIndexerWorker | None = None
     health_query_handler: GetHealthStatusQueryHandler | None = None
+    get_conversation_handler: GetConversationQueryHandler | None = None
 
 
 def _seed_default_demo_tenant(uow: UnitOfWorkPort) -> None:
@@ -363,6 +367,10 @@ def create_app_container(
 
     create_handler = CreateConversationCommandHandler(unit_of_work=uow)
     send_handler = SendMessageCommandHandler(unit_of_work=uow)
+    get_conv_handler = GetConversationQueryHandler(
+        unit_of_work=uow,
+        conversation_repository=read_repo,
+    )
     stream_handler = StreamConversationQueryHandler(
         conversation_repository=read_repo,
         llm_client=client,
@@ -461,6 +469,7 @@ def create_app_container(
         indexer_worker=indexer_worker,
         workflow_checkpoint_repo=resolved_workflow_repo,
         graph_execution_engine=graph_execution_engine,
+        get_conversation_handler=get_conv_handler,
     )
 
     return AppContainer(
@@ -493,6 +502,7 @@ def create_app_container(
         guarded_executor=guarded_executor,
         indexer_worker=indexer_worker,
         health_query_handler=health_query_handler,
+        get_conversation_handler=get_conv_handler,
     )
 
 

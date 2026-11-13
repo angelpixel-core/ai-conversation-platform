@@ -12,6 +12,9 @@ from src.application.conversations.commands.create_conversation import (
 from src.application.conversations.commands.send_message import (
     SendMessageCommandHandler,
 )
+from src.application.conversations.queries.get_conversation import (
+    GetConversationQueryHandler,
+)
 from src.application.conversations.queries.stream_conversation import (
     StreamConversationQueryHandler,
 )
@@ -26,6 +29,7 @@ from src.application.shared.governance.guarded_command_executor import (
 )
 from src.application.shared.idempotency.idempotent_command_executor import (
     IdempotencyConflictError,
+    IdempotencyPayloadMismatchError,
     IdempotentCommandExecutor,
 )
 from src.application.shared.ports.unit_of_work import UnitOfWorkPort
@@ -50,7 +54,11 @@ from src.application.tenants.queries.list_tenants_query import (
 from src.domain.agents.ports.workflow_checkpoint_repository_port import (
     WorkflowCheckpointRepositoryPort,
 )
-from src.domain.conversations.exceptions import ConversationNotFoundError
+from src.domain.conversations.exceptions import (
+    ConsecutiveUserMessageError,
+    ConversationNotFoundError,
+    InvalidUuidFormatError,
+)
 from src.domain.governance.exceptions import SafetyPolicyViolationError
 from src.domain.governance.ports.incident_repository_port import (
     IncidentRepositoryPort,
@@ -242,6 +250,42 @@ def _register_exception_handlers(app: FastAPI) -> None:
             code="CONVERSATION_NOT_FOUND",
         )
 
+    @app.exception_handler(ConsecutiveUserMessageError)
+    async def consecutive_user_message_handler(
+        request: Request, exc: ConsecutiveUserMessageError
+    ) -> JSONResponse:
+        return problem_details_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            title="Turn Invariant Violated",
+            detail=str(exc),
+            type_uri="urn:problem:turn-invariant-violated",
+            code="TURN_INVARIANT_VIOLATED",
+        )
+
+    @app.exception_handler(InvalidUuidFormatError)
+    async def invalid_uuid_format_handler(
+        request: Request, exc: InvalidUuidFormatError
+    ) -> JSONResponse:
+        return problem_details_response(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            title="Invalid UUID Format",
+            detail=str(exc),
+            type_uri="urn:problem:invalid-uuid-format",
+            code="INVALID_UUID_FORMAT",
+        )
+
+    @app.exception_handler(IdempotencyPayloadMismatchError)
+    async def idempotency_payload_mismatch_handler(
+        request: Request, exc: IdempotencyPayloadMismatchError
+    ) -> JSONResponse:
+        return problem_details_response(
+            status_code=status.HTTP_409_CONFLICT,
+            title="Idempotency Payload Mismatch",
+            detail=str(exc),
+            type_uri="urn:problem:idempotency-payload-mismatch",
+            code="IDEMPOTENCY_PAYLOAD_MISMATCH",
+        )
+
     @app.exception_handler(IdempotencyConflictError)
     async def idempotency_conflict_handler(
         request: Request, exc: IdempotencyConflictError
@@ -251,7 +295,7 @@ def _register_exception_handlers(app: FastAPI) -> None:
             title="Idempotency Conflict",
             detail=str(exc),
             type_uri="urn:problem:idempotency-conflict",
-            code="IDEMPOTENCY_CONFLICT",
+            code="IDEMPOTENCY_IN_PROGRESS",
         )
 
     @app.exception_handler(DomainError)
@@ -288,6 +332,7 @@ def build_api(
     indexer_worker: AnyioDocumentIndexerWorker | None = None,
     workflow_checkpoint_repo: WorkflowCheckpointRepositoryPort | None = None,
     graph_execution_engine: GraphExecutionEngine | None = None,
+    get_conversation_handler: GetConversationQueryHandler | None = None,
 ) -> FastAPI:
     """Create the HTTP adapter around application use cases."""
     active_create_handler = create_conversation_handler or handler
@@ -343,6 +388,7 @@ def build_api(
             retriever_service=retriever_service,
             unit_of_work=unit_of_work,
             guarded_executor=guarded_executor,
+            get_conversation_handler=get_conversation_handler,
         )
     )
 
