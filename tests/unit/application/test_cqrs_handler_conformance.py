@@ -22,6 +22,10 @@ from src.application.conversations.commands.send_message import (
     SendMessageCommand,
     SendMessageCommandHandler,
 )
+from src.application.conversations.queries.get_conversation import (
+    GetConversationQuery,
+    GetConversationQueryHandler,
+)
 from src.application.conversations.queries.resume_stream_query import ResumeStreamQuery
 from src.application.conversations.queries.resume_stream_query_handler import (
     ResumeStreamQueryHandler,
@@ -137,6 +141,7 @@ def test_command_handlers_have_handle_method_and_accept_command() -> None:
 def test_query_handlers_have_handle_method_and_accept_query() -> None:
     """Verifies all CQRS query handlers implement handle(query)."""
     handlers = [
+        (GetConversationQueryHandler, GetConversationQuery),
         (StreamConversationQueryHandler, StreamConversationQuery),
         (ResumeStreamQueryHandler, ResumeStreamQuery),
         (GetGovernanceMetricsQueryHandler, GetGovernanceMetricsQuery),

@@ -6,6 +6,7 @@ import pytest
 
 from src.application.shared.idempotency.idempotent_command_executor import (
     IdempotencyConflictError,
+    IdempotencyPayloadMismatchError,
     IdempotentCommandExecutor,
 )
 from src.application.shared.ports.idempotency_repository_port import (
@@ -150,3 +151,37 @@ async def test_idempotent_executor_marks_failed_on_exception() -> None:
     assert rec is not None
     assert rec.status == IdempotencyStatus.FAILED
     assert rec.response_body == {"error": "Something went wrong"}
+
+
+@pytest.mark.anyio
+async def test_idempotent_executor_payload_mismatch_and_on_cache_hit() -> None:
+    repo = FakeIdempotencyRepo()
+    executor = IdempotentCommandExecutor(idempotency_repo=repo)
+
+    async def sample_op() -> dict[str, Any]:
+        return {"content": "hello", "cached": False}
+
+    res1 = await executor.execute(
+        "key-fp-1",
+        sample_op,
+        payload_fingerprint="conv-1:hello",
+        on_cache_hit=lambda r: {**r, "cached": True},
+    )
+    assert res1 == {"content": "hello", "cached": False}
+
+    # Same key + same fingerprint -> returns cached with on_cache_hit applied
+    res2 = await executor.execute(
+        "key-fp-1",
+        sample_op,
+        payload_fingerprint="conv-1:hello",
+        on_cache_hit=lambda r: {**r, "cached": True},
+    )
+    assert res2 == {"content": "hello", "cached": True}
+
+    # Same key + different fingerprint -> raises IdempotencyPayloadMismatchError
+    with pytest.raises(IdempotencyPayloadMismatchError, match="payload diferente"):
+        await executor.execute(
+            "key-fp-1",
+            sample_op,
+            payload_fingerprint="conv-1:different-payload",
+        )

@@ -10,6 +10,9 @@ from src.application.conversations.commands.create_conversation import (
 from src.application.conversations.commands.send_message import (
     SendMessageCommandHandler,
 )
+from src.application.conversations.queries.get_conversation import (
+    GetConversationQueryHandler,
+)
 from src.application.conversations.queries.stream_conversation import (
     StreamConversationQueryHandler,
 )
@@ -95,6 +98,7 @@ def test_cqrs_handlers_have_google_style_docstrings() -> None:
     handlers = [
         CreateConversationCommandHandler,
         SendMessageCommandHandler,
+        GetConversationQueryHandler,
         StreamConversationQueryHandler,
         ProvisionTenantCommandHandler,
         ReserveQuotaCommandHandler,
