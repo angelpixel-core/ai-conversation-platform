@@ -22,6 +22,13 @@ class IdempotencyConflictError(ApplicationError):
     pass
 
 
+class IdempotencyPayloadMismatchError(IdempotencyConflictError):
+    """Raised when an existing idempotency key is reused with a different request payload."""
+
+    pass
+
+
+
 class TenantAccessDeniedError(ApplicationError, PermissionError):
     """Raised when an operation is attempted across tenant boundaries without authorization."""
 

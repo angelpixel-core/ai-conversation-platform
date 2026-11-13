@@ -1,10 +1,11 @@
 """Send message command and handler for user input ingestion."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from src.application.shared.ports.unit_of_work import UnitOfWorkPort
+from src.application.shared.tenancy.tenant_context import get_current_tenant_id
 from src.domain.conversations.exceptions import ConversationNotFoundError
 
 
@@ -14,6 +15,7 @@ class SendMessageCommand:
 
     conversation_id: UUID
     content: str
+    idempotency_key: str | None = None
 
 
 @dataclass(frozen=True)
@@ -24,6 +26,8 @@ class SendMessageResult:
     role: str
     content: str
     created_at: datetime
+    message_id: UUID = field(default_factory=uuid4)
+    idempotency_key: str | None = None
 
 
 class SendMessageCommandHandler:
@@ -47,8 +51,10 @@ class SendMessageCommandHandler:
             SendMessageResult with persisted message data.
 
         Raises:
-            ConversationNotFoundError: If target conversation does not exist.
+            ConversationNotFoundError: If target conversation does not exist or belongs
+                to another tenant.
         """
+        active_tenant = get_current_tenant_id()
         with self._unit_of_work as uow:
             conversation = uow.conversations.get(command.conversation_id)
             if conversation is None:
@@ -56,7 +62,20 @@ class SendMessageCommandHandler:
                     f"Conversation {command.conversation_id} not found."
                 )
 
-            message = conversation.append_user_message(command.content)
+            if (
+                active_tenant
+                and active_tenant != "default-tenant"
+                and conversation.tenant_id != "default-tenant"
+                and conversation.tenant_id != active_tenant
+            ):
+                raise ConversationNotFoundError(
+                    f"Conversation {command.conversation_id} not found."
+                )
+
+            message = conversation.append_user_message(
+                command.content,
+                idempotency_key=command.idempotency_key,
+            )
             uow.conversations.add(conversation)
             uow.commit()
 
@@ -65,6 +84,8 @@ class SendMessageCommandHandler:
                 role=message.role.value,
                 content=message.content,
                 created_at=message.created_at,
+                message_id=message.id,
+                idempotency_key=message.idempotency_key,
             )
 
 
