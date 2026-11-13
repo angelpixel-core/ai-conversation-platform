@@ -92,6 +92,7 @@ class MessageModel(SQLModel, table=True):
     )
     role: str = Field(max_length=20, nullable=False)
     content: str = Field(nullable=False)
+    idempotency_key: str | None = Field(default=None, max_length=128, nullable=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
 
     conversation: ConversationModel | None = Relationship(back_populates="messages")

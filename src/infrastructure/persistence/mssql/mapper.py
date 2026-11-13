@@ -19,9 +19,11 @@ class ConversationMapper:
         for msg_model in sorted_models:
             messages.append(
                 Message(
+                    id=msg_model.id,
                     role=MessageRole(msg_model.role),
                     content=msg_model.content,
                     created_at=msg_model.created_at,
+                    idempotency_key=msg_model.idempotency_key,
                 )
             )
 
@@ -30,12 +32,17 @@ class ConversationMapper:
             title=model.title,
             created_at=model.created_at,
             messages=messages,
+            tenant_id=model.tenant_id,
         )
 
     @staticmethod
     def to_model(entity: Conversation) -> ConversationModel:
         """Map Conversation aggregate root to SQLModel database model."""
-        current_tenant = get_current_tenant_id() or "default-tenant"
+        current_tenant = (
+            get_current_tenant_id()
+            or (entity.tenant_id if entity.tenant_id != "default-tenant" else None)
+            or "default-tenant"
+        )
         model = ConversationModel(
             id=entity.id,
             tenant_id=current_tenant,
@@ -58,9 +65,11 @@ class ConversationMapper:
     def message_to_model(message: Message, conversation_id: UUID) -> MessageModel:
         """Map Message value object to MessageModel database record."""
         return MessageModel(
+            id=message.id,
             conversation_id=conversation_id,
             role=message.role.value,
             content=message.content,
+            idempotency_key=message.idempotency_key,
             created_at=message.created_at,
         )
 
