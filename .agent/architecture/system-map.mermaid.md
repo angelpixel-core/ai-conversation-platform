@@ -45,6 +45,8 @@ graph TD
         SendMessageHandler["SendMessageCommandHandler"]
         AppendAssistantCmd["AppendAssistantMessageCommand"]
         AppendAssistantHandler["AppendAssistantMessageCommandHandler"]
+        GetConvQuery["GetConversationQuery"]
+        GetConvHandler["GetConversationQueryHandler"]
         StreamConvQuery["StreamConversationQuery"]
         StreamConvHandler["StreamConversationQueryHandler"]
         UOWPort["UnitOfWorkPort (Port)"]
@@ -115,7 +117,7 @@ graph TD
         AssistantCompletedEvent["AssistantResponseCompletedDomainEvent"]
         ConvRepoPort["ConversationRepository (Port)"]
         ConvNotFoundErr["ConversationNotFoundError"]
-        ConvExceptionsNode["ConversationExceptions (InvalidConversationTitleError, ConsecutiveUserMessageError)"]
+        ConvExceptionsNode["ConversationExceptions (InvalidConversationTitleError, ConsecutiveUserMessageError, InvalidUuidFormatError)"]
         DomainError["DomainError (DomainException)"]
         DomainExceptionsNode["DomainExceptions (DomainValidationError, EntityNotFoundError, InvariantViolationError)"]
         EventEnvelopeVO["EventEnvelope (ValueObject)"]
@@ -270,6 +272,7 @@ graph TD
     RouterFastAPI --> ProblemDetailsNode
     ConversationsRouterNode --> CreateConvHandler
     ConversationsRouterNode --> SendMessageHandler
+    ConversationsRouterNode --> GetConvHandler
     ConversationsRouterNode --> StreamConvHandler
     ConversationsRouterNode --> IdempotencyDep
     ConversationsRouterNode --> ResumableSSE
@@ -303,6 +306,11 @@ graph TD
     AppendAssistantHandler --> ConvAggregate
     AppendAssistantHandler --> ConvNotFoundErr
     AppendAssistantHandler --> UOWPort
+
+    GetConvHandler --> GetConvQuery
+    GetConvHandler --> ConvRepoPort
+    GetConvHandler --> ConvNotFoundErr
+    GetConvHandler --> UOWPort
 
     StreamConvHandler --> StreamConvQuery
     StreamConvHandler --> ConvRepoPort
@@ -602,5 +610,6 @@ graph TD
     AiEngineHealthProbeNode -- Implementa --> HealthProbePortNode
     AppContainerNode --> HealthRouterNode
     AppContainerNode --> GetHealthStatusHandlerNode
+    AppContainerNode --> GetConvHandler
 ```
 
