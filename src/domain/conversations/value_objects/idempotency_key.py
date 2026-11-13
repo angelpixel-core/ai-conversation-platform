@@ -11,6 +11,13 @@ import re
 import uuid
 from dataclasses import dataclass
 
+from src.domain.conversations.exceptions import InvalidUuidFormatError
+
+UUID_V4_REGEX = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+    re.IGNORECASE,
+)
+
 
 @dataclass(frozen=True)
 class IdempotencyKey:
@@ -45,6 +52,26 @@ class IdempotencyKey:
     def create(cls, key: str) -> "IdempotencyKey":
         """Semantic factory method creating IdempotencyKey."""
         return cls(value=key)
+
+    @classmethod
+    def from_uuid_v4(cls, raw: str) -> "IdempotencyKey":
+        """Validate and create an IdempotencyKey strictly conforming to RFC 4122 UUIDv4.
+
+        Args:
+            raw: Raw string representation of the UUIDv4 header.
+
+        Returns:
+            Validated IdempotencyKey instance with normalized lowercase UUIDv4 string.
+
+        Raises:
+            InvalidUuidFormatError: If raw string is empty or not a valid RFC 4122 UUIDv4.
+        """
+        clean = raw.strip() if raw else ""
+        if not clean or not UUID_V4_REGEX.match(clean):
+            raise InvalidUuidFormatError(
+                f"El encabezado 'X-Idempotency-Key' debe ser un UUIDv4 válido (RFC 4122): '{raw}'."
+            )
+        return cls(value=clean.lower())
 
     def __str__(self) -> str:
         return self.value

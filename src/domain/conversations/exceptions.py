@@ -25,3 +25,7 @@ class ConsecutiveAssistantMessageError(DomainError):
 
 class MessageValidationError(DomainValidationError):
     """Raised when a message payload violates domain invariants."""
+
+
+class InvalidUuidFormatError(DomainValidationError):
+    """Raised when an idempotency key does not conform to RFC 4122 UUIDv4 format."""

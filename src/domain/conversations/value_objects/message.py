@@ -1,8 +1,9 @@
 """Message Value Object in the Conversations domain."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
+from uuid import UUID, uuid4
 
 
 class MessageRole(StrEnum):
@@ -20,6 +21,8 @@ class Message:
     role: MessageRole
     content: str
     created_at: datetime
+    id: UUID = field(default_factory=uuid4, compare=False)
+    idempotency_key: str | None = field(default=None, compare=False)
 
     def __post_init__(self) -> None:
         clean_content = self.content.strip() if self.content else ""
@@ -33,21 +36,31 @@ class Message:
             object.__setattr__(self, "created_at", self.created_at.replace(tzinfo=UTC))
 
     @classmethod
-    def create_user_message(cls, content: str) -> "Message":
+    def create_user_message(
+        cls,
+        content: str,
+        idempotency_key: str | None = None,
+    ) -> "Message":
         """Factory method for user messages."""
         return cls(
             role=MessageRole.USER,
             content=content,
             created_at=datetime.now(UTC),
+            idempotency_key=idempotency_key,
         )
 
     @classmethod
-    def create_assistant_message(cls, content: str) -> "Message":
+    def create_assistant_message(
+        cls,
+        content: str,
+        idempotency_key: str | None = None,
+    ) -> "Message":
         """Factory method for assistant messages."""
         return cls(
             role=MessageRole.ASSISTANT,
             content=content,
             created_at=datetime.now(UTC),
+            idempotency_key=idempotency_key,
         )
 
     @classmethod
