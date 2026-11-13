@@ -52,3 +52,22 @@ def test_message_validates_max_length() -> None:
     too_long = "a" * 4001
     with pytest.raises(ValueError, match="excede el límite máximo"):
         Message.create_user_message(too_long)
+
+
+def test_message_preserves_id_and_idempotency_key_without_breaking_value_equality() -> None:
+    now = datetime.now(UTC)
+    msg1 = Message(
+        role=MessageRole.USER,
+        content="Idempotent turn",
+        created_at=now,
+        idempotency_key="4c9d8a1f-3b7e-4a6c-9f8e-1b2c3d4e5f6a",
+    )
+    msg2 = Message(
+        role=MessageRole.USER,
+        content="Idempotent turn",
+        created_at=now,
+        idempotency_key="different-key",
+    )
+    assert msg1 == msg2
+    assert msg1.idempotency_key == "4c9d8a1f-3b7e-4a6c-9f8e-1b2c3d4e5f6a"
+    assert msg1.id != msg2.id

@@ -72,3 +72,20 @@ def test_append_user_message_fails_if_last_message_was_also_user() -> None:
 
     with pytest.raises(DomainError, match="assistant responds"):
         conversation.append_user_message("Second user question without waiting")
+
+
+def test_conversation_can_append_user_message_and_tenant_and_idempotency_tracking() -> None:
+    conversation = Conversation.create("RFC-33 Chat", tenant_id="corp-acme")
+    assert conversation.tenant_id == "corp-acme"
+    assert conversation.can_append_user_message is True
+
+    user_msg = conversation.append_user_message(
+        "Calculate cloud budget",
+        idempotency_key="4c9d8a1f-3b7e-4a6c-9f8e-1b2c3d4e5f6a",
+    )
+    assert conversation.can_append_user_message is False
+    assert user_msg.idempotency_key == "4c9d8a1f-3b7e-4a6c-9f8e-1b2c3d4e5f6a"
+
+    assistant_msg = conversation.append_assistant_message("Estimated $1,450/mo.")
+    assert conversation.can_append_user_message is True
+    assert assistant_msg.idempotency_key == "4c9d8a1f-3b7e-4a6c-9f8e-1b2c3d4e5f6a"
