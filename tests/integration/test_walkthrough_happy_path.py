@@ -101,7 +101,7 @@ async def test_walkthrough_guide_full_happy_path() -> None:
         json=msg_payload,
     )
     assert resp_msg1_replay.status_code == 200
-    assert resp_msg1_replay.json() == msg1_data
+    assert resp_msg1_replay.json() == {**msg1_data, "cached": True}
 
     # Simulate background worker completing the turn & buffering chunks into stream_buffer_repo
     stream_chunks = [
