@@ -15,5 +15,5 @@ Un artículo por **vertical slice (User Story)**. Los refactors y cambios de arq
 
 | ID | User Story | Contexto | Tipo | Fecha |
 | :--- | :--- | :--- | :--- | :--- |
-| — | — | — | — | — |
+| [ARTICLE-001](ARTICLE-001-cu03-chat-idempotency-contract.md) | CU-03: Consola Conversacional con Idempotencia Resiliente (RFC-33) | `conversations` | Command / Query | 2026-11-13 |
 
