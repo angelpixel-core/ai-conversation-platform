@@ -15,8 +15,14 @@ from src.infrastructure.persistence.mssql.models import (
 
 def test_mapper__entity_to_model__converts_conversation_and_messages_correctly() -> None:
     # Arrange
-    conversation = Conversation.create(title="Arquitectura Limpia con MSSQL")
-    conversation.append_user_message("¿Cómo persistir en SQL Server?")
+    conversation = Conversation.create(
+        title="Arquitectura Limpia con MSSQL",
+        tenant_id="corp-acme",
+    )
+    conversation.append_user_message(
+        "¿Cómo persistir en SQL Server?",
+        idempotency_key="4c9d8a1f-3b7e-4a6c-9f8e-1b2c3d4e5f6a",
+    )
     conversation.append_assistant_message("Utilizando Data Mappers y SQLModel.")
 
     # Act
@@ -25,6 +31,7 @@ def test_mapper__entity_to_model__converts_conversation_and_messages_correctly()
     # Assert
     assert isinstance(model, ConversationModel)
     assert model.id == conversation.id
+    assert model.tenant_id == "corp-acme"
     assert model.title == "Arquitectura Limpia con MSSQL"
     assert model.created_at == conversation.created_at
     assert len(model.messages) == 2
@@ -33,6 +40,7 @@ def test_mapper__entity_to_model__converts_conversation_and_messages_correctly()
     assert first_msg.role == "user"
     assert first_msg.content == "¿Cómo persistir en SQL Server?"
     assert first_msg.conversation_id == conversation.id
+    assert first_msg.idempotency_key == "4c9d8a1f-3b7e-4a6c-9f8e-1b2c3d4e5f6a"
 
     second_msg = model.messages[1]
     assert second_msg.role == "assistant"
